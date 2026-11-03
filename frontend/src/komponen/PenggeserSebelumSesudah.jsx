@@ -1,24 +1,72 @@
 import { ChevronsLeftRight } from 'lucide-react';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
  * Komponen pembanding citra sebelum dan sesudah interaktif dengan bilah pemisah.
+ * Mendukung rendering performa tinggi berbasis elemen <canvas> langsung (zero PNG encoding)
+ * serta fallback tag <img> untuk kompatibilitas aksesibilitas penuh.
  *
  * @param {object} props
  * @param {string} props.gambarSebelum - URL sumber citra sebelum
  * @param {string} props.gambarSesudah - URL sumber citra sesudah
+ * @param {{ data: Uint8ClampedArray, width: number, height: number }} [props.citraSebelum]
+ * @param {{ data: Uint8ClampedArray, width: number, height: number }} [props.citraSesudah]
  * @param {string} [props.namaCitra] - Nama citra untuk atribut alt
  */
 export default function PenggeserSebelumSesudah({
   gambarSebelum,
   gambarSesudah,
+  citraSebelum,
+  citraSesudah,
   namaCitra = 'Citra PicLab',
 }) {
   const { t } = useTranslation();
   const [posisiPemisah, setPosisiPemisah] = useState(50); // Persentase 0 - 100
   const [sedangGeser, setSedangGeser] = useState(false);
   const kontainerRef = useRef(null);
+  const kanvasSebelumRef = useRef(null);
+  const kanvasSesudahRef = useRef(null);
+
+  // Render langsung ke canvas sesudah menggunakan putImageData (P2: bebas encoding PNG)
+  useEffect(() => {
+    if (!kanvasSesudahRef.current || !citraSesudah) return;
+    const kanvas = kanvasSesudahRef.current;
+    if (
+      kanvas.width !== citraSesudah.width ||
+      kanvas.height !== citraSesudah.height
+    ) {
+      kanvas.width = citraSesudah.width;
+      kanvas.height = citraSesudah.height;
+    }
+    const ctx = kanvas.getContext('2d');
+    const imageData = new ImageData(
+      new Uint8ClampedArray(citraSesudah.data),
+      citraSesudah.width,
+      citraSesudah.height
+    );
+    ctx.putImageData(imageData, 0, 0);
+  }, [citraSesudah]);
+
+  // Render langsung ke canvas sebelum menggunakan putImageData
+  useEffect(() => {
+    if (!kanvasSebelumRef.current || !citraSebelum) return;
+    const kanvas = kanvasSebelumRef.current;
+    if (
+      kanvas.width !== citraSebelum.width ||
+      kanvas.height !== citraSebelum.height
+    ) {
+      kanvas.width = citraSebelum.width;
+      kanvas.height = citraSebelum.height;
+    }
+    const ctx = kanvas.getContext('2d');
+    const imageData = new ImageData(
+      new Uint8ClampedArray(citraSebelum.data),
+      citraSebelum.width,
+      citraSebelum.height
+    );
+    ctx.putImageData(imageData, 0, 0);
+  }, [citraSebelum]);
 
   const perbaruiPosisi = useCallback((posisiX) => {
     if (!kontainerRef.current) return;
@@ -86,10 +134,21 @@ export default function PenggeserSebelumSesudah({
       onTouchStart={mulaiGeserSentuh}
     >
       {/* 1. Citra Sesudah (Latar Belakang Penuh) */}
+      {citraSesudah ? (
+        <canvas
+          ref={kanvasSesudahRef}
+          data-testid="kanvas-sesudah"
+          className="max-w-full max-h-full object-contain pointer-events-none"
+        />
+      ) : null}
       <img
         src={gambarSesudah}
         alt={`${namaCitra} - ${t('kanvas.sesudah')}`}
-        className="max-w-full max-h-full object-contain pointer-events-none"
+        className={
+          citraSesudah
+            ? 'hidden'
+            : 'max-w-full max-h-full object-contain pointer-events-none'
+        }
         draggable={false}
       />
 
@@ -100,10 +159,21 @@ export default function PenggeserSebelumSesudah({
           clipPath: `polygon(0 0, ${posisiPemisah}% 0, ${posisiPemisah}% 100%, 0 100%)`,
         }}
       >
+        {citraSebelum ? (
+          <canvas
+            ref={kanvasSebelumRef}
+            data-testid="kanvas-sebelum"
+            className="max-w-full max-h-full object-contain pointer-events-none"
+          />
+        ) : null}
         <img
           src={gambarSebelum}
           alt={`${namaCitra} - ${t('kanvas.sebelum')}`}
-          className="max-w-full max-h-full object-contain pointer-events-none"
+          className={
+            citraSebelum
+              ? 'hidden'
+              : 'max-w-full max-h-full object-contain pointer-events-none'
+          }
           draggable={false}
         />
       </div>

@@ -9,7 +9,6 @@ import PanelParameter from './komponen/PanelParameter';
 import { ekstrakNilaiAwalParameter } from './mesin/katalogOperasi';
 import {
   citraKeBlob,
-  citraKeUrlBlob,
   ekstrakDataCitra,
   jalankanOperasi,
 } from './pekerja/pengelolaPekerja';
@@ -92,18 +91,34 @@ export default function Aplikasi() {
     };
   }, [gambarSrc, gambarHasilSrc]);
 
-  // Menjalankan operasi preview di Web Worker
-  const terapkanPreview = async (op, param) => {
+  // Menjalankan operasi preview di Web Worker (P2: Jalur Render Bebas Encoding PNG)
+  const terapkanPreview = async (op, param, tInput = performance.now()) => {
     if (!citraPreview || !op) return;
     try {
-      const { hasil } = await jalankanOperasi(op.id, citraPreview, param);
-      const urlBlob = await citraKeUrlBlob(hasil);
+      const tMulaiJalankan = performance.now();
+      const respons = await jalankanOperasi(op.id, citraPreview, param);
+      const { hasil, waktuRinci } = respons;
 
-      if (gambarHasilSrc && gambarHasilSrc.startsWith('blob:')) {
-        URL.revokeObjectURL(gambarHasilSrc);
-      }
-      setGambarHasilSrc(urlBlob);
+      const tMulaiRenderReact = performance.now();
+      // Langsung perbarui objek citra hasil preview untuk kanvas langsung
       setCitraHasilPreview(hasil);
+
+      if (typeof window !== 'undefined' && window.__catatanProfil) {
+        window.__catatanProfil.push({
+          idOperasi: op.id,
+          tInput,
+          faseInputKeKirim: Math.max(0, tMulaiJalankan - tInput),
+          faseKirimKeWorker: waktuRinci?.durasiKirimKeWorker || 0,
+          faseKomputasiWorker: waktuRinci?.durasiKomputasiWorker || 0,
+          faseTransferBalik: waktuRinci?.durasiTransferBalik || 0,
+          fasePembuatanTampil: 0, // Nol encoding PNG (digantikan direct canvas putImageData)
+          faseRenderReact: Math.max(0, performance.now() - tMulaiRenderReact),
+          durasiHistogram:
+            window.__terakhirDurasiHistogram !== undefined
+              ? window.__terakhirDurasiHistogram
+              : 0,
+        });
+      }
     } catch (err) {
       // Galat operasi ditangkap tanpa menghentikan thread UI
       if (import.meta.env.DEV) {
@@ -127,15 +142,16 @@ export default function Aplikasi() {
     }
 
     setParameter(paramAwal);
-    terapkanPreview(op, paramAwal);
+    terapkanPreview(op, paramAwal, performance.now());
   };
 
   // Menangani perubahan parameter dari panel kanan
   const saatUbahParameter = (idParam, nilaiBaru) => {
+    const tInput = performance.now();
     const paramBaru = { ...parameter, [idParam]: nilaiBaru };
     setParameter(paramBaru);
     if (operasiAktif) {
-      terapkanPreview(operasiAktif, paramBaru);
+      terapkanPreview(operasiAktif, paramBaru, tInput);
     }
   };
 
@@ -293,7 +309,9 @@ export default function Aplikasi() {
             <>
               <AreaKanvas
                 gambarSrc={gambarSrc}
-                gambarSesudahSrc={gambarHasilSrc}
+                gambarSesudahSrc={gambarHasilSrc || gambarSrc}
+                citraSebelum={citraPreview}
+                citraSesudah={citraHasilPreview}
                 metadata={metadata}
               />
               <BilahAksiKanvas

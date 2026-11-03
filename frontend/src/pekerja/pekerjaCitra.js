@@ -9,7 +9,8 @@ import {
 } from '../mesin/katalogOperasi';
 
 self.onmessage = function (e) {
-  const { idPermintaan, idOperasi, citra, parameter } = e.data;
+  const tWorkerMasuk = performance.now();
+  const { idPermintaan, idOperasi, citra, parameter, tKirim } = e.data;
 
   try {
     const operasi = dapatkanOperasiBerdasarkanId(idOperasi);
@@ -35,7 +36,8 @@ self.onmessage = function (e) {
     // Eksekusi fungsi murni
     const waktuAwal = performance.now();
     const hasil = operasi.terapkan(masukanCitra, parameterBersih);
-    const durasi = performance.now() - waktuAwal;
+    const tWorkerSelesai = performance.now();
+    const durasi = tWorkerSelesai - waktuAwal;
 
     // Kirim hasil kembali ke thread utama dengan Transferable ArrayBuffer
     const bufferTransfer = hasil.data.buffer;
@@ -45,6 +47,13 @@ self.onmessage = function (e) {
         idPermintaan,
         berhasil: true,
         durasi,
+        waktuRinci: {
+          tKirim: tKirim || 0,
+          tWorkerMasuk,
+          tWorkerSelesai,
+          tWorkerKirim: performance.now(),
+          durasiWorker: durasi,
+        },
         hasil: {
           data: hasil.data,
           width: hasil.width,

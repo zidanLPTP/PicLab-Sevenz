@@ -22,7 +22,13 @@ export default function HistogramCitra({ citraSebelum, citraSesudah }) {
   }, [citraSebelum]);
 
   const histSesudah = useMemo(() => {
-    return citraSesudah ? hitungHistogram(citraSesudah) : null;
+    if (!citraSesudah) return null;
+    const tAwal = performance.now();
+    const h = hitungHistogram(citraSesudah);
+    if (typeof window !== 'undefined' && window.__catatanProfil) {
+      window.__terakhirDurasiHistogram = performance.now() - tAwal;
+    }
+    return h;
   }, [citraSesudah]);
 
   // Mengubah data histogram 256 nilai ke titik-titik SVG path

@@ -9,7 +9,6 @@ import {
   buatTabelPencarian,
   clamp,
   hitungHistogram,
-  hitungLuminansRec601,
 } from './utilitasCitra';
 
 /**
@@ -101,14 +100,20 @@ export const operasiEkualisasi = {
       }
     } else {
       // Default: Ekualisasi pada Luminans (menjaga integritas warna)
-      const hist = hitungHistogram(citra);
-      const lutY = hitungLutCdf(hist.luminans);
+      const histY = new Uint32Array(256);
+      for (let i = 0; i < len; i += 4) {
+        const y =
+          ((299 * src[i] + 587 * src[i + 1] + 114 * src[i + 2] + 500) / 1000) |
+          0;
+        histY[y]++;
+      }
+      const lutY = hitungLutCdf(histY);
 
       for (let i = 0; i < len; i += 4) {
         const r = src[i];
         const g = src[i + 1];
         const b = src[i + 2];
-        const yLama = hitungLuminansRec601(r, g, b);
+        const yLama = ((299 * r + 587 * g + 114 * b + 500) / 1000) | 0;
         const yBaru = lutY[yLama];
 
         if (yLama === 0) {
@@ -118,10 +123,10 @@ export const operasiEkualisasi = {
         } else {
           // Rasio luminans per piksel diskalakan ke kanal warna
           const rasio = yBaru / yLama;
-          // Hasil di atas 255 dijepit ke 255 oleh clamp()
-          dst[i] = clamp(r * rasio);
-          dst[i + 1] = clamp(g * rasio);
-          dst[i + 2] = clamp(b * rasio);
+          // Hasil di atas 255 dijepit secara otomatis oleh Uint8ClampedArray
+          dst[i] = r * rasio;
+          dst[i + 1] = g * rasio;
+          dst[i + 2] = b * rasio;
         }
         dst[i + 3] = src[i + 3];
       }
@@ -163,12 +168,17 @@ export const operasiPereganganKontras = {
     const persentil = p / 100;
 
     const { width, height, data: src } = citra;
+    const len = src.length;
     const totalPiksel = width * height;
     if (totalPiksel === 0)
       return { ...citra, data: new Uint8ClampedArray(citra.data) };
 
-    const hist = hitungHistogram(citra);
-    const lumHist = hist.luminans;
+    const lumHist = new Uint32Array(256);
+    for (let i = 0; i < len; i += 4) {
+      const y =
+        ((299 * src[i] + 587 * src[i + 1] + 114 * src[i + 2] + 500) / 1000) | 0;
+      lumHist[y]++;
+    }
 
     // Cari vMin dan vMax dengan pemangkasan persentil
     const ambangBawah = Math.round(totalPiksel * persentil);
@@ -208,7 +218,6 @@ export const operasiPereganganKontras = {
 
     const hasil = buatCitraKosong(width, height);
     const dst = hasil.data;
-    const len = src.length;
 
     for (let i = 0; i < len; i += 4) {
       dst[i] = lut[src[i]];

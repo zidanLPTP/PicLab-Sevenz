@@ -4,14 +4,7 @@
  * dan parameter, lalu mengembalikan objek citra baru tanpa memutasi masukan.
  */
 
-import {
-  buatCitraKosong,
-  buatTabelPencarian,
-  clamp,
-  hitungLuminansRec601,
-  hsvKeRgb,
-  rgbKeHsv,
-} from './utilitasCitra';
+import { buatCitraKosong, buatTabelPencarian } from './utilitasCitra';
 
 /**
  * Operasi Pemisah Kanal RGB.
@@ -122,25 +115,67 @@ export const operasiRuangWarna = {
     const dst = hasil.data;
     const len = src.length;
 
-    for (let i = 0; i < len; i += 4) {
-      let v = 0;
-      if (ruang === 'grayscale') {
-        v = hitungLuminansRec601(src[i], src[i + 1], src[i + 2]);
-      } else {
-        const hsv = rgbKeHsv(src[i], src[i + 1], src[i + 2]);
-        if (ruang === 'hsv_h') {
-          v = clamp((hsv.h / 360) * 255);
-        } else if (ruang === 'hsv_s') {
-          v = clamp(hsv.s * 255);
-        } else {
-          v = clamp(hsv.v * 255);
-        }
+    if (ruang === 'grayscale') {
+      for (let i = 0; i < len; i += 4) {
+        const v =
+          ((299 * src[i] + 587 * src[i + 1] + 114 * src[i + 2] + 500) / 1000) |
+          0;
+        dst[i] = v;
+        dst[i + 1] = v;
+        dst[i + 2] = v;
+        dst[i + 3] = src[i + 3];
       }
-
-      dst[i] = v;
-      dst[i + 1] = v;
-      dst[i + 2] = v;
-      dst[i + 3] = src[i + 3];
+    } else if (ruang === 'hsv_v') {
+      for (let i = 0; i < len; i += 4) {
+        const r = src[i];
+        const g = src[i + 1];
+        const b = src[i + 2];
+        const v = r > g ? (r > b ? r : b) : g > b ? g : b;
+        dst[i] = v;
+        dst[i + 1] = v;
+        dst[i + 2] = v;
+        dst[i + 3] = src[i + 3];
+      }
+    } else if (ruang === 'hsv_s') {
+      for (let i = 0; i < len; i += 4) {
+        const r = src[i];
+        const g = src[i + 1];
+        const b = src[i + 2];
+        const max = r > g ? (r > b ? r : b) : g > b ? g : b;
+        let v = 0;
+        if (max > 0) {
+          const min = r < g ? (r < b ? r : b) : g < b ? g : b;
+          v = Math.round(((max - min) / max) * 255);
+        }
+        dst[i] = v;
+        dst[i + 1] = v;
+        dst[i + 2] = v;
+        dst[i + 3] = src[i + 3];
+      }
+    } else {
+      // hsv_h
+      for (let i = 0; i < len; i += 4) {
+        const r = src[i];
+        const g = src[i + 1];
+        const b = src[i + 2];
+        const max = r > g ? (r > b ? r : b) : g > b ? g : b;
+        const min = r < g ? (r < b ? r : b) : g < b ? g : b;
+        const d = max - min;
+        let v = 0;
+        if (d > 0) {
+          let h = 0;
+          if (max === r) h = ((g - b) / d) % 6;
+          else if (max === g) h = (b - r) / d + 2;
+          else h = (r - g) / d + 4;
+          h *= 60;
+          if (h < 0) h += 360;
+          v = Math.round((h / 360) * 255);
+        }
+        dst[i] = v;
+        dst[i + 1] = v;
+        dst[i + 2] = v;
+        dst[i + 3] = src[i + 3];
+      }
     }
     return hasil;
   },
@@ -187,11 +222,11 @@ export const operasiSaturasi = {
       const r = src[i];
       const g = src[i + 1];
       const b = src[i + 2];
-      const y = hitungLuminansRec601(r, g, b);
+      const y = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
 
-      dst[i] = clamp(y + faktor * (r - y));
-      dst[i + 1] = clamp(y + faktor * (g - y));
-      dst[i + 2] = clamp(y + faktor * (b - y));
+      dst[i] = Math.round(y + faktor * (r - y));
+      dst[i + 1] = Math.round(y + faktor * (g - y));
+      dst[i + 2] = Math.round(y + faktor * (b - y));
       dst[i + 3] = src[i + 3];
     }
     return hasil;
@@ -200,7 +235,7 @@ export const operasiSaturasi = {
 
 /**
  * Operasi Pergeseran Hue (Hue Shift).
- * Metode: Transformasi RGB -> HSV -> pergeseran sudut Hue -> RGB.
+ * Metode: Transformasi RGB -> HSV -> pergeseran sudut Hue -> RGB (inlined zero-allocation).
  * Rumus inti: H' = (H + pergeseran + 360) % 360
  */
 export const operasiHue = {
@@ -235,13 +270,68 @@ export const operasiHue = {
     const len = src.length;
 
     for (let i = 0; i < len; i += 4) {
-      const hsv = rgbKeHsv(src[i], src[i + 1], src[i + 2]);
-      const newH = (((hsv.h + shift) % 360) + 360) % 360;
-      const rgbBaru = hsvKeRgb(newH, hsv.s, hsv.v);
+      const r = src[i];
+      const g = src[i + 1];
+      const b = src[i + 2];
 
-      dst[i] = rgbBaru.r;
-      dst[i + 1] = rgbBaru.g;
-      dst[i + 2] = rgbBaru.b;
+      if (r === g && g === b) {
+        dst[i] = r;
+        dst[i + 1] = g;
+        dst[i + 2] = b;
+        dst[i + 3] = src[i + 3];
+        continue;
+      }
+
+      const max = r > g ? (r > b ? r : b) : g > b ? g : b;
+      const min = r < g ? (r < b ? r : b) : g < b ? g : b;
+      const d = max - min;
+
+      let h = 0;
+      if (max === r) h = ((g - b) / d) % 6;
+      else if (max === g) h = (b - r) / d + 2;
+      else h = (r - g) / d + 4;
+      h *= 60;
+      if (h < 0) h += 360;
+
+      let newH = (h + shift) % 360;
+      if (newH < 0) newH += 360;
+
+      const hNorm = newH / 60;
+      const x = d * (1 - Math.abs((hNorm % 2) - 1));
+      const sector = hNorm | 0;
+
+      let r1 = 0,
+        g1 = 0,
+        b1 = 0;
+      if (sector === 0) {
+        r1 = d;
+        g1 = x;
+        b1 = 0;
+      } else if (sector === 1) {
+        r1 = x;
+        g1 = d;
+        b1 = 0;
+      } else if (sector === 2) {
+        r1 = 0;
+        g1 = d;
+        b1 = x;
+      } else if (sector === 3) {
+        r1 = 0;
+        g1 = x;
+        b1 = d;
+      } else if (sector === 4) {
+        r1 = x;
+        g1 = 0;
+        b1 = d;
+      } else {
+        r1 = d;
+        g1 = 0;
+        b1 = x;
+      }
+
+      dst[i] = r1 + min;
+      dst[i + 1] = g1 + min;
+      dst[i + 2] = b1 + min;
       dst[i + 3] = src[i + 3];
     }
     return hasil;
@@ -250,7 +340,7 @@ export const operasiHue = {
 
 /**
  * Operasi Efek Sepia (Sepia Tone).
- * Metode: Transformasi matriks afinitas warna sepia klasik.
+ * Metode: Transformasi matriks afinitas warna sepia klasik (precalculated 3x3 coefficients).
  * Rumus inti:
  *   R_sepia = clamp(0.393*R + 0.769*G + 0.189*B)
  *   G_sepia = clamp(0.349*R + 0.686*G + 0.168*B)
@@ -282,6 +372,7 @@ export const operasiSepia = {
 
     if (k === 0) return { ...citra, data: new Uint8ClampedArray(citra.data) };
 
+    const invK = 1 - k;
     const hasil = buatCitraKosong(citra.width, citra.height);
     const src = citra.data;
     const dst = hasil.data;
@@ -292,13 +383,16 @@ export const operasiSepia = {
       const g = src[i + 1];
       const b = src[i + 2];
 
-      const rSepia = clamp(0.393 * r + 0.769 * g + 0.189 * b);
-      const gSepia = clamp(0.349 * r + 0.686 * g + 0.168 * b);
-      const bSepia = clamp(0.272 * r + 0.534 * g + 0.131 * b);
+      let rSepia = 0.393 * r + 0.769 * g + 0.189 * b;
+      if (rSepia > 255) rSepia = 255;
+      let gSepia = 0.349 * r + 0.686 * g + 0.168 * b;
+      if (gSepia > 255) gSepia = 255;
+      let bSepia = 0.272 * r + 0.534 * g + 0.131 * b;
+      if (bSepia > 255) bSepia = 255;
 
-      dst[i] = clamp((1 - k) * r + k * rSepia);
-      dst[i + 1] = clamp((1 - k) * g + k * gSepia);
-      dst[i + 2] = clamp((1 - k) * b + k * bSepia);
+      dst[i] = invK * r + k * rSepia;
+      dst[i + 1] = invK * g + k * gSepia;
+      dst[i + 2] = invK * b + k * bSepia;
       dst[i + 3] = src[i + 3];
     }
     return hasil;

@@ -32,7 +32,15 @@ function dapatkanPekerja() {
       );
 
       instansPekerja.onmessage = function (e) {
-        const { idPermintaan, berhasil, hasil, pesanGalat, durasi } = e.data;
+        const tWorkerKembali = performance.now();
+        const {
+          idPermintaan,
+          berhasil,
+          hasil,
+          pesanGalat,
+          durasi,
+          waktuRinci,
+        } = e.data;
         const penangan = penanganTertunda.get(idPermintaan);
 
         if (!penangan) return; // Permintaan basi yang sudah dibuang
@@ -44,7 +52,22 @@ function dapatkanPekerja() {
         }
 
         if (berhasil) {
-          penangan.resolve({ hasil, durasi });
+          const detailWaktu = {
+            tKirim: waktuRinci?.tKirim || penangan.tKirim || 0,
+            tWorkerMasuk: waktuRinci?.tWorkerMasuk || 0,
+            tWorkerSelesai: waktuRinci?.tWorkerSelesai || 0,
+            tWorkerKirim: waktuRinci?.tWorkerKirim || 0,
+            tWorkerKembali,
+            durasiKirimKeWorker:
+              waktuRinci?.tWorkerMasuk && waktuRinci?.tKirim
+                ? Math.max(0, waktuRinci.tWorkerMasuk - waktuRinci.tKirim)
+                : 0,
+            durasiKomputasiWorker: durasi,
+            durasiTransferBalik: waktuRinci?.tWorkerKirim
+              ? Math.max(0, tWorkerKembali - waktuRinci.tWorkerKirim)
+              : 0,
+          };
+          penangan.resolve({ hasil, durasi, waktuRinci: detailWaktu });
         } else {
           penangan.reject(new Error(pesanGalat));
         }
@@ -83,7 +106,8 @@ export async function jalankanOperasi(idOperasi, citra, parameter = {}) {
   // Jika Web Worker tersedia, serahkan komputasi ke worker
   if (pekerja) {
     return new Promise((resolve, reject) => {
-      penanganTertunda.set(idSaatIni, { resolve, reject });
+      const tKirim = performance.now();
+      penanganTertunda.set(idSaatIni, { resolve, reject, tKirim });
 
       // Salin data buffer agar tidak merusak data citra asli di thread utama
       const salinanBuffer = citra.data.slice().buffer;
@@ -98,6 +122,7 @@ export async function jalankanOperasi(idOperasi, citra, parameter = {}) {
             height: citra.height,
           },
           parameter,
+          tKirim,
         },
         [salinanBuffer]
       );
