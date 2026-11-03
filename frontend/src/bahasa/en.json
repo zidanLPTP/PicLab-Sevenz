@@ -1,0 +1,62 @@
+{
+  "navigasi": {
+    "judulAplikasi": "PicLab Sevenz",
+    "deskripsiAplikasi": "Digital Image Processing Application",
+    "tautanBelajar": "Learn (Phase 9)",
+    "keteranganBelajar": "Available in Phase 9",
+    "tautanPrivasi": "Privacy",
+    "pilihBahasa": "Language"
+  },
+  "privasi": {
+    "judul": "User Data Privacy & Security",
+    "poin1": "Client-side image processing runs entirely inside your browser's memory. Your images never leave your local device.",
+    "poin2": "When server operations are enabled in later phases, images are only sent temporarily for in-memory computation and immediately discarded after the response finishes. We never store your images on disk or database.",
+    "poin3": "Zero personal tracking, user accounts, or third-party analytics.",
+    "tombolTutup": "Understood and Close"
+  },
+  "unggah": {
+    "ajakan": "Upload an Image to Start Processing",
+    "petunjukSeret": "Drag and drop an image file here, or click the button below",
+    "tombolPilih": "Select Image from Computer",
+    "infoBatas": "Supports JPG, PNG, WebP, BMP • Max 10 MB • Max 4096 px dimension • Up to 16M pixels",
+    "atauCoba": "Or test directly with:",
+    "tombolContoh": "Use Sample Image",
+    "sedangMemuat": "Decoding image..."
+  },
+  "kanvas": {
+    "sebelum": "Before",
+    "sesudah": "After",
+    "labelSlider": "Before and after image comparison slider",
+    "perbesar": "Zoom in",
+    "perkecil": "Zoom out",
+    "skala100": "Original size 100%",
+    "pasLayar": "Fit to screen",
+    "posisiSlider": "Split position: {{nilai}}%"
+  },
+  "bilahAksi": {
+    "namaBerkas": "File",
+    "dimensi": "Dimensions",
+    "ukuran": "Size",
+    "totalPiksel": "Pixels",
+    "tombolGanti": "Replace Image",
+    "tombolUnduh": "Download Result",
+    "formatUnduh": "Format:",
+    "unduhBerhasil": "Image successfully downloaded!"
+  },
+  "panel": {
+    "judulOperasi": "Operation Catalog",
+    "kosongOperasi": "Image operations will be implemented in Phase 2 (color, contrast, basic) and Phase 4 (binary, convolution, edges).",
+    "judulParameter": "Parameters & History",
+    "kosongParameter": "Parameter tuning and operation history (undo/redo) will activate once image operations are applied."
+  },
+  "galat": {
+    "judul": "Failed to Load File",
+    "GALAT_UKURAN_MELEBIHI_BATAS": "File size exceeds the maximum limit of 10 MB. Please use a smaller image file.",
+    "GALAT_FORMAT_TIDAK_DIDUKUNG": "File format is not supported. Please use a JPG, PNG, WebP, or BMP file.",
+    "GALAT_DIMENSI_MELEBIHI_BATAS": "The longest edge of the image exceeds 4096 pixels. Please reduce image resolution before uploading.",
+    "GALAT_TOTAL_PIKSEL_MELEBIHI_BATAS": "Total image resolution exceeds 16 million pixels to preserve browser stability.",
+    "GALAT_BERKAS_RUSAK": "The image file is corrupted or cannot be decoded by the browser. Please try another image file.",
+    "GALAT_SVG_DITOLAK": "Vector SVG format is not permitted for security reasons. Please upload a raster image (JPG, PNG, WebP, BMP).",
+    "tombolCobaLagi": "Try Another File"
+  }
+}

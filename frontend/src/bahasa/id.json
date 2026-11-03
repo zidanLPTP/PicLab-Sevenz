@@ -1,0 +1,62 @@
+{
+  "navigasi": {
+    "judulAplikasi": "PicLab Sevenz",
+    "deskripsiAplikasi": "Aplikasi Pengolahan Citra Digital",
+    "tautanBelajar": "Belajar (Tahap 9)",
+    "keteranganBelajar": "Tersedia di Tahap 9",
+    "tautanPrivasi": "Privasi",
+    "pilihBahasa": "Bahasa"
+  },
+  "privasi": {
+    "judul": "Privasi & Keamanan Data Pengguna",
+    "poin1": "Operasi pengolahan citra klien berjalan sepenuhnya di memori peramban Anda. Gambar Anda tidak pernah meninggalkan perangkat.",
+    "poin2": "Saat operasi server diaktifkan di tahap lanjutan, gambar hanya dikirim sementara untuk diproses di memori dan langsung dihapus seketika setelah respons selesai. Kami tidak pernah menyimpan gambar Anda di disk atau database.",
+    "poin3": "Tidak ada pelacakan pribadi, akun pengguna, atau analitik pihak ketiga.",
+    "tombolTutup": "Mengerti dan Tutup"
+  },
+  "unggah": {
+    "ajakan": "Unggah Gambar untuk Mulai Mengolah",
+    "petunjukSeret": "Seret dan lepas gambar ke sini, atau klik tombol di bawah",
+    "tombolPilih": "Pilih Gambar dari Komputer",
+    "infoBatas": "Mendukung JPG, PNG, WebP, BMP • Maksimal 10 MB • Dimensi maks 4096 px • Hingga 16 juta piksel",
+    "atauCoba": "Atau uji coba langsung dengan:",
+    "tombolContoh": "Gunakan Gambar Contoh",
+    "sedangMemuat": "Sedang mendekode citra..."
+  },
+  "kanvas": {
+    "sebelum": "Sebelum",
+    "sesudah": "Sesudah",
+    "labelSlider": "Penggeser perbandingan citra sebelum dan sesudah",
+    "perbesar": "Perbesar tampilan",
+    "perkecil": "Perkecil tampilan",
+    "skala100": "Ukuran asli 100%",
+    "pasLayar": "Sesuaikan ke layar",
+    "posisiSlider": "Posisi pemisah: {{nilai}}%"
+  },
+  "bilahAksi": {
+    "namaBerkas": "Berkas",
+    "dimensi": "Dimensi",
+    "ukuran": "Ukuran",
+    "totalPiksel": "Piksel",
+    "tombolGanti": "Ganti Gambar",
+    "tombolUnduh": "Unduh Hasil",
+    "formatUnduh": "Format:",
+    "unduhBerhasil": "Citra berhasil diunduh!"
+  },
+  "panel": {
+    "judulOperasi": "Katalog Operasi Citra",
+    "kosongOperasi": "Daftar operasi citra akan hadir pada Tahap 2 (warna, kontras, dasar) dan Tahap 4 (biner, konvolusi, tepi).",
+    "judulParameter": "Parameter & Riwayat",
+    "kosongParameter": "Panel penyesuaian parameter dan riwayat operasi (undo/redo) akan aktif saat operasi citra mulai diterapkan."
+  },
+  "galat": {
+    "judul": "Gagal Memuat Berkas",
+    "GALAT_UKURAN_MELEBIHI_BATAS": "Ukuran berkas melebihi batas maksimum 10 MB. Silakan gunakan berkas citra yang lebih kecil.",
+    "GALAT_FORMAT_TIDAK_DIDUKUNG": "Format berkas tidak didukung. Harap gunakan berkas JPG, PNG, WebP, atau BMP.",
+    "GALAT_DIMENSI_MELEBIHI_BATAS": "Sisi terpanjang citra melebihi 4096 piksel. Harap perkecil resolusi citra sebelum mengunggah.",
+    "GALAT_TOTAL_PIKSEL_MELEBIHI_BATAS": "Total resolusi citra melebihi 16 juta piksel demi menjaga kestabilan memori peramban.",
+    "GALAT_BERKAS_RUSAK": "Berkas citra rusak atau tidak dapat didekode oleh peramban. Silakan coba berkas lainnya.",
+    "GALAT_SVG_DITOLAK": "Format vektor SVG tidak didukung demi keamanan. Harap gunakan citra raster (JPG, PNG, WebP, BMP).",
+    "tombolCobaLagi": "Coba Unggah Berkas Lain"
+  }
+}
