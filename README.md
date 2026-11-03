@@ -8,7 +8,7 @@ Proyek ini dibangun dengan prioritas utama pada **utilitas praktis** bagi penggu
 
 ## 🚀 Teknologi Utama
 
-- **Frontend**: React (JavaScript, tanpa TypeScript), Vite, Tailwind CSS.
+- **Frontend**: React (JavaScript), Vite, Tailwind CSS.
 - **Backend**: Python 3.13+, FastAPI, Uvicorn.
 - **Pengujian**:
   - Frontend: Vitest + React Testing Library.
