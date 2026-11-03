@@ -1,35 +1,91 @@
 import { ShieldCheck, X } from 'lucide-react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
  * Modal dialog informasi privasi dan transparansi pemrosesan citra PicLab Sevenz.
+ * Memenuhi spesifikasi WAI-ARIA Dialog (Modal):
+ * - role="dialog", aria-modal="true", aria-labelledby
+ * - Menutup dengan tombol Escape
+ * - Penguncian fokus (focus trap) di dalam dialog
+ * - Mengembalikan fokus ke elemen pemicu saat dialog ditutup
  */
-export default function ModalPrivasi({ terbuka, saatTutup }) {
+export default function ModalPrivasi({ terbuka, saatTutup, elemenPemicuRef }) {
   const { t } = useTranslation();
+  const dialogRef = useRef(null);
+  const tombolTutupAtasRef = useRef(null);
+  const elemenTerfokusSebelumnyaRef = useRef(null);
 
-  // Menutup modal dengan tombol Escape
   useEffect(() => {
-    function tanganiKeyDown(e) {
-      if (e.key === 'Escape' && terbuka) {
-        saatTutup();
-      }
+    if (terbuka) {
+      // Simpan elemen yang aktif sebelum modal dibuka
+      elemenTerfokusSebelumnyaRef.current =
+        elemenPemicuRef?.current || document.activeElement;
+
+      // Fokuskan elemen pertama yang dapat diinteraksi di modal
+      const timer = setTimeout(() => {
+        tombolTutupAtasRef.current?.focus();
+      }, 50);
+
+      // Handler keyboard: Escape untuk menutup, Tab untuk focus trap
+      const tanganiKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          saatTutup();
+          return;
+        }
+
+        if (e.key === 'Tab' && dialogRef.current) {
+          const elemenFokus = dialogRef.current.querySelectorAll(
+            'button:not([disabled]), [tabindex="0"], a[href]'
+          );
+          if (elemenFokus.length === 0) return;
+
+          const pertama = elemenFokus[0];
+          const terakhir = elemenFokus[elemenFokus.length - 1];
+
+          if (e.shiftKey) {
+            // Shift + Tab
+            if (document.activeElement === pertama) {
+              e.preventDefault();
+              terakhir.focus();
+            }
+          } else {
+            // Tab biasa
+            if (document.activeElement === terakhir) {
+              e.preventDefault();
+              pertama.focus();
+            }
+          }
+        }
+      };
+
+      window.addEventListener('keydown', tanganiKeyDown);
+
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('keydown', tanganiKeyDown);
+        // Kembalikan fokus ke elemen pemicu saat ditutup
+        if (elemenTerfokusSebelumnyaRef.current) {
+          elemenTerfokusSebelumnyaRef.current.focus?.();
+        }
+      };
     }
-    window.addEventListener('keydown', tanganiKeyDown);
-    return () => window.removeEventListener('keydown', tanganiKeyDown);
-  }, [terbuka, saatTutup]);
+  }, [terbuka, saatTutup, elemenPemicuRef]);
 
   if (!terbuka) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="judul-modal-privasi"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-fade-in"
       onClick={saatTutup}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="judul-modal-privasi"
+        tabIndex={-1}
         className="w-full max-w-lg bg-latar-panel rounded-xl shadow-xl border border-garis-panel p-6 overflow-hidden text-teks-utama focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
@@ -44,10 +100,11 @@ export default function ModalPrivasi({ terbuka, saatTutup }) {
             </h2>
           </div>
           <button
+            ref={tombolTutupAtasRef}
             type="button"
             onClick={saatTutup}
             aria-label="Tutup"
-            className="p-1 rounded-md text-teks-redup hover:text-teks-utama hover:bg-slate-100 transition-colors focus:ring-2 focus:ring-primer focus:outline-none"
+            className="p-1 rounded-md text-teks-redup hover:text-teks-utama hover:bg-slate-100 transition-colors focus:ring-2 focus:ring-primer focus:outline-none cursor-pointer"
           >
             <X size={20} className="stroke-[1.75]" />
           </button>

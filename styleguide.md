@@ -106,15 +106,16 @@ Keputusan desain ini dihasilkan melalui skill **UI UX PRO MAX** berdasarkan anal
 
 ## 7. Komponen Inti (diisi di Tahap 1 dan dilengkapi di tahap berikutnya)
 
-Daftar komponen yang dibangun pada Tahap 1:
-- `BilahAtas.jsx`: Bilah atas memuat logo PicLab Sevenz, pemilih bahasa (ID/EN), tautan Belajar (nonaktif dengan keterangan "Tersedia di Tahap 9"), dan tautan Privasi (membuka dialog informasi privasi).
-- `PanelOperasi.jsx`: Panel kiri editor yang menampilkan kerangka jujur keadaan belum ada operasi citra yang diterapkan pada Tahap 1.
-- `PanelParameter.jsx`: Panel kanan editor yang menampilkan kerangka jujur keadaan belum ada parameter operasi yang disetel.
+Daftar komponen yang dibangun pada Tahap 1 dan Tahap 2:
+- `BilahAtas.jsx`: Bilah atas memuat logo PicLab Sevenz, pemilih bahasa (ID/EN), tautan Belajar (nonaktif dengan status jelas "Segera hadir"), dan tautan Privasi (membuka dialog informasi privasi).
+- `ModalPrivasi.jsx`: Dialog penjelasan privasi transparan dengan penguncian fokus (focus trap), penutupan tombol Escape, dan pengembalian fokus ke elemen pemicu.
+- `PanelOperasi.jsx`: Panel kiri editor yang menampilkan katalog operasi terstruktur per kategori (Dasar, Warna, Enhancement) lengkap dengan pencarian nama operasi ramah pengguna.
+- `PanelParameter.jsx`: Panel kanan editor yang merender kontrol parameter secara dinamis sesuai skema operasi (slider sinkron dengan input angka, pilihan, sakelar), tombol setel ulang, dan histogram citra lipat.
 - `AreaKanvas.jsx`: Kanvas interaktif tengah dengan dukungan zoom roda mouse, tombol zoom (+, -, 100%, pas layar), geser (pan), dan ramah keyboard.
 - `PenggeserSebelumSesudah.jsx`: Komponen slider pembanding sebelum dan sesudah dengan bilah pemisah interaktif, label terbaca, dan atribut ARIA lengkap (`role="slider"`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax`).
-- `BilahAksiKanvas.jsx`: Bilah kontrol di bawah kanvas untuk menampilkan informasi berkas (nama citra, dimensi, ukuran), tombol ganti citra, dan opsi unduh citra (PNG, JPG, WebP).
+- `BilahAksiKanvas.jsx`: Bilah kontrol di bawah kanvas untuk menampilkan informasi berkas (nama citra, dimensi sebelum/sesudah, ukuran), tombol ganti citra, dan opsi unduh citra (PNG, JPG, WebP).
 - `AreaUnggah.jsx`: Keadaan kosong editor yang menyediakan area seret-lepas (*drag and drop*), tombol jelajah berkas, rincian batasan format/ukuran, dan tombol jalan pintas untuk memuat gambar contoh.
-- `ModalPrivasi.jsx`: Dialog penjelasan privasi yang transparan dan jujur menyatakan bahwa pemrosesan klien tidak meninggalkan peramban.
+- `HistogramCitra.jsx`: Visualisasi frekuensi piksel kanal RGB dan Luminans mandiri berbasis SVG murni tanpa pustaka grafik eksternal.
 
 ## 8. Logo dan Identitas
 
@@ -128,7 +129,10 @@ Daftar komponen yang dibangun pada Tahap 1:
   - Ukuran minimum pada antarmuka: tinggi 28px untuk versi penuh, 16px untuk favicon.
   - Latar yang diizinkan: latar terang (`#FFFFFF`, `#F8FAFC`, `#F1F5F9`).
 - **Sumber Gambar Contoh**:
-  - Gambar contoh untuk keadaan kosong adalah citra lanskap uji bebas lisensi (*public domain* / CC0) yang dibuat sendiri dan disimpan di `frontend/public/contoh/gambar-contoh.webp`.
+  - Berkas: `frontend/public/contoh/gambar-contoh.png` (resolusi 400×300 piksel, ukuran 1.923 byte).
+  - Asal dan Pembuatan: Dibuat sendiri secara mandiri menggunakan skrip prosedural Python standar (`zlib` & `struct` untuk encoding PNG murni, tanpa dependensi pustaka pihak ketiga).
+  - Konten Visual: Gradien langit biru-teal (`rgb(14,148,190)` ke `rgb(94,188,220)`), matahari geometris kuning cerah (`rgb(250,204,21)`) pada koordinat (300, 70), dan lembah perbukitan hijau tua (`rgb(15,118,110)` ke `rgb(35,78,80)`).
+  - Lisensi: CC0 / Domain Publik (100% buatan sendiri, bebas royalti).
 
 ## 9. Daftar Periksa Visual (dipakai di setiap laporan tahap yang menyentuh UI)
 

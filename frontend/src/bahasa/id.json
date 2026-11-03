@@ -2,15 +2,15 @@
   "navigasi": {
     "judulAplikasi": "PicLab Sevenz",
     "deskripsiAplikasi": "Aplikasi Pengolahan Citra Digital",
-    "tautanBelajar": "Belajar (Tahap 9)",
-    "keteranganBelajar": "Tersedia di Tahap 9",
+    "tautanBelajar": "Belajar",
+    "keteranganBelajar": "Segera hadir",
     "tautanPrivasi": "Privasi",
     "pilihBahasa": "Bahasa"
   },
   "privasi": {
     "judul": "Privasi & Keamanan Data Pengguna",
     "poin1": "Operasi pengolahan citra klien berjalan sepenuhnya di memori peramban Anda. Gambar Anda tidak pernah meninggalkan perangkat.",
-    "poin2": "Saat operasi server diaktifkan di tahap lanjutan, gambar hanya dikirim sementara untuk diproses di memori dan langsung dihapus seketika setelah respons selesai. Kami tidak pernah menyimpan gambar Anda di disk atau database.",
+    "poin2": "Saat operasi server diaktifkan, gambar hanya dikirim sementara untuk diproses di memori dan langsung dihapus seketika setelah respons selesai. Kami tidak pernah menyimpan gambar Anda di disk atau database.",
     "poin3": "Tidak ada pelacakan pribadi, akun pengguna, atau analitik pihak ketiga.",
     "tombolTutup": "Mengerti dan Tutup"
   },
@@ -45,9 +45,12 @@
   },
   "panel": {
     "judulOperasi": "Katalog Operasi Citra",
-    "kosongOperasi": "Daftar operasi citra akan hadir pada Tahap 2 (warna, kontras, dasar) dan Tahap 4 (biner, konvolusi, tepi).",
-    "judulParameter": "Parameter & Riwayat",
-    "kosongParameter": "Panel penyesuaian parameter dan riwayat operasi (undo/redo) akan aktif saat operasi citra mulai diterapkan."
+    "kosongOperasi": "Pilih salah satu operasi citra untuk melihat dan menyesuaikan parameter.",
+    "judulParameter": "Parameter Operasi",
+    "kosongParameter": "Pilih operasi di panel kiri untuk mulai mengatur parameter pengolahan citra.",
+    "setelUlang": "Setel Ulang Parameter",
+    "judulHistogram": "Histogram Citra",
+    "infoSatuOperasi": "Satu operasi aktif pada satu waktu (beroperasi pada citra asli)."
   },
   "galat": {
     "judul": "Gagal Memuat Berkas",

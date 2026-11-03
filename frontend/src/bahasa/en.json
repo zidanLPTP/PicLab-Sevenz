@@ -2,15 +2,15 @@
   "navigasi": {
     "judulAplikasi": "PicLab Sevenz",
     "deskripsiAplikasi": "Digital Image Processing Application",
-    "tautanBelajar": "Learn (Phase 9)",
-    "keteranganBelajar": "Available in Phase 9",
+    "tautanBelajar": "Learn",
+    "keteranganBelajar": "Coming soon",
     "tautanPrivasi": "Privacy",
     "pilihBahasa": "Language"
   },
   "privasi": {
     "judul": "User Data Privacy & Security",
     "poin1": "Client-side image processing runs entirely inside your browser's memory. Your images never leave your local device.",
-    "poin2": "When server operations are enabled in later phases, images are only sent temporarily for in-memory computation and immediately discarded after the response finishes. We never store your images on disk or database.",
+    "poin2": "When server operations are enabled, images are only sent temporarily for in-memory computation and immediately discarded after the response finishes. We never store your images on disk or database.",
     "poin3": "Zero personal tracking, user accounts, or third-party analytics.",
     "tombolTutup": "Understood and Close"
   },
@@ -45,9 +45,12 @@
   },
   "panel": {
     "judulOperasi": "Operation Catalog",
-    "kosongOperasi": "Image operations will be implemented in Phase 2 (color, contrast, basic) and Phase 4 (binary, convolution, edges).",
-    "judulParameter": "Parameters & History",
-    "kosongParameter": "Parameter tuning and operation history (undo/redo) will activate once image operations are applied."
+    "kosongOperasi": "Select an image operation to view and adjust parameters.",
+    "judulParameter": "Operation Parameters",
+    "kosongParameter": "Select an operation from the left panel to begin tuning processing parameters.",
+    "setelUlang": "Reset Parameters",
+    "judulHistogram": "Image Histogram",
+    "infoSatuOperasi": "One active operation at a time (applied directly to original image)."
   },
   "galat": {
     "judul": "Failed to Load File",
