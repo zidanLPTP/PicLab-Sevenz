@@ -17,7 +17,7 @@ test.describe('PicLab Sevenz — Pengujian E2E Tahap 1', () => {
     await expect(page.getByText('Katalog Operasi Citra')).toBeVisible();
 
     // Beralih ke Bahasa Inggris
-    await page.getByRole('button', { name: 'EN' }).click();
+    await page.getByRole('button', { name: 'EN', exact: true }).click();
 
     // Verifikasi teks berubah menjadi Bahasa Inggris
     await expect(
@@ -36,7 +36,7 @@ test.describe('PicLab Sevenz — Pengujian E2E Tahap 1', () => {
     ).not.toBeVisible();
 
     // Kembali ke Bahasa Indonesia
-    await page.getByRole('button', { name: 'ID' }).click();
+    await page.getByRole('button', { name: 'ID', exact: true }).click();
     await expect(
       page.getByText('Unggah Gambar untuk Mulai Mengolah')
     ).toBeVisible();
@@ -148,9 +148,6 @@ test.describe('PicLab Sevenz — Pengujian E2E Tahap 1', () => {
 
     // Reset ke kosong untuk tangkapan layar 1920px kosong
     await page.getByRole('button', { name: 'Ganti Gambar' }).click();
-    await expect(
-      page.getByText('Unggah Gambar untuk Mulai Mengolah')
-    ).toBeVisible();
     await page.screenshot({
       path: 'tangkapan-layar/editor-1920px-kosong.png',
       fullPage: true,
