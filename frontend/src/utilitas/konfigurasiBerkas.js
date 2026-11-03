@@ -15,6 +15,9 @@ export const BATASAN_BERKAS = {
   DIMENSI_SISI_MAKS_PIKSEL: 4096, // 4096 px sisi terpanjang
   TOTAL_PIKSEL_MAKS: 16_000_000, // 16 juta piksel
 
+  // Dimensi maksimum preview interaktif (untuk efisiensi slider real-time)
+  DIMENSI_MAKS_PREVIEW: 1024, // 1024 px sisi terpanjang untuk preview responsif
+
   // Format unduhan yang didukung
   FORMAT_UNDUHAN: ['png', 'jpeg', 'webp'],
   FORMAT_UNDUHAN_DEFAULT: 'png',
