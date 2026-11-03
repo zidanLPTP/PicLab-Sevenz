@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "piclab-sevenz-backend"
+version = "0.1.0"
+description = "Backend API untuk aplikasi pengolahan citra digital PicLab Sevenz"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "httpx>=0.28.0",
+    "ruff>=0.7.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["uji"]
+python_files = ["test_*.py", "uji_*.py"]
+python_functions = ["test_*", "uji_*"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+exclude = [".venv", "__pycache__"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
