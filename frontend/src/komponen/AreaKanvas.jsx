@@ -6,7 +6,7 @@ import PenggeserSebelumSesudah from './PenggeserSebelumSesudah';
 /**
  * Area kerja kanvas interaktif dengan kemampuan zoom dan geser (pan).
  */
-export default function AreaKanvas({ gambarSrc, metadata }) {
+export default function AreaKanvas({ gambarSrc, gambarSesudahSrc, metadata }) {
   const { t } = useTranslation();
   const [skala, setSkala] = useState(1); // 1 = 100%
   const [posisiGeser, setPosisiGeser] = useState({ x: 0, y: 0 });
@@ -121,7 +121,7 @@ export default function AreaKanvas({ gambarSrc, metadata }) {
       >
         <PenggeserSebelumSesudah
           gambarSebelum={gambarSrc}
-          gambarSesudah={gambarSrc}
+          gambarSesudah={gambarSesudahSrc || gambarSrc}
           namaCitra={metadata?.nama}
         />
       </div>

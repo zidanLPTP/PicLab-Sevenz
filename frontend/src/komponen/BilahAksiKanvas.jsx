@@ -1,7 +1,9 @@
 import {
+  ArrowRight,
   Download,
   HardDrive,
   Image as ImageIcon,
+  Loader2,
   RefreshCw,
 } from 'lucide-react';
 import React, { useState } from 'react';
@@ -19,59 +21,27 @@ function formatUkuran(byte) {
 }
 
 /**
- * Bilah aksi kontrol kanvas (informasi berkas, ganti citra, unduh).
+ * Bilah aksi kontrol kanvas (informasi berkas, dimensi sebelum->sesudah, ganti citra, unduh).
  */
 export default function BilahAksiKanvas({
   metadata,
-  elemenCitra,
+  dimensiSesudah,
+  saatUnduh,
   saatGantiGambar,
+  sedangMemprosesPenuh,
 }) {
   const { t } = useTranslation();
   const [formatPilihan, setFormatPilihan] = useState(
     BATASAN_BERKAS.FORMAT_UNDUHAN_DEFAULT
   );
-  const [sedangMengunduh, setSedangMengunduh] = useState(false);
 
-  // Fungsi unduh resolusi penuh menggunakan kanvas murni
-  const unduhCitra = () => {
-    if (!elemenCitra) return;
-    setSedangMengunduh(true);
+  const dimensiBerubah =
+    dimensiSesudah &&
+    (dimensiSesudah.width !== metadata?.lebar ||
+      dimensiSesudah.height !== metadata?.tinggi);
 
-    try {
-      const kanvas = document.createElement('canvas');
-      kanvas.width = elemenCitra.naturalWidth;
-      kanvas.height = elemenCitra.naturalHeight;
-      const ctx = kanvas.getContext('2d');
-      ctx.drawImage(elemenCitra, 0, 0);
-
-      const mimeType =
-        formatPilihan === 'jpeg' ? 'image/jpeg' : `image/${formatPilihan}`;
-
-      kanvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            setSedangMengunduh(false);
-            return;
-          }
-          const urlUnduhan = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          const namaDasar = metadata?.nama
-            ? metadata.nama.replace(/\.[^/.]+$/, '')
-            : 'piclab-hasil';
-          link.download = `${namaDasar}-piclab.${formatPilihan}`;
-          link.href = urlUnduhan;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(urlUnduhan);
-          setSedangMengunduh(false);
-        },
-        mimeType,
-        formatPilihan === 'jpeg' || formatPilihan === 'webp' ? 0.95 : undefined
-      );
-    } catch {
-      setSedangMengunduh(false);
-    }
+  const tanganiKlikUnduh = () => {
+    saatUnduh(formatPilihan);
   };
 
   return (
@@ -79,18 +49,26 @@ export default function BilahAksiKanvas({
       {/* Informasi Metadata Citra */}
       <div className="flex items-center gap-3 sm:gap-5 text-teks-sekunder overflow-hidden">
         {/* Nama Berkas (hanya tampil di UI) */}
-        <div className="flex items-center gap-1.5 font-medium truncate max-w-[160px] sm:max-w-[220px]">
+        <div className="flex items-center gap-1.5 font-medium truncate max-w-[150px] sm:max-w-[200px]">
           <ImageIcon size={15} className="text-primer shrink-0 stroke-[1.75]" />
           <span className="truncate" title={metadata?.nama}>
             {metadata?.nama}
           </span>
         </div>
 
-        {/* Dimensi */}
-        <div className="hidden sm:flex items-center gap-1 text-teks-redup">
-          <span className="font-semibold text-teks-utama">
+        {/* Dimensi (Sebelum -> Sesudah jika dimensi berubah) */}
+        <div className="hidden sm:flex items-center gap-1.5 text-teks-redup font-mono">
+          <span className="text-teks-utama font-semibold">
             {metadata?.lebar} × {metadata?.tinggi}
           </span>
+          {dimensiBerubah && (
+            <>
+              <ArrowRight size={12} className="text-primer shrink-0" />
+              <span className="text-primer font-bold">
+                {dimensiSesudah.width} × {dimensiSesudah.height}
+              </span>
+            </>
+          )}
           <span>px</span>
         </div>
 
@@ -135,11 +113,15 @@ export default function BilahAksiKanvas({
         {/* Tombol Unduh Resolusi Penuh */}
         <button
           type="button"
-          onClick={unduhCitra}
-          disabled={sedangMengunduh}
+          onClick={tanganiKlikUnduh}
+          disabled={sedangMemprosesPenuh}
           className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-primer hover:bg-primer-sorot rounded-md transition-colors shadow-sm focus:ring-2 focus:ring-primer focus:ring-offset-1 focus:outline-none cursor-pointer disabled:opacity-50"
         >
-          <Download size={15} className="stroke-[2]" />
+          {sedangMemprosesPenuh ? (
+            <Loader2 size={15} className="animate-spin stroke-[2]" />
+          ) : (
+            <Download size={15} className="stroke-[2]" />
+          )}
           <span>{t('bilahAksi.tombolUnduh')}</span>
         </button>
       </div>

@@ -43,14 +43,140 @@
     "formatUnduh": "Format:",
     "unduhBerhasil": "Citra berhasil diunduh!"
   },
+  "kategori": {
+    "dasar": "Operasi Dasar",
+    "warna": "Operasi Warna",
+    "enhancement": "Enhancement Citra"
+  },
   "panel": {
     "judulOperasi": "Katalog Operasi Citra",
     "kosongOperasi": "Pilih salah satu operasi citra untuk melihat dan menyesuaikan parameter.",
+    "cariOperasiPlaceholder": "Cari nama operasi...",
     "judulParameter": "Parameter Operasi",
     "kosongParameter": "Pilih operasi di panel kiri untuk mulai mengatur parameter pengolahan citra.",
     "setelUlang": "Setel Ulang Parameter",
     "judulHistogram": "Histogram Citra",
     "infoSatuOperasi": "Satu operasi aktif pada satu waktu (beroperasi pada citra asli)."
+  },
+  "operasi": {
+    "dasar": {
+      "kecerahan": {
+        "nama": "Kecerahan",
+        "deskripsi": "Mengatur tingkat terang atau gelapnya citra secara merata"
+      },
+      "kontras": {
+        "nama": "Kontras",
+        "deskripsi": "Mempertegas selisih kontras antara bagian terang dan gelap"
+      },
+      "negatif": {
+        "nama": "Negatif Citra",
+        "deskripsi": "Membalikkan seluruh nilai intensitas warna piksel fotometrik"
+      },
+      "grayscale": {
+        "nama": "Derajat Keabuan (Grayscale)",
+        "deskripsi": "Mengubah citra warna ke derajat abu-abu standar Rec.601"
+      },
+      "flip": {
+        "nama": "Pembalik (Flip)",
+        "deskripsi": "Membalikkan orientasi citra secara horizontal atau vertikal"
+      },
+      "rotasi": {
+        "nama": "Rotasi 90°",
+        "deskripsi": "Memutar posisi citra kelipatan 90, 180, atau 270 derajat"
+      },
+      "crop": {
+        "nama": "Potong (Crop)",
+        "deskripsi": "Memotong bagian persegi citra berdasarkan koordinat numerik"
+      },
+      "ubahUkuran": {
+        "nama": "Ubah Ukuran (Resize)",
+        "deskripsi": "Mengubah resolusi dimensi citra dengan interpolasi geometris murni"
+      }
+    },
+    "warna": {
+      "pisahKanal": {
+        "nama": "Pisah Kanal RGB",
+        "deskripsi": "Mengisolasi kanal Merah, Hijau, atau Biru dalam mode warna/abu-abu"
+      },
+      "ruangWarna": {
+        "nama": "Ruang Warna",
+        "deskripsi": "Mendekomposisi citra ke kanal ruang warna HSV atau Grayscale"
+      },
+      "saturasi": {
+        "nama": "Saturasi",
+        "deskripsi": "Mengatur kepekatan dan kekayaan warna piksel"
+      },
+      "hue": {
+        "nama": "Pergeseran Hue",
+        "deskripsi": "Menggeser sudut warna pada lingkaran spektrum warna HSV"
+      },
+      "sepia": {
+        "nama": "Efek Sepia",
+        "deskripsi": "Memberikan rona kecokelatan hangat ala foto klasik tempo dulu"
+      },
+      "balance": {
+        "nama": "Keseimbangan Warna",
+        "deskripsi": "Menyesuaikan penguatan independen kanal Merah, Hijau, dan Biru"
+      }
+    },
+    "enhancement": {
+      "ekualisasi": {
+        "nama": "Ekualisasi Histogram",
+        "deskripsi": "Meratakan distribusi CDF intensitas piksel untuk meningkatkan kontras"
+      },
+      "pereganganKontras": {
+        "nama": "Peregangan Kontras",
+        "deskripsi": "Menormalkan rentang dinamis min-max dengan pemangkasan persentil"
+      },
+      "gamma": {
+        "nama": "Koreksi Gamma",
+        "deskripsi": "Menyesuaikan kurva non-linear respon daya kecerahan citra"
+      }
+    }
+  },
+  "parameter": {
+    "kecerahan": "Tingkat Kecerahan",
+    "kontras": "Tingkat Kontras",
+    "arahFlip": "Arah Pembalikan",
+    "horizontal": "Horizontal",
+    "vertikal": "Vertikal",
+    "keduanya": "Kedua Arah",
+    "sudutRotasi": "Sudut Putar",
+    "rotasi90": "90° Searah Jarum Jam",
+    "rotasi180": "180° Putar Penuh",
+    "rotasi270": "270° Berlawanan Jarum Jam",
+    "posisiX": "Posisi X (Piksel)",
+    "posisiY": "Posisi Y (Piksel)",
+    "lebarPotong": "Lebar Potong",
+    "tinggiPotong": "Tinggi Potong",
+    "lebarBaru": "Lebar Baru",
+    "tinggiBaru": "Tinggi Baru",
+    "metodeInterpolasi": "Metode Interpolasi",
+    "bilinear": "Bilinear (Halus)",
+    "tetanggaTerdekat": "Tetangga Terdekat (Tajam)",
+    "pilihKanal": "Kanal yang Dipilih",
+    "kanalMerah": "Kanal Merah (R)",
+    "kanalHijau": "Kanal Hijau (G)",
+    "kanalBiru": "Kanal Biru (B)",
+    "modeTampil": "Format Tampilan",
+    "tampilKeabuan": "Derajat Abu-Abu",
+    "tampilBerwarna": "Isolasi Berwarna",
+    "pilihRuangWarna": "Pilih Kanal Ruang Warna",
+    "ruangGrayscale": "Luminans (Grayscale)",
+    "ruangHsvH": "Hue (Spektrum Warna)",
+    "ruangHsvS": "Saturasi (Kepekatan)",
+    "ruangHsvV": "Value (Kecerahan)",
+    "saturasi": "Intensitas Saturasi",
+    "pergeseranHue": "Derajat Pergeseran Hue",
+    "intensitasSepia": "Intensitas Efek Sepia",
+    "penguatanMerah": "Penguatan Merah (R)",
+    "penguatanHijau": "Penguatan Hijau (G)",
+    "penguatanBiru": "Penguatan Biru (B)",
+    "modeEkualisasi": "Metode Ekualisasi",
+    "ekualisasiLuminans": "Luminans (Menjaga Warna)",
+    "ekualisasiPerKanal": "Per Kanal RGB Independen",
+    "persentilPangkas": "Persentil Pemangkasan Ekstrem",
+    "nilaiGamma": "Nilai Eksponen Gamma"
   },
   "galat": {
     "judul": "Gagal Memuat Berkas",
