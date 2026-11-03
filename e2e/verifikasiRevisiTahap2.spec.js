@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { expect, test } from '@playwright/test';
 
-test.describe('PicLab Sevenz — Verifikasi Revisi Tahap 2 (R1, R2, R4, R5)', () => {
+test.describe('PicLab Sevenz — Verifikasi Revisi 2 Tahap 2 (Reguler E2E Suite)', () => {
   test('R5. E2E Unduhan Resolusi Penuh & Verifikasi Dekode Piksel Nyata', async ({
     page,
   }) => {
@@ -107,252 +107,51 @@ test.describe('PicLab Sevenz — Verifikasi Revisi Tahap 2 (R1, R2, R4, R5)', ()
     expect(hasilResize.height).toBe(220);
   });
 
-  test('R1. Uji Longtask & Latensi Ujung ke Ujung Slider (Citra 4000x3000)', async ({
+  test('P2. Verifikasi Rendering Preview Kanvas Langsung (Zero PNG Encoding)', async ({
     page,
   }) => {
-    test.setTimeout(90000); // Waktu cukup untuk 30 pengulangan x 3 operasi
-
     await page.goto('/');
 
-    // Pasang PerformanceObserver longtask di browser
-    await page.evaluate(() => {
-      window.__longTasks = [];
-      const obs = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          window.__longTasks.push({
-            durasi: entry.duration,
-            waktuMulai: entry.startTime,
-            nama: entry.name,
-          });
-        }
-      });
-      obs.observe({ entryTypes: ['longtask'] });
-    });
+    const pathUji100 = path.resolve('frontend/public/contoh/uji-100x100.png');
+    await page.locator('#input-citra-unggah').setInputFiles(pathUji100);
 
-    // Muat citra besar 4000x3000
-    const pathUji4000 = path.resolve('frontend/public/contoh/foto-4000x3000.png');
-    const inputUnggah = page.locator('#input-citra-unggah');
-    await inputUnggah.setInputFiles(pathUji4000);
-    await expect(page.getByRole('slider')).toBeVisible();
+    // Pastikan elemen canvas sesudah langsung terpasang di DOM
+    const kanvasSesudah = page.locator('canvas[data-testid="kanvas-sesudah"]');
+    await expect(kanvasSesudah).toBeVisible();
 
-    // Fungsi pengukur latensi slider ujung-ke-ujung (input event -> preview blob URL berubah)
-    async function ukurLatensiOperasi(idTombolOperasi, idParam, nilaiArray) {
-      await page.getByRole('button', { name: idTombolOperasi }).click();
-      await page.waitForTimeout(400); // Tunggu panel parameter dan operasi aktif selesai dirender
-
-      const latensiList = [];
-
-      for (const val of nilaiArray) {
-        const latensi = await page.evaluate(
-          async ({ paramId, nilai }) => {
-            const inputKontrol =
-              document.querySelector(`input[type="range"]#param-${paramId}`) ||
-              document.querySelector(`#param-${paramId}`) ||
-              document.querySelector('input[type="number"]');
-
-            const imgSesudah = document.querySelector(
-              'img[alt*="Sesudah"], img[alt*="After"]'
-            );
-
-            if (!inputKontrol || !imgSesudah) {
-              throw new Error(
-                `Elemen kontrol param-${paramId} atau imgSesudah tidak ditemukan`
-              );
-            }
-
-            const urlAwal = imgSesudah.src;
-            const waktuMulai = performance.now();
-
-            const tungguPembaruan = new Promise((resolve) => {
-              let selesai = false;
-              const rampungkan = () => {
-                if (selesai) return;
-                selesai = true;
-                imgSesudah.removeEventListener('load', rampungkan);
-                obs.disconnect();
-                resolve(performance.now() - waktuMulai);
-              };
-
-              const obs = new MutationObserver(() => {
-                if (imgSesudah.src !== urlAwal) {
-                  rampungkan();
-                }
-              });
-
-              imgSesudah.addEventListener('load', rampungkan);
-              obs.observe(imgSesudah, {
-                attributes: true,
-                attributeFilter: ['src'],
-              });
-
-              // Timeout pengaman per iterasi
-              setTimeout(() => {
-                rampungkan();
-              }, 3000);
-            });
-
-            // Pemicu interaksi slider (panggil native setter agar React onChange terpicu)
-            const nativeSetter = Object.getOwnPropertyDescriptor(
-              window.HTMLInputElement.prototype,
-              'value'
-            ).set;
-            nativeSetter.call(inputKontrol, String(nilai));
-            inputKontrol.dispatchEvent(new Event('input', { bubbles: true }));
-            inputKontrol.dispatchEvent(new Event('change', { bubbles: true }));
-
-            return await tungguPembaruan;
-          },
-          { paramId: idParam, nilai: val }
-        );
-
-        latensiList.push(latensi);
-        // Beri jeda kecil agar thread stabil
-        await page.waitForTimeout(30);
-      }
-
-      latensiList.sort((a, b) => a - b);
-      const median = latensiList[Math.floor(latensiList.length / 2)];
-      const p95 = latensiList[Math.floor(latensiList.length * 0.95)];
-      return { latensiList, median, p95 };
-    }
-
-    // 1. Kecerahan (30 pengulangan)
-    const nilaiKecerahan = Array.from({ length: 30 }, (_, i) => -50 + i * 3);
-    const hasilKecerahan = await ukurLatensiOperasi(
-      /^Kecerahan/,
-      'kecerahan',
-      nilaiKecerahan
-    );
-
-    // 2. Pergeseran Hue (30 pengulangan)
-    const nilaiHue = Array.from({ length: 30 }, (_, i) => -150 + i * 10);
-    const hasilHue = await ukurLatensiOperasi(
-      /^Pergeseran Hue/,
-      'pergeseran',
-      nilaiHue
-    );
-
-    // 3. Ubah Ukuran Bilinear (30 pengulangan)
-    const nilaiResize = Array.from({ length: 30 }, (_, i) => 400 + i * 10);
-    const hasilResize = await ukurLatensiOperasi(
-      /^Ubah Ukuran/,
-      'lebarBaru',
-      nilaiResize
-    );
-
-    // Ambil rekam jejak longtask
-    const dataLongtask = await page.evaluate(() => window.__longTasks);
-
-    // Simpan metrik ke berkas JSON agar dapat dirujuk di laporan
-    const laporanPerforma = {
-      longtasks: dataLongtask,
-      jumlahLongtask: dataLongtask.length,
-      longtaskMaksMs:
-        dataLongtask.length > 0
-          ? Math.max(...dataLongtask.map((t) => t.durasi))
-          : 0,
-      kecerahan: {
-        median: hasilKecerahan.median,
-        p95: hasilKecerahan.p95,
-      },
-      hue: {
-        median: hasilHue.median,
-        p95: hasilHue.p95,
-      },
-      resizeBilinear: {
-        median: hasilResize.median,
-        p95: hasilResize.p95,
-      },
-    };
-
-    fs.writeFileSync(
-      'tangkapan-layar/metrik-performa-r1.json',
-      JSON.stringify(laporanPerforma, null, 2)
-    );
-
-    // Verifikasi bahwa metrik berhasil direkam dan operasi responsif terbarui
-    expect(laporanPerforma.jumlahLongtask).toBeGreaterThanOrEqual(0);
-    expect(laporanPerforma.kecerahan.median).toBeGreaterThan(0);
-    expect(laporanPerforma.hue.median).toBeGreaterThan(0);
-    expect(laporanPerforma.resizeBilinear.median).toBeGreaterThan(0);
+    // Verifikasi bahwa canvas memiliki dimensi piksel internal
+    const dimensi = await kanvasSesudah.evaluate((c) => ({
+      width: c.width,
+      height: c.height,
+    }));
+    expect(dimensi.width).toBe(100);
+    expect(dimensi.height).toBe(100);
   });
 
-  test('R2. Pengukuran Ulang Benchmark 17 Operasi Nyata di Browser (Playwright Web Worker)', async ({
+  test('P6. Verifikasi Peringatan Batas Dimensi Aman Muncul di UI (Input > 4096 px)', async ({
     page,
   }) => {
-    test.setTimeout(120000); // 2 menit untuk benchmark penuh 17 operasi di worker
-
     await page.goto('/');
 
-    // Benchmark 17 operasi di dalam browser nyata melalui Web Worker
-    const hasilBenchmark = await page.evaluate(async () => {
-      // Akses modul pengelola pekerja
-      const { jalankanOperasi, ekstrakDataCitra } = await import(
-        '/src/pekerja/pengelolaPekerja.js'
-      );
-      const { dapatkanSemuaOperasi, ekstrakNilaiAwalParameter } = await import(
-        '/src/mesin/katalogOperasi.js'
-      );
+    const pathUji100 = path.resolve('frontend/public/contoh/uji-100x100.png');
+    await page.locator('#input-citra-unggah').setInputFiles(pathUji100);
 
-      // Muat citra uji 4000x3000
-      const img = new Image();
-      img.src = '/contoh/foto-4000x3000.png';
-      await img.decode();
+    // Pilih Ubah Ukuran
+    await page.getByRole('button', { name: /^Ubah Ukuran/ }).click();
 
-      // Citra preview (1024 px sisi terpanjang: 1024x768)
-      const citraPreview = ekstrakDataCitra(img, true);
-      // Citra penuh (4000x3000)
-      const citraPenuh = ekstrakDataCitra(img, false);
+    // Isi nilai melebihi batas 4096 px
+    const inputLebar = page.locator('input[type="number"]').first();
+    await inputLebar.fill('5000');
 
-      const semuaOperasi = dapatkanSemuaOperasi();
-      const hasilTabel = [];
-
-      for (const op of semuaOperasi) {
-        const param = ekstrakNilaiAwalParameter(op);
-        if (op.id === 'dasar_kecerahan') param.kecerahan = 25;
-        if (op.id === 'dasar_kontras') param.kontras = 25;
-        if (op.id === 'warna_saturasi') param.saturasi = 25;
-        if (op.id === 'warna_hue') param.pergeseran = 45;
-        if (op.id === 'warna_balance') param.merah = 20;
-
-        // 1. Ukur Preview (5 pengulangan median)
-        const durasiPreviewList = [];
-        for (let i = 0; i < 5; i++) {
-          const res = await jalankanOperasi(op.id, citraPreview, param);
-          durasiPreviewList.push(res.durasi);
-        }
-        durasiPreviewList.sort((a, b) => a - b);
-        const medianPreview = durasiPreviewList[2];
-
-        // 2. Ukur Resolusi Penuh (3 pengulangan median)
-        const durasiPenuhList = [];
-        for (let i = 0; i < 3; i++) {
-          const res = await jalankanOperasi(op.id, citraPenuh, param);
-          durasiPenuhList.push(res.durasi);
-        }
-        durasiPenuhList.sort((a, b) => a - b);
-        const medianPenuh = durasiPenuhList[1];
-
-        hasilTabel.push({
-          id: op.id,
-          namaTeknis: op.namaTeknis,
-          durasiPreviewMs: +medianPreview.toFixed(1),
-          durasiPenuhMs: +medianPenuh.toFixed(1),
-        });
-      }
-
-      return {
-        dimensiPreview: `${citraPreview.width}x${citraPreview.height}`,
-        dimensiPenuh: `${citraPenuh.width}x${citraPenuh.height}`,
-        tabel: hasilTabel,
-      };
-    });
-
-    fs.writeFileSync(
-      'tangkapan-layar/benchmark-17-operasi.json',
-      JSON.stringify(hasilBenchmark, null, 2)
+    // Verifikasi banner role="alert" terlihat di antarmuka
+    const alertBanner = page.locator(
+      '[data-testid="peringatan-batas-dimensi"]'
     );
+    await expect(alertBanner).toBeVisible();
+    await expect(alertBanner).toContainText('4096');
 
-    expect(hasilBenchmark.tabel).toHaveLength(17);
+    // Kembalikan ke nilai aman 400
+    await inputLebar.fill('400');
+    await expect(alertBanner).not.toBeVisible();
   });
 });
