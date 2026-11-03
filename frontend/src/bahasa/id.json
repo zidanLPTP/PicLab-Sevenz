@@ -56,7 +56,9 @@
     "kosongParameter": "Pilih operasi di panel kiri untuk mulai mengatur parameter pengolahan citra.",
     "setelUlang": "Setel Ulang Parameter",
     "judulHistogram": "Histogram Citra",
-    "infoSatuOperasi": "Satu operasi aktif pada satu waktu (beroperasi pada citra asli)."
+    "infoSatuOperasi": "Satu operasi aktif pada satu waktu (beroperasi pada citra asli).",
+    "peringatanBatasDimensiJudul": "Peringatan Batas Dimensi Aman",
+    "peringatanBatasDimensiDeskripsi": "Nilai input melampaui batas maksimum ({{maksSisi}} px per sisi atau {{maksTotal}} total). Dimensi efektif dijepit ke {{lebar}} × {{tinggi}} px untuk mencegah lonjakan memori."
   },
   "operasi": {
     "dasar": {

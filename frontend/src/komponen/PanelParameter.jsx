@@ -1,6 +1,7 @@
-import { Info, RotateCcw, Sliders } from 'lucide-react';
-import React from 'react';
+import { AlertTriangle, Info, RotateCcw, Sliders } from 'lucide-react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BATASAN_BERKAS } from '../utilitas/konfigurasiBerkas';
 import HistogramCitra from './HistogramCitra';
 
 /**
@@ -16,6 +17,57 @@ export default function PanelParameter({
   citraSesudah,
 }) {
   const { t } = useTranslation();
+
+  // Evaluasi apakah parameter dimensi melampaui batas aman (P6: penjepitan terlihat)
+  const melebihiBatasDimensi = useMemo(() => {
+    if (!operasiAktif) return null;
+    if (operasiAktif.id === 'dasar_ubah_ukuran') {
+      const w = Number(parameter.lebarBaru);
+      const h = Number(parameter.tinggiBaru);
+      if (
+        w > BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL ||
+        h > BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL ||
+        w * h > BATASAN_BERKAS.TOTAL_PIKSEL_MAKS
+      ) {
+        let targetW = Math.min(
+          BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL,
+          Math.max(1, w)
+        );
+        let targetH = Math.min(
+          BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL,
+          Math.max(1, h)
+        );
+        const totalPiksel = targetW * targetH;
+        if (totalPiksel > BATASAN_BERKAS.TOTAL_PIKSEL_MAKS) {
+          const faktorSkala = Math.sqrt(
+            BATASAN_BERKAS.TOTAL_PIKSEL_MAKS / totalPiksel
+          );
+          targetW = Math.max(1, Math.floor(targetW * faktorSkala));
+          targetH = Math.max(1, Math.floor(targetH * faktorSkala));
+        }
+        return { lebarDijepit: targetW, tinggiDijepit: targetH };
+      }
+    } else if (operasiAktif.id === 'dasar_crop') {
+      const w = Number(parameter.lebar);
+      const h = Number(parameter.tinggi);
+      if (
+        w > BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL ||
+        h > BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL
+      ) {
+        return {
+          lebarDijepit: Math.min(
+            BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL,
+            Math.max(1, w)
+          ),
+          tinggiDijepit: Math.min(
+            BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL,
+            Math.max(1, h)
+          ),
+        };
+      }
+    }
+    return null;
+  }, [operasiAktif, parameter]);
 
   return (
     <aside
@@ -61,6 +113,28 @@ export default function PanelParameter({
               <Info size={14} className="shrink-0 mt-0.5" />
               <span>{t('panel.infoSatuOperasi')}</span>
             </div>
+
+            {/* Banner Peringatan Batas Dimensi (P6: Penjepitan Terlihat) */}
+            {melebihiBatasDimensi && (
+              <div
+                role="alert"
+                data-testid="peringatan-batas-dimensi"
+                className="p-2.5 bg-rose-50 border border-rose-300 rounded-lg text-rose-900 text-xs space-y-1"
+              >
+                <div className="flex items-center gap-1.5 font-bold text-rose-800">
+                  <AlertTriangle size={15} className="shrink-0 text-rose-600" />
+                  <span>{t('panel.peringatanBatasDimensiJudul')}</span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-rose-700">
+                  {t('panel.peringatanBatasDimensiDeskripsi', {
+                    maksSisi: BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL,
+                    maksTotal: '16 MP',
+                    lebar: melebihiBatasDimensi.lebarDijepit,
+                    tinggi: melebihiBatasDimensi.tinggiDijepit,
+                  })}
+                </p>
+              </div>
+            )}
 
             {/* Kontrol Parameter Dinamis */}
             {operasiAktif.skemaParameter?.length > 0 ? (

@@ -56,7 +56,9 @@
     "kosongParameter": "Select an operation from the left panel to begin tuning processing parameters.",
     "setelUlang": "Reset Parameters",
     "judulHistogram": "Image Histogram",
-    "infoSatuOperasi": "One active operation at a time (applied directly to original image)."
+    "infoSatuOperasi": "One active operation at a time (applied directly to original image).",
+    "peringatanBatasDimensiJudul": "Safe Dimension Limit Warning",
+    "peringatanBatasDimensiDeskripsi": "Input values exceed maximum limit ({{maksSisi}} px per side or {{maksTotal}} total). Effective dimensions are clamped to {{lebar}} × {{tinggi}} px to prevent out-of-memory."
   },
   "operasi": {
     "dasar": {
