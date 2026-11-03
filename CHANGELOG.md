@@ -4,6 +4,34 @@ Semua perubahan penting pada proyek **PicLab Sevenz** akan didokumentasikan dala
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/) dan mengikuti prinsip [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.3.0] - 2026-11-03
+
+### Ditambahkan
+- **Arsitektur Mesin Operasi Citra Murni**:
+  - Seluruh algoritma citra diimplementasikan sebagai fungsi murni pada objek `{ data: Uint8ClampedArray, width: number, height: number }` di `frontend/src/mesin/`.
+  - Fungsi tidak memutasi masukan (`immutability`), menjaga kanal alfa utuh, dan bekerja tanpa dependensi DOM/browser sehingga dapat diuji secara terisolasi.
+- **Katalog 17 Operasi Citra Bawaan**:
+  - **Operasi Dasar** (`dasar.js`): Kecerahan (LUT linear), Kontras (peregangan midtone), Negatif (pembalikan fotometrik), Grayscale (ITU-R BT.601), Pembalik / Flip (horizontal & vertikal), Rotasi (ortogonal 90°, 180°, 270°), Potong / Crop (ekstraksi sub-matriks koordinat), Ubah Ukuran / Resize (resampling murni Nearest Neighbor & Bilinear).
+  - **Operasi Warna** (`warna.js`): Pisah Kanal RGB (isolasi kanal mode berwarna atau keabuan), Ruang Warna (dekomposisi HSV H/S/V & Grayscale), Saturasi (penskalaan saturasi menjaga luminans), Pergeseran Hue (rotasi lingkaran derajat HSV), Efek Sepia (matriks afinitas hangat), Keseimbangan Warna (penguatan kanal R, G, B independen via LUT).
+  - **Operasi Enhancement** (`enhancement.js`): Ekualisasi Histogram (ekualisasi luminans menjaga warna & per-kanal via CDF LUT), Peregangan Kontras (normalisasi min-max dengan pemangkasan persentil ekstrem), Koreksi Gamma (transformasi kurva daya non-linear fotometrik).
+- **Arsitektur Registri Dinamis**:
+  - Modul `katalogOperasi.js` yang menyediakan skema seragam (id, kategori, kunci i18n, nama teknis, skema parameter dinamis, fungsi terapkan).
+  - Penambahan operasi baru cukup dengan mendaftarkan satu objek definisi tanpa perlu memodifikasi komponen UI.
+- **Web Worker & Pola Permintaan Terbaru Menang**:
+  - Eksekusi komputasi citra di thread terpisah (`frontend/src/pekerja/pekerjaCitra.js`) memanfaatkan *Transferable ArrayBuffer*.
+  - Modul `pengelolaPekerja.js` membuang respons basi ketika parameter digeser cepat dan menyediakan fallback sinkron otomatis untuk lingkungan Vitest/Node.
+- **Preview Responsif & Unduh Resolusi Penuh**:
+  - Preview interaktif bekerja pada salinan gambar yang diperkecil (sisi terpanjang maks 1024 px, didefinisikan di `BATASAN_BERKAS.DIMENSI_MAKS_PREVIEW`).
+  - Unduhan hasil tetap dieksekusi pada resolusi penuh hingga 16 juta piksel dengan indikator proses memuat.
+- **Visualisasi Histogram SVG Mandiri**:
+  - Komponen `HistogramCitra.jsx` berbasis SVG murni tanpa pustaka grafik pihak ketiga.
+  - Menampilkan grafik histogram kanal Luminans, Merah, Hijau, dan Biru untuk kondisi sebelum dan sesudah operasi.
+- **Penyempurnaan Aksesibilitas & Dialog Privasi**:
+  - Modal Privasi (`ModalPrivasi.jsx`) kini memiliki penguncian fokus (*focus trap*), penutupan tombol Escape, dan pengembalian fokus ke pemicu.
+- **Pengujian Unit & E2E Komprehensif**:
+  - 23 pengujian unit baru di `frontend/src/uji/mesinOperasi.test.js` dengan matriks kecil terhitung manual, uji kasus tepi 1x1, pengujian ekualisasi CDF manual, dan bukti pendaftaran dinamis operasi baru. Total uji unit frontend: 45 passed.
+  - Pengujian E2E Playwright di `e2e/operasiCitra.spec.js` memvalidasi alur operasi -> slider -> histogram -> unduh resolusi penuh, rotasi dimensi sebelum-sesudah, pencarian katalog, dan penangkapan layar QA visual (1280px & 1920px ID/EN). Total uji E2E: 8 passed.
+
 ## [0.2.0] - 2026-11-03
 
 ### Ditambahkan
@@ -12,7 +40,7 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 - **Identitas & Logo Proyek**: Logo vektor SVG penuh (`/logo-piclab.svg`) dan ikon favicon (`/favicon.svg`) yang memadukan aperture optik presisi dan piksel digital tanpa gaya template AI.
 - **Internasionalisasi (i18n)**: Integrasi pustaka `i18next` dan `react-i18next` dengan berkas kamus `id.json` dan `en.json`. Mendukung pergantian bahasa instan tanpa memuat ulang halaman serta tersimpan di `localStorage`.
 - **Layout Tiga Area Editor**:
-  - `BilahAtas.jsx`: Menampilkan logo, pemilih bahasa ID/EN, tautan Belajar (nonaktif dengan status jelas menuju Tahap 9), dan tautan Privasi.
+  - `BilahAtas.jsx`: Menampilkan logo, pemilih bahasa ID/EN, tautan Belajar (nonaktif dengan status jelas "Segera hadir"), dan tautan Privasi.
   - `ModalPrivasi.jsx`: Dialog transparansi privasi yang menyatakan pemrosesan klien tidak meninggalkan peramban.
   - `PanelOperasi.jsx`: Panel kiri dengan kerangka rapi keadaan belum ada operasi.
   - `PanelParameter.jsx`: Panel kanan dengan kerangka rapi keadaan belum ada parameter/riwayat.
