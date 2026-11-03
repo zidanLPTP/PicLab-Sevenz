@@ -8,11 +8,12 @@ Proyek ini dibangun dengan prioritas utama pada **utilitas praktis** bagi penggu
 
 ## 🚀 Teknologi Utama
 
-- **Frontend**: React (JavaScript), Vite, Tailwind CSS.
+- **Frontend**: React 18 (JavaScript), Vite, Tailwind CSS v3.
 - **Backend**: Python 3.13+, FastAPI, Uvicorn.
 - **Pengujian**:
   - Frontend: Vitest + React Testing Library.
   - Backend: pytest + HTTPX.
+  - End-to-End: Playwright (Chromium).
 - **Kualitas Kode**: ESLint, Prettier, Ruff.
 - **Integrasi Berkelanjutan (CI)**: GitHub Actions.
 
@@ -25,7 +26,7 @@ Struktur folder utama proyek mengacu pada spesifikasi (`spec.md` bagian 12):
 ```text
 PicLab-Sevenz/
 ├── .github/
-│   └── workflows/       # Alur kerja GitHub Actions (CI)
+│   └── workflows/       # Alur kerja GitHub Actions (CI: lint, uji, e2e)
 ├── backend/
 │   ├── app/
 │   │   ├── inti/        # Konfigurasi aplikasi & CORS
@@ -38,23 +39,35 @@ PicLab-Sevenz/
 │   ├── pyproject.toml   # Konfigurasi proyek & pytest/ruff
 │   └── main.py          # Titik masuk eksekusi backend
 ├── frontend/
-│   ├── public/          # Berkas statis
+│   ├── public/          # Berkas statis & aset logo SVG
+│   │   ├── contoh/      # Gambar contoh bebas lisensi
+│   │   ├── favicon.svg  # Favicon ikon lensa optik
+│   │   └── logo-piclab.svg # Logo penuh PicLab Sevenz
 │   ├── src/
 │   │   ├── komponen/    # Komponen antarmuka React
+│   │   │   ├── AreaKanvas.jsx
+│   │   │   ├── AreaUnggah.jsx
+│   │   │   ├── BilahAksiKanvas.jsx
+│   │   │   ├── BilahAtas.jsx
+│   │   │   ├── ModalPrivasi.jsx
+│   │   │   ├── PanelOperasi.jsx
+│   │   │   ├── PanelParameter.jsx
+│   │   │   └── PenggeserSebelumSesudah.jsx
 │   │   ├── halaman/     # Halaman aplikasi
 │   │   ├── mesin/       # Algoritma pemrosesan citra klien
 │   │   ├── pekerja/     # Web Worker untuk komputasi berat
 │   │   ├── hook/        # Kustom React Hook
-│   │   ├── bahasa/      # Berkas internasionalisasi (id/en)
+│   │   ├── bahasa/      # Berkas internasionalisasi (id.json & en.json)
 │   │   ├── gaya/        # Gaya visual & utilitas CSS
-│   │   ├── utilitas/    # Fungsi pembantu murni
+│   │   ├── utilitas/    # Validasi berkas biner (OWASP) & konfigurasi batas
 │   │   ├── uji/         # Pengujian frontend (Vitest + RTL)
-│   │   ├── Aplikasi.jsx # Komponen akar antarmuka
+│   │   ├── Aplikasi.jsx # Komponen akar antarmuka editor tiga area
 │   │   └── main.jsx     # Titik masuk render React
 │   ├── package.json     # Dependensi & skrip frontend
 │   ├── vite.config.js   # Konfigurasi Vite & Vitest
-│   └── tailwind.config.js # Konfigurasi tema Tailwind CSS
+│   └── tailwind.config.js # Konfigurasi tema & token desain Tailwind
 ├── e2e/                 # Pengujian End-to-End (Playwright)
+├── tangkapan-layar/     # Tangkapan layar QA visual (diabaikan git)
 ├── Agent.md             # Panduan kerja dan aturan agent
 ├── spec.md              # Spesifikasi teknis & urutan tahap
 ├── styleguide.md        # Panduan sistem desain dan antarmuka
@@ -120,12 +133,17 @@ Endpoint pemeriksaan kesehatan: `http://127.0.0.1:8000/kesehatan`
 
 ## 🧪 Menjalankan Pengujian & Linting
 
-### Pengujian Frontend:
+### Pengujian Unit Frontend (Vitest):
 ```bash
 npm --prefix frontend test
 ```
 
-### Pengujian Backend:
+### Pengujian E2E (Playwright):
+```bash
+npx playwright test
+```
+
+### Pengujian Backend (pytest):
 ```bash
 cd backend
 .venv\Scripts\pytest -v
@@ -149,4 +167,5 @@ cd ..
 ## 📌 Status Proyek
 
 - [x] **Tahap 0 — Fondasi repo** (Struktur repositori, Vite + React + Tailwind, FastAPI + endpoint `/kesehatan`, pengujian Vitest dan pytest, konfigurasi CI).
-- [ ] **Tahap 1 — Kerangka editor dan sistem desain** *(tahap berikutnya)*.
+- [x] **Tahap 1 — Kerangka editor dan sistem desain** (Sistem desain UI UX PRO MAX, token Tailwind, logo SVG & favicon, layout tiga area, validasi berkas klien OWASP, slider sebelum/sesudah, zoom/pan kanvas, unduh resolusi penuh, i18n ID/EN, pengujian Vitest dan E2E Playwright).
+- [ ] **Tahap 2 — Mesin operasi klien: dasar, warna, enhancement** *(tahap berikutnya)*.

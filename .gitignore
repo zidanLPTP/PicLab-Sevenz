@@ -29,6 +29,7 @@ coverage/
 htmlcov/
 test-results/
 playwright-report/
+tangkapan-layar/
 
 # IDE & Editor
 .vscode/
