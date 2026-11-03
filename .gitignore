@@ -1,0 +1,41 @@
+# Dependency & Environment
+node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Lingkungan & Rahasia (jangan simpan .env asli)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Hasil Build & Cache
+dist/
+build/
+.vite/
+*.egg-info/
+.eggs/
+
+# Pengujian & Cakupan
+coverage/
+.nyc_output/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+test-results/
+playwright-report/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistem Operasi
+.DS_Store
+Thumbs.db

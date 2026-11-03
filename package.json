@@ -1,0 +1,17 @@
+{
+  "name": "piclab-sevenz",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Aplikasi Pengolahan Citra Digital PicLab Sevenz",
+  "scripts": {
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "python backend/main.py",
+    "build:frontend": "npm --prefix frontend run build",
+    "lint:frontend": "npm --prefix frontend run lint",
+    "lint:backend": "ruff check backend",
+    "lint": "npm run lint:frontend && npm run lint:backend",
+    "test:frontend": "npm --prefix frontend test",
+    "test:backend": "pytest backend/uji",
+    "test": "npm run test:frontend && npm run test:backend"
+  }
+}
