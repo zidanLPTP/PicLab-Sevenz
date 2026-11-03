@@ -36,7 +36,10 @@ export const operasiKecerahan = {
     },
   ],
   terapkan(citra, parameter = {}) {
-    const nilaiOffset = parameter.kecerahan ?? 0;
+    let nilaiOffset = Number(parameter.kecerahan);
+    if (!Number.isFinite(nilaiOffset)) nilaiOffset = 0;
+    nilaiOffset = Math.max(-150, Math.min(150, Math.round(nilaiOffset)));
+
     if (nilaiOffset === 0)
       return { ...citra, data: new Uint8ClampedArray(citra.data) };
 
@@ -81,7 +84,10 @@ export const operasiKontras = {
     },
   ],
   terapkan(citra, parameter = {}) {
-    const c = parameter.kontras ?? 0;
+    let c = Number(parameter.kontras);
+    if (!Number.isFinite(c)) c = 0;
+    c = Math.max(-100, Math.min(100, Math.round(c)));
+
     if (c === 0) return { ...citra, data: new Uint8ClampedArray(citra.data) };
 
     const faktor = (259 * (c + 255)) / (255 * (259 - c));
@@ -186,7 +192,11 @@ export const operasiFlip = {
     },
   ],
   terapkan(citra, parameter = {}) {
-    const arah = parameter.arah || 'horizontal';
+    const opsiArah = ['horizontal', 'vertikal', 'keduanya'];
+    const arah = opsiArah.includes(parameter.arah)
+      ? parameter.arah
+      : 'horizontal';
+
     const { width, height, data: src } = citra;
     const hasil = buatCitraKosong(width, height);
     const dst = hasil.data;
@@ -239,7 +249,8 @@ export const operasiRotasi = {
     },
   ],
   terapkan(citra, parameter = {}) {
-    const sudut = Number(parameter.sudut) || 90;
+    const sudutAngka = Number(parameter.sudut);
+    const sudut = [90, 180, 270].includes(sudutAngka) ? sudutAngka : 90;
     const { width, height, data: src } = citra;
 
     let targetW = width;
@@ -284,6 +295,7 @@ export const operasiRotasi = {
  * Operasi Pemotongan Citra (Crop).
  * Metode: Ekstraksi sub-matriks piksel koordinat [x, y, lebar, tinggi].
  * Rumus inti: dest(dx, dy) = src(x + dx, y + dy)
+ * Dilengkapi batasan dimensi dan koordinat aman untuk mencegah memori liar.
  */
 export const operasiCrop = {
   id: 'dasar_crop',
@@ -336,26 +348,35 @@ export const operasiCrop = {
   terapkan(citra, parameter = {}) {
     const { width: srcW, height: srcH, data: src } = citra;
 
+    const rawX = Number(parameter.x);
+    const rawY = Number(parameter.y);
+    const rawW = Number(parameter.lebar);
+    const rawH = Number(parameter.tinggi);
+
     const startX = Math.max(
       0,
-      Math.min(srcW - 1, Math.round(parameter.x ?? 0))
+      Math.min(srcW - 1, Number.isFinite(rawX) ? Math.round(rawX) : 0)
     );
     const startY = Math.max(
       0,
-      Math.min(srcH - 1, Math.round(parameter.y ?? 0))
+      Math.min(srcH - 1, Number.isFinite(rawY) ? Math.round(rawY) : 0)
     );
 
     const maxW = srcW - startX;
     const maxH = srcH - startY;
 
-    const cropW = Math.max(
+    let cropW = Math.max(
       1,
-      Math.min(maxW, Math.round(parameter.lebar ?? maxW))
+      Math.min(maxW, Number.isFinite(rawW) ? Math.round(rawW) : maxW)
     );
-    const cropH = Math.max(
+    let cropH = Math.max(
       1,
-      Math.min(maxH, Math.round(parameter.tinggi ?? maxH))
+      Math.min(maxH, Number.isFinite(rawH) ? Math.round(rawH) : maxH)
     );
+
+    // Menjamin kepatuhan pada batas dimensi maksimum konfigurasi
+    cropW = Math.min(BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL, cropW);
+    cropH = Math.min(BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL, cropH);
 
     const hasil = buatCitraKosong(cropW, cropH);
     const dst = hasil.data;
@@ -382,6 +403,7 @@ export const operasiCrop = {
  * Metode: Interpolasi Nearest Neighbor atau Bilinear murni (bukan drawImage).
  * Rumus Nearest: srcX = Math.floor(x * (srcW / dstW)), srcY = Math.floor(y * (srcH / dstH))
  * Rumus Bilinear: f(x, y) = (1-dx)(1-dy)f00 + dx(1-dy)f10 + (1-dx)dy*f01 + dx*dy*f11
+ * Menjamin penjepitan ke batas maksimum 4096 px dan 16 juta piksel (spec.md bagian 8).
  */
 export const operasiUbahUkuran = {
   id: 'dasar_ubah_ukuran',
@@ -393,20 +415,20 @@ export const operasiUbahUkuran = {
     {
       id: 'lebarBaru',
       kunciLabel: 'parameter.lebarBaru',
-      tipe: 'angka',
-      min: 1,
+      tipe: 'slider',
+      min: 16,
       max: BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL,
-      step: 1,
+      step: 10,
       nilaiAwal: 400,
       satuan: 'px',
     },
     {
       id: 'tinggiBaru',
       kunciLabel: 'parameter.tinggiBaru',
-      tipe: 'angka',
-      min: 1,
+      tipe: 'slider',
+      min: 16,
       max: BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL,
-      step: 1,
+      step: 10,
       nilaiAwal: 300,
       satuan: 'px',
     },
@@ -424,22 +446,21 @@ export const operasiUbahUkuran = {
   terapkan(citra, parameter = {}) {
     const { width: srcW, height: srcH, data: src } = citra;
 
+    const rawW = Number(parameter.lebarBaru);
+    const rawH = Number(parameter.tinggiBaru);
+    const parsedW = Number.isFinite(rawW) ? rawW : srcW;
+    const parsedH = Number.isFinite(rawH) ? rawH : srcH;
+
     let targetW = Math.max(
       1,
-      Math.min(
-        BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL,
-        Math.round(parameter.lebarBaru ?? srcW)
-      )
+      Math.min(BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL, Math.round(parsedW))
     );
     let targetH = Math.max(
       1,
-      Math.min(
-        BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL,
-        Math.round(parameter.tinggiBaru ?? srcH)
-      )
+      Math.min(BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL, Math.round(parsedH))
     );
 
-    // Validasi batas total piksel
+    // Validasi batas total piksel (16 juta piksel)
     if (targetW * targetH > BATASAN_BERKAS.TOTAL_PIKSEL_MAKS) {
       const skala = Math.sqrt(
         BATASAN_BERKAS.TOTAL_PIKSEL_MAKS / (targetW * targetH)
@@ -448,7 +469,11 @@ export const operasiUbahUkuran = {
       targetH = Math.max(1, Math.floor(targetH * skala));
     }
 
-    const metode = parameter.metode || 'bilinear';
+    const opsiMetode = ['nearest', 'bilinear'];
+    const metode = opsiMetode.includes(parameter.metode)
+      ? parameter.metode
+      : 'bilinear';
+
     const hasil = buatCitraKosong(targetW, targetH);
     const dst = hasil.data;
 
@@ -484,6 +509,11 @@ export const operasiUbahUkuran = {
           const x1 = Math.min(srcW - 1, x0 + 1);
           const dx = Math.max(0, Math.min(1, srcXFloat - x0));
 
+          const w00 = (1 - dx) * (1 - dy);
+          const w10 = dx * (1 - dy);
+          const w01 = (1 - dx) * dy;
+          const w11 = dx * dy;
+
           const i00 = (y0 * srcW + x0) * 4;
           const i10 = (y0 * srcW + x1) * 4;
           const i01 = (y1 * srcW + x0) * 4;
@@ -491,12 +521,6 @@ export const operasiUbahUkuran = {
 
           const dstIdx = (y * targetW + x) * 4;
 
-          const w00 = (1 - dx) * (1 - dy);
-          const w10 = dx * (1 - dy);
-          const w01 = (1 - dx) * dy;
-          const w11 = dx * dy;
-
-          // R, G, B, A interpolasi
           dst[dstIdx] = clamp(
             src[i00] * w00 + src[i10] * w10 + src[i01] * w01 + src[i11] * w11
           );

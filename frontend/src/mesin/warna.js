@@ -50,8 +50,13 @@ export const operasiPisahKanal = {
     },
   ],
   terapkan(citra, parameter = {}) {
-    const kanal = parameter.kanal || 'r';
-    const mode = parameter.modeTampil || 'keabuan';
+    const opsiKanal = ['r', 'g', 'b'];
+    const kanal = opsiKanal.includes(parameter.kanal) ? parameter.kanal : 'r';
+
+    const opsiMode = ['keabuan', 'berwarna'];
+    const mode = opsiMode.includes(parameter.modeTampil)
+      ? parameter.modeTampil
+      : 'keabuan';
 
     const hasil = buatCitraKosong(citra.width, citra.height);
     const src = citra.data;
@@ -107,7 +112,11 @@ export const operasiRuangWarna = {
     },
   ],
   terapkan(citra, parameter = {}) {
-    const ruang = parameter.ruang || 'hsv_s';
+    const opsiRuang = ['grayscale', 'hsv_h', 'hsv_s', 'hsv_v'];
+    const ruang = opsiRuang.includes(parameter.ruang)
+      ? parameter.ruang
+      : 'hsv_s';
+
     const hasil = buatCitraKosong(citra.width, citra.height);
     const src = citra.data;
     const dst = hasil.data;
@@ -162,7 +171,10 @@ export const operasiSaturasi = {
     },
   ],
   terapkan(citra, parameter = {}) {
-    const sat = parameter.saturasi ?? 0;
+    let sat = Number(parameter.saturasi);
+    if (!Number.isFinite(sat)) sat = 0;
+    sat = Math.max(-100, Math.min(100, sat));
+
     if (sat === 0) return { ...citra, data: new Uint8ClampedArray(citra.data) };
 
     const faktor = 1 + sat / 100;
@@ -210,7 +222,10 @@ export const operasiHue = {
     },
   ],
   terapkan(citra, parameter = {}) {
-    const shift = parameter.pergeseran ?? 0;
+    let shift = Number(parameter.pergeseran);
+    if (!Number.isFinite(shift)) shift = 0;
+    shift = Math.max(-180, Math.min(180, shift));
+
     if (shift === 0)
       return { ...citra, data: new Uint8ClampedArray(citra.data) };
 
@@ -261,7 +276,10 @@ export const operasiSepia = {
     },
   ],
   terapkan(citra, parameter = {}) {
-    const k = (parameter.intensitas ?? 80) / 100;
+    let kRaw = Number(parameter.intensitas);
+    if (!Number.isFinite(kRaw)) kRaw = 80;
+    const k = Math.max(0, Math.min(100, kRaw)) / 100;
+
     if (k === 0) return { ...citra, data: new Uint8ClampedArray(citra.data) };
 
     const hasil = buatCitraKosong(citra.width, citra.height);
@@ -331,9 +349,19 @@ export const operasiBalanceWarna = {
     },
   ],
   terapkan(citra, parameter = {}) {
-    const gainR = 1 + (parameter.merah ?? 0) / 100;
-    const gainG = 1 + (parameter.hijau ?? 0) / 100;
-    const gainB = 1 + (parameter.biru ?? 0) / 100;
+    let m = Number(parameter.merah);
+    let h = Number(parameter.hijau);
+    let b = Number(parameter.biru);
+    if (!Number.isFinite(m)) m = 0;
+    if (!Number.isFinite(h)) h = 0;
+    if (!Number.isFinite(b)) b = 0;
+    m = Math.max(-100, Math.min(100, m));
+    h = Math.max(-100, Math.min(100, h));
+    b = Math.max(-100, Math.min(100, b));
+
+    const gainR = 1 + m / 100;
+    const gainG = 1 + h / 100;
+    const gainB = 1 + b / 100;
 
     const lutR = buatTabelPencarian((v) => v * gainR);
     const lutG = buatTabelPencarian((v) => v * gainG);

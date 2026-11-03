@@ -4,7 +4,10 @@
  * dan fallback otomatis ke eksekusi thread utama saat berada di lingkungan uji/tanpa Worker.
  */
 
-import { dapatkanOperasiBerdasarkanId } from '../mesin/katalogOperasi';
+import {
+  bersihkanParameter,
+  dapatkanOperasiBerdasarkanId,
+} from '../mesin/katalogOperasi';
 import { BATASAN_BERKAS } from '../utilitas/konfigurasiBerkas';
 
 let instansPekerja = null;
@@ -108,7 +111,8 @@ export async function jalankanOperasi(idOperasi, citra, parameter = {}) {
   }
 
   const waktuMulai = performance.now();
-  const hasil = operasi.terapkan(citra, parameter);
+  const paramBersih = bersihkanParameter(operasi, parameter);
+  const hasil = operasi.terapkan(citra, paramBersih);
   const durasi = performance.now() - waktuMulai;
 
   return { hasil, durasi };

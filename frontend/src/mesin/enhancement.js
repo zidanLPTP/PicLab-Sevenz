@@ -16,10 +16,18 @@ import {
  * Operasi Ekualisasi Histogram (Histogram Equalization).
  * Metode: Perataan distribusi intensitas piksel melalui Cumulative Distribution Function (CDF).
  * Mode default: Pada kanal luminans (menjaga hue dan saturasi alami citra).
- * Mode alternatif: Per-kanal RGB individual.
- * Rumus inti:
- *   CDF(v) = sum_{j=0}^v H(j)
- *   LUT(v) = round(((CDF(v) - CDF_min) / (TotalPiksel - CDF_min)) * 255)
+ *   - Rumus rasio luminans per piksel:
+ *     Y = round(0.299*R + 0.587*G + 0.114*B)
+ *     Y' = round(((CDF(Y) - CDF_min) / (TotalPiksel - CDF_min)) * 255)
+ *     Jika Y == 0 -> R'=G'=B'=Y'
+ *     Jika Y > 0  -> rasio = Y' / Y
+ *                    R' = clamp(R * rasio)
+ *                    G' = clamp(G * rasio)
+ *                    B' = clamp(B * rasio)
+ *     Jika hasil melebihi 255, fungsi clamp() menjepit nilai ke 255.
+ *   - Kasus citra seragam: jika seluruh piksel bernilai sama, totalPiksel <= cdfMin,
+ *     fungsi menghasilkan LUT(v) = v untuk mencegah pembagian nol (0 / 0).
+ * Mode alternatif: Per-kanal RGB individual melalui LUT CDF masing-masing kanal.
  */
 export const operasiEkualisasi = {
   id: 'enhancement_ekualisasi',
@@ -40,7 +48,11 @@ export const operasiEkualisasi = {
     },
   ],
   terapkan(citra, parameter = {}) {
-    const mode = parameter.mode || 'luminans';
+    const opsiMode = ['luminans', 'per_kanal'];
+    const mode = opsiMode.includes(parameter.mode)
+      ? parameter.mode
+      : 'luminans';
+
     const { width, height, data: src } = citra;
     const totalPiksel = width * height;
     if (totalPiksel === 0)
@@ -50,7 +62,7 @@ export const operasiEkualisasi = {
     const dst = hasil.data;
     const len = src.length;
 
-    // Helper untuk menghitung LUT dari histogram 256 nilai
+    // Helper untuk menghitung LUT dari histogram 256 nilai via CDF
     function hitungLutCdf(hist) {
       let cdfMin = -1;
       let kumulatif = 0;
@@ -62,6 +74,7 @@ export const operasiEkualisasi = {
           cdfMin = kumulatif;
         }
 
+        // Perlindungan kasus citra seragam: jika totalPiksel <= cdfMin, cegah pembagian nol
         if (cdfMin === -1 || totalPiksel <= cdfMin) {
           lut[i] = i;
         } else {
@@ -103,7 +116,9 @@ export const operasiEkualisasi = {
           dst[i + 1] = yBaru;
           dst[i + 2] = yBaru;
         } else {
+          // Rasio luminans per piksel diskalakan ke kanal warna
           const rasio = yBaru / yLama;
+          // Hasil di atas 255 dijepit ke 255 oleh clamp()
           dst[i] = clamp(r * rasio);
           dst[i + 1] = clamp(g * rasio);
           dst[i + 2] = clamp(b * rasio);
@@ -121,6 +136,7 @@ export const operasiEkualisasi = {
  * Metode: Normalisasi rentang dinamis min-max dengan pemangkasan persentil ekstrem.
  * Rumus inti:
  *   V' = round(((clamp(V, vMin, vMax) - vMin) / (vMax - vMin)) * 255)
+ *   Kasus vMax <= vMin: vMin disetel 0 dan vMax disetel 255 untuk mencegah pembagian nol.
  */
 export const operasiPereganganKontras = {
   id: 'enhancement_peregangan_kontras',
@@ -141,7 +157,11 @@ export const operasiPereganganKontras = {
     },
   ],
   terapkan(citra, parameter = {}) {
-    const persentil = (parameter.pemangkasan ?? 1) / 100;
+    let p = Number(parameter.pemangkasan);
+    if (!Number.isFinite(p)) p = 1;
+    p = Math.max(0, Math.min(5, p));
+    const persentil = p / 100;
+
     const { width, height, data: src } = citra;
     const totalPiksel = width * height;
     if (totalPiksel === 0)
@@ -174,6 +194,7 @@ export const operasiPereganganKontras = {
       }
     }
 
+    // Penanganan kasus tepi jika vMax <= vMin (misal citra kontras datar)
     if (vMax <= vMin) {
       vMin = 0;
       vMax = 255;
@@ -223,7 +244,10 @@ export const operasiGamma = {
     },
   ],
   terapkan(citra, parameter = {}) {
-    const g = Number(parameter.gamma) || 1.0;
+    let g = Number(parameter.gamma);
+    if (!Number.isFinite(g) || g <= 0) g = 1.0;
+    g = Math.max(0.1, Math.min(4.0, g));
+
     if (g === 1.0) return { ...citra, data: new Uint8ClampedArray(citra.data) };
 
     const lut = buatTabelPencarian((v) => 255 * Math.pow(v / 255, g));

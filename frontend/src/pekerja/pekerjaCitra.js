@@ -3,7 +3,10 @@
  * Menjamin antarmuka pengguna tidak membeku saat komputasi berlangsung.
  */
 
-import { dapatkanOperasiBerdasarkanId } from '../mesin/katalogOperasi';
+import {
+  bersihkanParameter,
+  dapatkanOperasiBerdasarkanId,
+} from '../mesin/katalogOperasi';
 
 self.onmessage = function (e) {
   const { idPermintaan, idOperasi, citra, parameter } = e.data;
@@ -26,9 +29,12 @@ self.onmessage = function (e) {
       height: citra.height,
     };
 
+    // Bersihkan dan sanitasi parameter sesuai skema operasi
+    const parameterBersih = bersihkanParameter(operasi, parameter);
+
     // Eksekusi fungsi murni
     const waktuAwal = performance.now();
-    const hasil = operasi.terapkan(masukanCitra, parameter);
+    const hasil = operasi.terapkan(masukanCitra, parameterBersih);
     const durasi = performance.now() - waktuAwal;
 
     // Kirim hasil kembali ke thread utama dengan Transferable ArrayBuffer

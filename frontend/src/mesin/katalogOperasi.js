@@ -1,8 +1,7 @@
 /**
- * Katalog dan Registri Operasi Citra PicLab Sevenz.
- * Menyediakan titik tunggal pendaftaran seluruh operasi mesin pengolah citra.
- * Menambah operasi baru cukup dengan mengekspor objek definisi operasi
- * dan mendaftarkannya di berkas ini.
+ * Katalog & Registri Terpadu Operasi Citra PicLab Sevenz (spec.md bagian 3 & 4).
+ * Menyediakan antarmuka pendaftaran dinamis untuk menambahkan operasi baru
+ * tanpa memodifikasi komponen antarmuka pengguna (UI).
  */
 
 import {
@@ -30,7 +29,7 @@ import {
 } from './warna';
 
 /**
- * Daftar kategori operasi yang didukung pada antarmuka.
+ * Daftar kategori operasi citra.
  */
 export const KATEGORI_OPERASI = [
   { id: 'dasar', kunciLabel: 'kategori.dasar' },
@@ -111,4 +110,43 @@ export function ekstrakNilaiAwalParameter(operasi) {
     nilaiAwal[skema.id] = skema.nilaiAwal;
   }
   return nilaiAwal;
+}
+
+/**
+ * Memvalidasi dan membersihkan parameter berdasarkan skema operasi.
+ * Nilai non-finite (NaN, Infinity, undefined, string non-numerik) diganti dengan nilai awal,
+ * dan nilai di luar batas [min, max] dijepit (clamped).
+ *
+ * @param {object} operasi
+ * @param {Record<string, any>} parameter
+ * @returns {Record<string, any>}
+ */
+export function bersihkanParameter(operasi, parameter = {}) {
+  if (!operasi || !operasi.skemaParameter) return {};
+  const hasil = {};
+  for (const skema of operasi.skemaParameter) {
+    const valMasukan = parameter[skema.id];
+
+    if (skema.tipe === 'slider' || skema.tipe === 'angka') {
+      const num = Number(valMasukan);
+      if (!Number.isFinite(num)) {
+        hasil[skema.id] = skema.nilaiAwal;
+      } else {
+        let clamped = num;
+        if (skema.min !== undefined) clamped = Math.max(skema.min, clamped);
+        if (skema.max !== undefined) clamped = Math.min(skema.max, clamped);
+        hasil[skema.id] = clamped;
+      }
+    } else if (skema.tipe === 'pilihan') {
+      const opsiValid = (skema.pilihan || []).map((p) => p.nilai);
+      if (opsiValid.length > 0 && !opsiValid.includes(valMasukan)) {
+        hasil[skema.id] = skema.nilaiAwal;
+      } else {
+        hasil[skema.id] = valMasukan ?? skema.nilaiAwal;
+      }
+    } else {
+      hasil[skema.id] = valMasukan ?? skema.nilaiAwal;
+    }
+  }
+  return hasil;
 }
