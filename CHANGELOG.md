@@ -28,9 +28,17 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
   - Menampilkan grafik histogram kanal Luminans, Merah, Hijau, dan Biru untuk kondisi sebelum dan sesudah operasi.
 - **Penyempurnaan Aksesibilitas & Dialog Privasi**:
   - Modal Privasi (`ModalPrivasi.jsx`) kini memiliki penguncian fokus (*focus trap*), penutupan tombol Escape, dan pengembalian fokus ke pemicu.
+- **Peringatan Batas Dimensi Terlihat (P6)**:
+  - Penambahan banner peringatan `role="alert"` dinamis pada `PanelParameter.jsx` bila nilai ubah ukuran atau pemotongan melampaui 4096 px atau 16 MP, dengan pesan penjelasan multibahasa (ID/EN) dan nilai efektif yang dijepit.
+- **Jalur Render Preview Kanvas Langsung (P2)**:
+  - `PenggeserSebelumSesudah.jsx` dan `AreaKanvas.jsx` kini merender pratinjau langsung ke elemen `<canvas>` menggunakan `ctx.putImageData`, meniadakan konversi `toBlob` dan kompresi PNG di thread utama selama penggeseran slider interaktif.
+- **Optimasi Algoritma Citra Murni (P3)**:
+  - Eliminasi alokasi objek per-piksel pada `warna_hue`, `warna_ruang_warna`, `warna_saturasi`, `warna_sepia`, `enhancement_ekualisasi`, dan `enhancement_peregangan_kontras`. Seluruh operasi kini mencapai median komputasi worker < 10 ms pada preview dan < 150 ms pada resolusi penuh 12 MP, dengan jaminan kesetaraan numerik (selisih <= 1 LSB) terverifikasi lewat uji regresi `regresiOptimasi.test.js`.
+- **Pemisahan Skrip Benchmark dari CI Reguler (P5)**:
+  - Perintah `npm run benchmark` menjalankan pengujian komprehensif 12 MP dan pengukuran latensi ujung-ke-ujung (`e2e/benchmarkTahap2.spec.js`) secara terpisah dari suite E2E reguler. Suite E2E reguler stabil menyelesaikan 11 pengujian dalam waktu ~6,5 detik.
 - **Pengujian Unit & E2E Komprehensif**:
-  - 23 pengujian unit baru di `frontend/src/uji/mesinOperasi.test.js` dengan matriks kecil terhitung manual, uji kasus tepi 1x1, pengujian ekualisasi CDF manual, dan bukti pendaftaran dinamis operasi baru. Total uji unit frontend: 45 passed.
-  - Pengujian E2E Playwright di `e2e/operasiCitra.spec.js` memvalidasi alur operasi -> slider -> histogram -> unduh resolusi penuh, rotasi dimensi sebelum-sesudah, pencarian katalog, dan penangkapan layar QA visual (1280px & 1920px ID/EN). Total uji E2E: 8 passed.
+  - 57 pengujian unit lulus di Vitest (termasuk pemetaan 17 operasi mandiri, uji regresi optimasi numerik, uji penjepitan batas dimensi, dan uji registri lengkap).
+  - 11 pengujian E2E Playwright lulus konsisten, memvalidasi alur operasi -> slider -> histogram -> unduh resolusi penuh, rotasi dimensi sebelum-sesudah, pencarian katalog, rendering kanvas langsung, serta peringatan batas dimensi di UI.
 
 ## [0.2.0] - 2026-11-03
 

@@ -151,6 +151,11 @@ npm --prefix frontend test
 npx playwright test
 ```
 
+### Benchmark Kinerja 17 Operasi & Latensi Slider:
+```bash
+npm run benchmark
+```
+
 ### Pengujian Backend (pytest):
 ```bash
 cd backend
