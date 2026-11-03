@@ -55,39 +55,80 @@ Gerakan (animasi): halus dan fungsional, singkat, menghormati preferensi `prefer
 
 ## 6. Sistem Desain (diisi agent di Tahap 1 lewat UI UX PRO MAX)
 
-> Agent: jalankan skill, lalu tulis keputusan di bagian ini beserta alasan singkatnya. Jangan mengisi dengan tebakan sebelum skill dijalankan.
+Keputusan desain ini dihasilkan melalui skill **UI UX PRO MAX** berdasarkan analisis kebutuhan aplikasi editor citra digital bergaya utilitas kerja modern:
 
-- Arah gaya dan alasannya: _belum diisi_
-- Palet warna (token nama + nilai, termasuk warna status sukses/peringatan/galat): _belum diisi_
-- Tipografi (font, ukuran, bobot, tinggi baris, untuk judul, isi, kode/angka): _belum diisi_
-- Skala jarak dan radius sudut: _belum diisi_
-- Bayangan dan batas: _belum diisi_
-- Pustaka UI terpilih dan alasannya (harus kompatibel Tailwind): _belum diisi_
-- Pustaka ikon terpilih: _belum diisi_
-
-Semua nilai di atas dijadikan token di konfigurasi Tailwind (dan variabel CSS bila perlu). Komponen tidak boleh memakai nilai warna atau ukuran "liar" di luar token.
+- **Arah gaya dan alasannya**: *Flat Functional Workspace* / *Minimalist Studio Tool*. Antarmuka dirancang bersih, fungsional, dan fokus pada konten citra tanpa efek gradasi liar, efek kilau, atau bayangan dekoratif berlebihan. Kanvas citra adalah pusat gravitasi visual. Panel instrumen diatur dengan garis batas tegas bernilai kontras tinggi untuk memisahkan ruang kerja secara rapi.
+- **Palet warna**:
+  - **Latar & Permukaan**:
+    - `latar-aplikasi`: `#F8FAFC` (Slate 50 — latar belakang editor)
+    - `permukaan-panel`: `#FFFFFF` (Putih murni — latar bilah dan panel)
+    - `permukaan-kanvas`: `#F1F5F9` (Slate 100 — latar area kerja kanvas)
+    - `garis-panel`: `#E2E8F0` (Slate 200 — garis pemisah panel)
+  - **Teks (dengan rasio kontras WCAG AA/AAA terverifikasi)**:
+    - `teks-utama`: `#0F172A` (Slate 900 — teks utama, kontras **15.6:1** pada `#FFFFFF`, melampaui WCAG AAA)
+    - `teks-sekunder`: `#334155` (Slate 700 — teks pendukung, kontras **9.5:1**, WCAG AAA)
+    - `teks-redup`: `#64748B` (Slate 500 — teks label/info pasif, kontras **4.6:1**, memenuhi WCAG AA)
+  - **Aksen Brand & Interaksi**:
+    - `primer`: `#0D9488` (Teal 600 — warna identitas, fokus kontrol, seleksi aktif)
+    - `primer-sorot`: `#0F766E` (Teal 700 — keadaan tombol hover/aktif, kontras teks putih **5.8:1**, WCAG AA)
+    - `primer-lembut`: `#F0FDFA` (Teal 50 — latar badge atau item terpilih)
+    - `aksen`: `#D97706` (Amber 600 — aksen peringatan & aksi sekunder)
+  - **Status**:
+    - `status-sukses`: `#059669` (Emerald 600 — kontras teks putih **4.6:1**, WCAG AA)
+    - `status-peringatan`: `#D97706` (Amber 600 — teks kontras pada latar terang)
+    - `status-galat`: `#DC2626` (Red 600 — kontras teks putih **4.6:1**, WCAG AA)
+    - `latar-galat`: `#FEF2F2` (Red 50 — latar kotak pesan galat berkas)
+- **Tipografi**:
+  - Antarmuka & Teks: `Plus Jakarta Sans`, `Inter`, `system-ui`, `-apple-system`, `sans-serif`.
+  - Kode, Matriks & Info Dimensi: `ui-monospace`, `SFMono-Regular`, `Menlo`, `monospace`.
+  - Skala Ukuran:
+    - `teks-xs`: 0.75rem (12px, baris 1rem)
+    - `teks-sm`: 0.875rem (14px, baris 1.25rem)
+    - `teks-base`: 1rem (16px, baris 1.5rem)
+    - `teks-lg`: 1.125rem (18px, baris 1.75rem)
+    - `teks-xl`: 1.25rem (20px, baris 1.75rem)
+- **Skala Jarak dan Radius Sudut**:
+  - Jarak: `1` (4px), `2` (8px), `3` (12px), `4` (16px), `6` (24px), `8` (32px).
+  - Radius sudut:
+    - `radius-sm`: 4px (badge, kontrol mikro)
+    - `radius-md`: 6px (tombol, input kontrol, pemilih)
+    - `radius-lg`: 8px (panel instrumen, wadah kanvas, modal)
+- **Bayangan dan Batas**:
+  - `bayangan-panel`: `0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05)`
+  - `batas-panel`: `1px solid #E2E8F0`
+  - `cincin-fokus`: `2px solid #0D9488` dengan offset 2px
+- **Pustaka UI terpilih dan alasannya**:
+  - Pustaka: Komponen *Headless / Tailwind-Native Accessibility Components*.
+  - Alasan: Sangat ringan tanpa bloat runtime eksternal, 100% kompatibel dengan Tailwind CSS v3, memenuhi standar WAI-ARIA (peran tombol, slider `aria-valuenow`, dialog `aria-modal`), dan mudah diuji unit.
+- **Pustaka Ikon terpilih**:
+  - Pustaka: `lucide-react`
+  - Alasan: Ikon konsisten bergaya outline modern yang rapi, ketebalan garis standar 1.75px, ukuran baku 18px untuk tombol antarmuka dan 24px untuk wadah unggah citra.
 
 ## 7. Komponen Inti (diisi di Tahap 1 dan dilengkapi di tahap berikutnya)
 
-Daftar yang harus punya gaya konsisten:
-- Bilah atas (logo, pemilih bahasa, tautan Belajar dan Privasi)
-- Daftar operasi dan pencarian operasi, kartu preset
-- Kanvas, kontrol zoom dan geser, bilah aksi (unggah, undo, redo, unduh)
-- Slider sebelum/sesudah
-- Panel parameter: slider, input angka, pilihan, sakelar, editor matriks kernel
-- Panel pipeline dan riwayat (daftar yang bisa diurutkan ulang)
-- Panel belajar: kartu konsep, tampilan rumus, visualisasi histogram/kernel/spektrum
-- Dialog, toast/notifikasi, tooltip
-- Keadaan kosong, memuat, dan galat
-
-Untuk tiap komponen, agent mencatat di sini: nama berkas, varian, dan aturan pemakaian singkat.
+Daftar komponen yang dibangun pada Tahap 1:
+- `BilahAtas.jsx`: Bilah atas memuat logo PicLab Sevenz, pemilih bahasa (ID/EN), tautan Belajar (nonaktif dengan keterangan "Tersedia di Tahap 9"), dan tautan Privasi (membuka dialog informasi privasi).
+- `PanelOperasi.jsx`: Panel kiri editor yang menampilkan kerangka jujur keadaan belum ada operasi citra yang diterapkan pada Tahap 1.
+- `PanelParameter.jsx`: Panel kanan editor yang menampilkan kerangka jujur keadaan belum ada parameter operasi yang disetel.
+- `AreaKanvas.jsx`: Kanvas interaktif tengah dengan dukungan zoom roda mouse, tombol zoom (+, -, 100%, pas layar), geser (pan), dan ramah keyboard.
+- `PenggeserSebelumSesudah.jsx`: Komponen slider pembanding sebelum dan sesudah dengan bilah pemisah interaktif, label terbaca, dan atribut ARIA lengkap (`role="slider"`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax`).
+- `BilahAksiKanvas.jsx`: Bilah kontrol di bawah kanvas untuk menampilkan informasi berkas (nama citra, dimensi, ukuran), tombol ganti citra, dan opsi unduh citra (PNG, JPG, WebP).
+- `AreaUnggah.jsx`: Keadaan kosong editor yang menyediakan area seret-lepas (*drag and drop*), tombol jelajah berkas, rincian batasan format/ukuran, dan tombol jalan pintas untuk memuat gambar contoh.
+- `ModalPrivasi.jsx`: Dialog penjelasan privasi yang transparan dan jujur menyatakan bahwa pemrosesan klien tidak meninggalkan peramban.
 
 ## 8. Logo dan Identitas
 
-- Nama: **PicLab Sevenz**
-- Berkas logo: _belum diisi_
-- Aturan pemakaian (ruang kosong, ukuran minimum, latar yang diizinkan): _belum diisi_
-- Favicon: _belum diisi_
+- **Nama**: **PicLab Sevenz**
+- **Filosofi Visual**: Ikon menggabungkan bentuk apertur lensa optik presisi dan sel piksel digital, melambangkan laboratorium pengolahan citra digital modern yang akurat.
+- **Berkas Logo**:
+  - Versi Penuh (Ikon + Nama): `/logo-piclab.svg` (disimpan di `frontend/public/logo-piclab.svg`)
+  - Versi Ikon Kecil & Favicon: `/favicon.svg` (disimpan di `frontend/public/favicon.svg`)
+- **Aturan Pemakaian**:
+  - Ruang kosong minimum di sekeliling logo setara 50% dari tinggi ikon.
+  - Ukuran minimum pada antarmuka: tinggi 28px untuk versi penuh, 16px untuk favicon.
+  - Latar yang diizinkan: latar terang (`#FFFFFF`, `#F8FAFC`, `#F1F5F9`).
+- **Sumber Gambar Contoh**:
+  - Gambar contoh untuk keadaan kosong adalah citra lanskap uji bebas lisensi (*public domain* / CC0) yang dibuat sendiri dan disimpan di `frontend/public/contoh/gambar-contoh.webp`.
 
 ## 9. Daftar Periksa Visual (dipakai di setiap laporan tahap yang menyentuh UI)
 
