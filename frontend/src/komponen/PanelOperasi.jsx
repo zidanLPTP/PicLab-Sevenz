@@ -14,7 +14,9 @@ import {
 export default function PanelOperasi({ operasiAktif, saatPilihOperasi }) {
   const { t } = useTranslation();
   const [kataKunci, setKataKunci] = useState('');
-  const [semuaOperasi, setSemuaOperasi] = useState(() => dapatkanSemuaOperasi());
+  const [semuaOperasi, setSemuaOperasi] = useState(() =>
+    dapatkanSemuaOperasi()
+  );
 
   // Langganan pembaruan registri operasi dinamis (V6)
   useEffect(() => {

@@ -29,7 +29,7 @@ self.onmessage = function (e) {
         ) {
           str = 'function ' + str;
         }
-        // eslint-disable-next-line no-new-func
+
         fnTerapkan = new Function('return (' + str + ')')();
       } else {
         throw new Error(

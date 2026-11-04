@@ -122,7 +122,10 @@ export default function PanelParameter({
                 className="p-2.5 bg-latar-bahaya border border-garis-bahaya rounded-lg text-teks-bahaya text-xs space-y-1"
               >
                 <div className="flex items-center gap-1.5 font-bold text-teks-bahaya">
-                  <AlertTriangle size={15} className="shrink-0 text-status-bahaya" />
+                  <AlertTriangle
+                    size={15}
+                    className="shrink-0 text-status-bahaya"
+                  />
                   <span>{t('panel.peringatanBatasDimensiJudul')}</span>
                 </div>
                 <p className="text-[11px] leading-relaxed text-teks-bahaya-terang">

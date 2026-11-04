@@ -46,6 +46,17 @@ export default function PenggeserSebelumSesudah({
       citraSesudah.height
     );
     ctx.putImageData(imageData, 0, 0);
+
+    // Tandai penyelesaian visual kanvas untuk pengukuran latensi presisi tinggi
+    if (typeof window !== 'undefined') {
+      window.__terakhirWaktuPutImageData = performance.now();
+      requestAnimationFrame(() => {
+        window.__terakhirRenderKanvas = performance.now();
+        if (typeof window.__saatKanvasTerbarui === 'function') {
+          window.__saatKanvasTerbarui();
+        }
+      });
+    }
   }, [citraSesudah]);
 
   // Render langsung ke canvas sebelum menggunakan putImageData

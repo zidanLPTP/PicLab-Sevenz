@@ -155,4 +155,3 @@ export default function HistogramCitra({ citraSebelum, citraSesudah }) {
     </div>
   );
 }
-
