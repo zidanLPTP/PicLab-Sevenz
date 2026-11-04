@@ -143,7 +143,7 @@ export default function BilahAksiKanvas({
           type="button"
           onClick={tanganiKlikUnduh}
           disabled={sedangMemprosesPenuh}
-          className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 text-xs font-bold text-teks-terbalik bg-primer hover:bg-primer-gelap rounded-md shadow-xs transition-colors focus:ring-2 focus:ring-primer focus:ring-offset-1 focus:outline-none cursor-pointer disabled:opacity-60"
+          className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 text-xs font-bold text-teks-terbalik bg-primer hover:bg-primer-sorot rounded-md shadow-xs transition-colors focus:ring-2 focus:ring-primer focus:ring-offset-1 focus:outline-none cursor-pointer disabled:opacity-60"
         >
           {sedangMemprosesPenuh ? (
             <>

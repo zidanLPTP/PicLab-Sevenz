@@ -166,7 +166,7 @@ export default function PanelParameter({
               <div
                 role="alert"
                 data-testid="peringatan-batas-dimensi"
-                className="p-3 rounded-lg bg-peringatan/10 border border-peringatan/30 text-peringatan text-xs space-y-1.5"
+                className="p-3 rounded-lg bg-latar-peringatan border border-garis-peringatan text-teks-peringatan text-xs space-y-1.5"
               >
                 <div className="flex items-center gap-1.5 font-bold">
                   <AlertTriangle size={15} className="shrink-0" />

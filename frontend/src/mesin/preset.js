@@ -19,12 +19,7 @@ export const DAFTAR_PRESET = [
     kunciDeskripsi: 'preset.kontrasTinggi.deskripsi',
     langkah: [
       { idOperasi: 'dasar_kontras', parameter: { kontras: 40 }, aktif: true },
-      {
-        idOperasi: 'dasar_kecerahan',
-        parameter: { kecerahan: 10 },
-        aktif: true,
-      },
-      { idOperasi: 'warna_saturasi', parameter: { saturasi: 20 }, aktif: true },
+      { idOperasi: 'warna_saturasi', parameter: { saturasi: 25 }, aktif: true },
     ],
   },
   {
@@ -32,15 +27,10 @@ export const DAFTAR_PRESET = [
     kunciNama: 'preset.hangatKlasik.nama',
     kunciDeskripsi: 'preset.hangatKlasik.deskripsi',
     langkah: [
-      { idOperasi: 'warna_sepia', parameter: { intensitas: 40 }, aktif: true },
+      { idOperasi: 'warna_sepia', parameter: { intensitas: 30 }, aktif: true },
       {
         idOperasi: 'warna_balance',
         parameter: { merah: 15, hijau: 5, biru: -15 },
-        aktif: true,
-      },
-      {
-        idOperasi: 'enhancement_gamma',
-        parameter: { gamma: 1.1 },
         aktif: true,
       },
     ],
@@ -56,7 +46,6 @@ export const DAFTAR_PRESET = [
         aktif: true,
       },
       { idOperasi: 'warna_saturasi', parameter: { saturasi: 15 }, aktif: true },
-      { idOperasi: 'dasar_kontras', parameter: { kontras: 10 }, aktif: true },
     ],
   },
   {
@@ -74,4 +63,87 @@ export const DAFTAR_PRESET = [
  */
 export function dapatkanPresetBerdasarkanId(id) {
   return DAFTAR_PRESET.find((p) => p.id === id);
+}
+
+/**
+ * Memvalidasi struktur, skema parameter, dan ketiadaan kunci asing pada sebuah preset.
+ * @param {object} preset
+ * @param {Function} cariOperasiFn Fungsi pencari operasi berdasarkan ID di katalog
+ * @returns {{ valid: boolean, galat: string[] }}
+ */
+export function validasiStrukturPreset(preset, cariOperasiFn) {
+  const galat = [];
+  if (!preset || typeof preset !== 'object') {
+    return { valid: false, galat: ['Preset harus berupa objek'] };
+  }
+  if (!preset.id || typeof preset.id !== 'string') {
+    galat.push('ID preset tidak valid');
+  }
+  if (!preset.kunciNama || typeof preset.kunciNama !== 'string') {
+    galat.push('kunciNama preset tidak valid');
+  }
+  if (!Array.isArray(preset.langkah) || preset.langkah.length === 0) {
+    galat.push('Preset harus memiliki minimal 1 langkah');
+    return { valid: false, galat };
+  }
+
+  for (const [idx, langkah] of preset.langkah.entries()) {
+    if (!langkah.idOperasi) {
+      galat.push(`Langkah indeks ${idx} tidak memiliki idOperasi`);
+      continue;
+    }
+    const op = cariOperasiFn(langkah.idOperasi);
+    if (!op) {
+      galat.push(
+        `Operasi '${langkah.idOperasi}' pada langkah ${idx} tidak terdaftar di katalog`
+      );
+      continue;
+    }
+
+    const skemaMap = new Map((op.skemaParameter || []).map((s) => [s.id, s]));
+    const param = langkah.parameter || {};
+
+    // 1. Periksa ketiadaan kunci asing
+    for (const kunci of Object.keys(param)) {
+      if (!skemaMap.has(kunci)) {
+        galat.push(
+          `Kunci parameter asing '${kunci}' pada operasi '${langkah.idOperasi}' (langkah ${idx})`
+        );
+      }
+    }
+
+    // 2. Periksa tipe dan rentang parameter
+    for (const [kunci, skema] of skemaMap.entries()) {
+      if (kunci in param) {
+        const val = param[kunci];
+        if (skema.tipe === 'slider' || skema.tipe === 'angka') {
+          if (typeof val !== 'number' || !Number.isFinite(val)) {
+            galat.push(
+              `Parameter '${kunci}' pada '${langkah.idOperasi}' harus berupa angka finit, diterima: ${val}`
+            );
+          } else {
+            if (skema.min !== undefined && val < skema.min) {
+              galat.push(
+                `Nilai parameter '${kunci}' (${val}) kurang dari batas minimum (${skema.min})`
+              );
+            }
+            if (skema.max !== undefined && val > skema.max) {
+              galat.push(
+                `Nilai parameter '${kunci}' (${val}) melebihi batas maksimum (${skema.max})`
+              );
+            }
+          }
+        } else if (skema.tipe === 'pilihan') {
+          const opsiValid = (skema.pilihan || []).map((p) => p.nilai);
+          if (!opsiValid.includes(val)) {
+            galat.push(
+              `Nilai pilihan '${val}' untuk '${kunci}' tidak ada dalam daftar opsi valid`
+            );
+          }
+        }
+      }
+    }
+  }
+
+  return { valid: galat.length === 0, galat };
 }

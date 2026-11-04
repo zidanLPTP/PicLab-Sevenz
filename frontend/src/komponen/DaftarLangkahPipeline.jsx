@@ -97,7 +97,7 @@ export default function DaftarLangkahPipeline({
           <button
             type="button"
             onClick={saatKosongkanPipeline}
-            className="text-[11px] font-semibold text-bahaya hover:underline cursor-pointer flex items-center gap-1"
+            className="text-[11px] font-semibold text-teks-bahaya hover:underline cursor-pointer flex items-center gap-1"
             title={t('pipeline.resetSemua')}
           >
             <Trash2 size={11} />
@@ -223,7 +223,7 @@ export default function DaftarLangkahPipeline({
                       e.stopPropagation();
                       saatHapusLangkah(item.id);
                     }}
-                    className="p-1 rounded text-teks-redup hover:text-bahaya hover:bg-bahaya/10 transition-colors cursor-pointer"
+                    className="p-1 rounded text-teks-redup hover:text-teks-bahaya hover:bg-latar-bahaya transition-colors cursor-pointer"
                     title={t('pipeline.hapus')}
                     aria-label={`${t('pipeline.hapus')} ${namaOp}`}
                   >
