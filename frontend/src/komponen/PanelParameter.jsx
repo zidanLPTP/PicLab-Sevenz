@@ -6,11 +6,13 @@ import { BATASAN_BERKAS } from '../utilitas/konfigurasiBerkas';
 import { KONFIGURASI_PIPELINE } from '../utilitas/konfigurasiPipeline';
 import DaftarLangkahPipeline from './DaftarLangkahPipeline';
 import DaftarRiwayatPerubahan from './DaftarRiwayatPerubahan';
+import EditorMatriksKernel from './EditorMatriksKernel';
 import HistogramCitra from './HistogramCitra';
+import KartuBelajarOperasi from './KartuBelajarOperasi';
 
 /**
  * Panel Kanan Editor: Pengatur Rangkaian Pipeline, Parameter Langkah Terpilih,
- * Visualisasi Histogram, dan Daftar Riwayat Perubahan (Tahap 3).
+ * Editor Matriks Kernel, Kartu Belajar Konsep, Visualisasi Histogram, dan Riwayat (Tahap 4).
  */
 export default function PanelParameter({
   langkah = [],
@@ -191,6 +193,86 @@ export default function PanelParameter({
                   const nilai =
                     langkahTerpilih.parameter?.[skema.id] ?? skema.nilaiAwal;
 
+                  // Kontrol Khusus Matriks Kernel (Konvolusi)
+                  if (skema.tipe === 'matriks') {
+                    return (
+                      <div key={skema.id} className="space-y-1">
+                        <label className="font-semibold text-teks-utama text-xs block">
+                          {t(skema.kunciLabel)}
+                        </label>
+                        <EditorMatriksKernel
+                          parameter={langkahTerpilih.parameter || {}}
+                          saatUbahParameter={(paramBaru, isCoalescing) =>
+                            saatUbahParameter(
+                              langkahTerpilih.id,
+                              paramBaru,
+                              isCoalescing
+                            )
+                          }
+                          saatKomitParameter={() =>
+                            saatKomitParameter(langkahTerpilih.id)
+                          }
+                        />
+                      </div>
+                    );
+                  }
+
+                  // Kontrol Khusus Sakelar (Boolean Toggle)
+                  if (skema.tipe === 'sakelar') {
+                    return (
+                      <div
+                        key={skema.id}
+                        className="flex items-center justify-between py-1"
+                      >
+                        <label
+                          htmlFor={`param-${skema.id}`}
+                          className="font-semibold text-teks-utama text-xs cursor-pointer select-none"
+                        >
+                          {t(skema.kunciLabel)}
+                        </label>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={Boolean(nilai)}
+                          id={`param-${skema.id}`}
+                          data-testid={`sakelar-${skema.id}`}
+                          onClick={() => {
+                            const valBaru = !Boolean(nilai);
+                            saatUbahParameter(
+                              langkahTerpilih.id,
+                              {
+                                ...langkahTerpilih.parameter,
+                                [skema.id]: valBaru,
+                              },
+                              false
+                            );
+                            saatKomitParameter(langkahTerpilih.id);
+                          }}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primer focus:ring-offset-2 ${
+                            nilai ? 'bg-primer' : 'bg-garis-panel'
+                          }`}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                              nilai ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  // Jangan render kontrol ukuran jika sudah dikelola di dalam EditorMatriksKernel
+                  if (
+                    operasiTerpilih.id === 'konvolusi_kernel' &&
+                    (skema.id === 'ukuran' ||
+                      skema.id === 'pembagi' ||
+                      skema.id === 'offset')
+                  ) {
+                    return null;
+                  }
+
                   return (
                     <div key={skema.id} className="space-y-1.5">
                       <div className="flex justify-between items-center text-xs">
@@ -359,6 +441,11 @@ export default function PanelParameter({
                 <span>{t('panel.tanpaParameter')}</span>
               </div>
             )}
+
+            {/* Kartu Belajar Konsep & Rumus Operasi Terpilih (Tahap 4) */}
+            <div className="pt-2">
+              <KartuBelajarOperasi operasi={operasiTerpilih} />
+            </div>
           </div>
         )}
 
