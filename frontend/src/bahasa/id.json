@@ -93,6 +93,10 @@
       "ubahUkuran": {
         "nama": "Ubah Ukuran (Resize)",
         "deskripsi": "Mengubah resolusi dimensi citra dengan interpolasi geometris murni"
+      },
+      "inversiKustom": {
+        "nama": "Inversi Kustom",
+        "deskripsi": "Membalikkan warna secara parsial dengan intensitas dinamis"
       }
     },
     "warna": {
@@ -178,7 +182,8 @@
     "ekualisasiLuminans": "Luminans (Menjaga Warna)",
     "ekualisasiPerKanal": "Per Kanal RGB Independen",
     "persentilPangkas": "Persentil Pemangkasan Ekstrem",
-    "nilaiGamma": "Nilai Eksponen Gamma"
+    "nilaiGamma": "Nilai Eksponen Gamma",
+    "intensitas": "Intensitas Efek"
   },
   "galat": {
     "judul": "Gagal Memuat Berkas",

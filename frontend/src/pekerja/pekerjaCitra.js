@@ -5,10 +5,57 @@
 
 import {
   bersihkanParameter,
+  daftarkanOperasiBaru,
   dapatkanOperasiBerdasarkanId,
 } from '../mesin/katalogOperasi';
 
 self.onmessage = function (e) {
+  // Tangani pesan pendaftaran dinamis operasi baru (V6)
+  if (e.data?.tipe === 'DAFTARKAN_OPERASI') {
+    const { definisi } = e.data;
+    try {
+      if (!definisi || !definisi.id) {
+        throw new Error('Definisi operasi tidak memiliki ID.');
+      }
+      let fnTerapkan;
+      if (typeof definisi.terapkan === 'function') {
+        fnTerapkan = definisi.terapkan;
+      } else if (definisi.sumberFungsi) {
+        let str = definisi.sumberFungsi.trim();
+        if (
+          !str.startsWith('function') &&
+          !str.startsWith('(') &&
+          !str.includes('=>')
+        ) {
+          str = 'function ' + str;
+        }
+        // eslint-disable-next-line no-new-func
+        fnTerapkan = new Function('return (' + str + ')')();
+      } else {
+        throw new Error(
+          'Fungsi terapkan tidak ditemukan pada definisi operasi.'
+        );
+      }
+
+      daftarkanOperasiBaru({
+        ...definisi,
+        terapkan: fnTerapkan,
+      });
+
+      self.postMessage({
+        tipe: 'DAFTARKAN_OPERASI_SUKSES',
+        idOperasi: definisi.id,
+      });
+    } catch (err) {
+      self.postMessage({
+        tipe: 'DAFTARKAN_OPERASI_GAGAL',
+        idOperasi: definisi?.id,
+        pesanGalat: err.message,
+      });
+    }
+    return;
+  }
+
   const tWorkerMasuk = performance.now();
   const { idPermintaan, idOperasi, citra, parameter, tKirim } = e.data;
 

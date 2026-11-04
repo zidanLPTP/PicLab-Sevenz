@@ -7,12 +7,41 @@
 import {
   bersihkanParameter,
   dapatkanOperasiBerdasarkanId,
+  setSinkronisasiPekerjaCallback,
 } from '../mesin/katalogOperasi';
 import { BATASAN_BERKAS } from '../utilitas/konfigurasiBerkas';
 
 let instansPekerja = null;
 let idPermintaanBerjalan = 0;
 const penanganTertunda = new Map();
+const operasiDinamisTersimpan = [];
+
+/**
+ * Menyinkronkan definisi operasi ke Web Worker secara dinamis.
+ */
+function sinkronkanOperasiKeWorker(op) {
+  if (!operasiDinamisTersimpan.find((o) => o.id === op.id)) {
+    operasiDinamisTersimpan.push(op);
+  }
+  if (instansPekerja) {
+    instansPekerja.postMessage({
+      tipe: 'DAFTARKAN_OPERASI',
+      definisi: {
+        id: op.id,
+        kategori: op.kategori,
+        kunciNama: op.kunciNama,
+        kunciDeskripsi: op.kunciDeskripsi,
+        namaTeknis: op.namaTeknis,
+        skemaParameter: op.skemaParameter,
+        sumberFungsi:
+          typeof op.terapkan === 'function' ? op.terapkan.toString() : null,
+      },
+    });
+  }
+}
+
+// Pasang pendengar sinkronisasi ke katalog operasi
+setSinkronisasiPekerjaCallback(sinkronkanOperasiKeWorker);
 
 /**
  * Menginisialisasi Web Worker jika didukung peramban.
@@ -31,7 +60,17 @@ function dapatkanPekerja() {
         }
       );
 
+      // Sinkronkan seluruh operasi dinamis yang sudah terdaftar sebelumnya
+      for (const op of operasiDinamisTersimpan) {
+        sinkronkanOperasiKeWorker(op);
+      }
+
       instansPekerja.onmessage = function (e) {
+        // Abaikan sinyal balasan pendaftaran operasi dinamis
+        if (e.data?.tipe && e.data.tipe.startsWith('DAFTARKAN_OPERASI_')) {
+          return;
+        }
+
         const tWorkerKembali = performance.now();
         const {
           idPermintaan,

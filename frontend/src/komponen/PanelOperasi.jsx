@@ -1,9 +1,10 @@
 import { Search, Sparkles } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   dapatkanSemuaOperasi,
   KATEGORI_OPERASI,
+  langganRegistri,
 } from '../mesin/katalogOperasi';
 
 /**
@@ -13,8 +14,14 @@ import {
 export default function PanelOperasi({ operasiAktif, saatPilihOperasi }) {
   const { t } = useTranslation();
   const [kataKunci, setKataKunci] = useState('');
+  const [semuaOperasi, setSemuaOperasi] = useState(() => dapatkanSemuaOperasi());
 
-  const semuaOperasi = useMemo(() => dapatkanSemuaOperasi(), []);
+  // Langganan pembaruan registri operasi dinamis (V6)
+  useEffect(() => {
+    return langganRegistri((daftarBaru) => {
+      setSemuaOperasi([...daftarBaru]);
+    });
+  }, []);
 
   // Filter operasi berdasarkan kata kunci pencarian
   const operasiTersaring = useMemo(() => {

@@ -93,6 +93,10 @@
       "ubahUkuran": {
         "nama": "Resize",
         "deskripsi": "Resample image dimensions using pure geometric interpolation"
+      },
+      "inversiKustom": {
+        "nama": "Custom Inversion",
+        "deskripsi": "Partially inverts colors with dynamic intensity"
       }
     },
     "warna": {
@@ -178,7 +182,8 @@
     "ekualisasiLuminans": "Luminance (Preserves Color)",
     "ekualisasiPerKanal": "Independent RGB Channels",
     "persentilPangkas": "Extreme Percentile Clipping",
-    "nilaiGamma": "Gamma Exponent Value"
+    "nilaiGamma": "Gamma Exponent Value",
+    "intensitas": "Effect Intensity"
   },
   "galat": {
     "judul": "Failed to Load File",

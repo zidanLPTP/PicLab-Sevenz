@@ -83,6 +83,30 @@ export function dapatkanOperasiBerdasarkanId(id) {
 }
 
 /**
+ * Set penyimpan fungsi pendengar perubahan registri operasi.
+ */
+const pendengarRegistri = new Set();
+let sinkronisasiPekerjaCallback = null;
+
+/**
+ * Mendaftarkan callback untuk sinkronisasi operasi ke Web Worker.
+ * @param {(operasi: object) => void} cb
+ */
+export function setSinkronisasiPekerjaCallback(cb) {
+  sinkronisasiPekerjaCallback = cb;
+}
+
+/**
+ * Berlangganan terhadap penambahan atau perubahan registri operasi.
+ * @param {(semuaOperasi: Array<object>) => void} cb
+ * @returns {() => void} fungsi berhenti langganan
+ */
+export function langganRegistri(cb) {
+  pendengarRegistri.add(cb);
+  return () => pendengarRegistri.delete(cb);
+}
+
+/**
  * Mendaftarkan operasi citra baru secara dinamis ke dalam registri.
  * @param {object} operasiBaru
  */
@@ -95,6 +119,21 @@ export function daftarkanOperasiBaru(operasiBaru) {
     REGISTRI_OPERASI[indeks] = operasiBaru;
   } else {
     REGISTRI_OPERASI.push(operasiBaru);
+  }
+
+  // Notifikasi seluruh pendengar antarmuka
+  const semua = dapatkanSemuaOperasi();
+  for (const cb of pendengarRegistri) {
+    try {
+      cb(semua);
+    } catch (e) {
+      console.error('Galat pendengar registri operasi:', e);
+    }
+  }
+
+  // Sinkronkan ke Web Worker jika callback terpasang
+  if (sinkronisasiPekerjaCallback) {
+    sinkronisasiPekerjaCallback(operasiBaru);
   }
 }
 
