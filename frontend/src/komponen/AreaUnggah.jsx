@@ -48,18 +48,18 @@ export default function AreaUnggah({
         {/* Tampilan Galat Jika Validasi Gagal */}
         {pesanGalat && (
           <div
-            className="mb-6 p-4 bg-latar-galat border border-red-200 rounded-lg text-status-galat shadow-sm animate-fade-in"
+            className="mb-6 p-4 bg-latar-galat border border-garis-galat rounded-lg text-status-galat shadow-sm animate-fade-in"
             role="alert"
           >
             <div className="flex items-start gap-3">
               <AlertTriangle size={20} className="shrink-0 mt-0.5" />
               <div className="flex-1 text-sm">
                 <p className="font-bold">{t('galat.judul')}</p>
-                <p className="mt-1 text-red-700">{pesanGalat}</p>
+                <p className="mt-1 text-teks-galat-terang">{pesanGalat}</p>
                 <button
                   type="button"
                   onClick={saatResetGalat}
-                  className="mt-3 text-xs font-semibold text-red-800 underline hover:text-red-900 cursor-pointer"
+                  className="mt-3 text-xs font-semibold text-teks-galat underline hover:text-teks-utama cursor-pointer"
                 >
                   {t('galat.tombolCobaLagi')}
                 </button>
@@ -76,7 +76,7 @@ export default function AreaUnggah({
           className={`relative border-2 border-dashed rounded-xl p-8 sm:p-12 text-center transition-all bg-white ${
             sedangDrag
               ? 'border-primer bg-primer-lembut/60 scale-[1.01] shadow-md'
-              : 'border-garis-panel hover:border-slate-300 shadow-sm'
+              : 'border-garis-panel hover:border-garis-subtil shadow-sm'
           }`}
         >
           {/* Input Berkas Tersembunyi */}
@@ -100,7 +100,7 @@ export default function AreaUnggah({
           ) : (
             /* Keadaan Kosong Normal */
             <div className="flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-primer mb-4">
+              <div className="w-16 h-16 rounded-full bg-latar-sorot flex items-center justify-center text-primer mb-4">
                 <UploadCloud size={32} className="stroke-[1.75]" />
               </div>
 

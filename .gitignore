@@ -30,6 +30,7 @@ htmlcov/
 test-results/
 playwright-report/
 tangkapan-layar/
+test-assets/
 
 # IDE & Editor
 .vscode/
@@ -40,3 +41,4 @@ tangkapan-layar/
 # Sistem Operasi
 .DS_Store
 Thumbs.db
+

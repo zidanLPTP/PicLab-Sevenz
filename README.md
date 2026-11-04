@@ -49,13 +49,24 @@ PicLab-Sevenz/
 │   │   │   ├── AreaUnggah.jsx
 │   │   │   ├── BilahAksiKanvas.jsx
 │   │   │   ├── BilahAtas.jsx
+│   │   │   ├── HistogramCitra.jsx
 │   │   │   ├── ModalPrivasi.jsx
 │   │   │   ├── PanelOperasi.jsx
 │   │   │   ├── PanelParameter.jsx
 │   │   │   └── PenggeserSebelumSesudah.jsx
 │   │   ├── halaman/     # Halaman aplikasi
-│   │   ├── mesin/       # Algoritma pemrosesan citra klien
-│   │   ├── pekerja/     # Web Worker untuk komputasi berat
+│   │   ├── mesin/       # Algoritma pemrosesan citra klien murni
+│   │   │   ├── utilitasCitra.js
+│   │   │   ├── dasar.js
+│   │   │   ├── warna.js
+│   │   │   ├── enhancement.js
+│   │   │   ├── fixtureOperasiInversi.js
+│   │   │   └── katalogOperasi.js
+│   │   ├── tema/        # Sumber kebenaran tunggal token desain
+│   │   │   └── token.js
+│   │   ├── pekerja/     # Web Worker untuk pemrosesan citra non-blocking
+│   │   │   ├── pekerjaCitra.js
+│   │   │   └── pengelolaPekerja.js
 │   │   ├── hook/        # Kustom React Hook
 │   │   ├── bahasa/      # Berkas internasionalisasi (id.json & en.json)
 │   │   ├── gaya/        # Gaya visual & utilitas CSS
@@ -143,6 +154,11 @@ npm --prefix frontend test
 npx playwright test
 ```
 
+### Benchmark Kinerja 17 Operasi & Latensi Slider:
+```bash
+npm run benchmark
+```
+
 ### Pengujian Backend (pytest):
 ```bash
 cd backend
@@ -168,4 +184,5 @@ cd ..
 
 - [x] **Tahap 0 — Fondasi repo** (Struktur repositori, Vite + React + Tailwind, FastAPI + endpoint `/kesehatan`, pengujian Vitest dan pytest, konfigurasi CI).
 - [x] **Tahap 1 — Kerangka editor dan sistem desain** (Sistem desain UI UX PRO MAX, token Tailwind, logo SVG & favicon, layout tiga area, validasi berkas klien OWASP, slider sebelum/sesudah, zoom/pan kanvas, unduh resolusi penuh, i18n ID/EN, pengujian Vitest dan E2E Playwright).
-- [ ] **Tahap 2 — Mesin operasi klien: dasar, warna, enhancement** *(tahap berikutnya)*.
+- [x] **Tahap 2 — Mesin operasi klien: dasar, warna, enhancement** (Arsitektur fungsi murni `{ data, width, height }`, 17 operasi citra bawaan, Web Worker dengan pola "permintaan terbaru menang", preview responsif batas 1024 px, unduh resolusi penuh multi-format, visualisasi histogram RGB & luminans SVG mandiri, registri dinamis ekstensibel).
+- [ ] **Tahap 3 — Pipeline operasi, riwayat, undo/redo, dan preset** *(tahap berikutnya)*.

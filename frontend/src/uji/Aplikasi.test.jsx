@@ -18,9 +18,9 @@ describe('Komponen Utama Aplikasi (Tahap 1 Kerangka Editor)', () => {
       screen.getByText(/aplikasi pengolahan citra digital/i)
     ).toBeInTheDocument();
 
-    // Tautan Belajar (Nonaktif dengan penjelasan)
+    // Tautan Belajar (Nonaktif dengan penjelasan segera hadir)
     const tombolBelajar = screen.getByRole('button', {
-      name: /belajar \(tahap 9\)/i,
+      name: /^belajar$/i,
     });
     expect(tombolBelajar).toBeDisabled();
 
@@ -31,7 +31,9 @@ describe('Komponen Utama Aplikasi (Tahap 1 Kerangka Editor)', () => {
 
     // Panel Kiri dan Kanan (Kerangka rapi)
     expect(screen.getByText(/katalog operasi citra/i)).toBeInTheDocument();
-    expect(screen.getByText(/parameter & riwayat/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /parameter/i })
+    ).toBeInTheDocument();
 
     // Keadaan kosong area unggah
     expect(
@@ -72,7 +74,7 @@ describe('Komponen Utama Aplikasi (Tahap 1 Kerangka Editor)', () => {
     ).toBeInTheDocument();
   });
 
-  it('dapat membuka dan menutup dialog informasi privasi', () => {
+  it('dapat membuka dan menutup dialog informasi privasi serta merespons tombol Escape', () => {
     render(<Aplikasi />);
 
     // Klik tombol Privasi
@@ -82,17 +84,36 @@ describe('Komponen Utama Aplikasi (Tahap 1 Kerangka Editor)', () => {
     // Modal dialog muncul
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeInTheDocument();
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
     expect(
       screen.getByText(/privasi & keamanan data pengguna/i)
     ).toBeInTheDocument();
 
-    // Klik tombol tutup
+    // Tekan tombol Escape untuk menutup dialog
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    // Modal dialog tertutup
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('mengembalikan fokus ke elemen pemicu saat dialog ditutup', async () => {
+    render(<Aplikasi />);
+
+    const tombolPrivasi = screen.getByRole('button', { name: /privasi/i });
+    tombolPrivasi.focus();
+    expect(document.activeElement).toBe(tombolPrivasi);
+
+    // Buka modal
+    fireEvent.click(tombolPrivasi);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    // Tutup modal via tombol Tutup
     const tombolTutup = screen.getByRole('button', {
       name: /mengerti dan tutup/i,
     });
     fireEvent.click(tombolTutup);
 
-    // Modal dialog tertutup
+    // Fokus kembali ke tombol pemicu
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

@@ -5,15 +5,16 @@
   "description": "Aplikasi Pengolahan Citra Digital PicLab Sevenz",
   "scripts": {
     "dev:frontend": "npm --prefix frontend run dev",
-    "dev:backend": "python backend/main.py",
+    "dev:backend": "backend\\.venv\\Scripts\\python.exe backend/main.py",
     "build:frontend": "npm --prefix frontend run build",
     "lint:frontend": "npm --prefix frontend run lint",
-    "lint:backend": "ruff check backend",
+    "lint:backend": "backend\\.venv\\Scripts\\ruff.exe check backend",
     "lint": "npm run lint:frontend && npm run lint:backend",
     "test:frontend": "npm --prefix frontend test",
-    "test:backend": "pytest backend/uji",
+    "test:backend": "backend\\.venv\\Scripts\\pytest.exe backend/uji",
     "test:e2e": "playwright test",
-    "test": "npm run test:frontend && npm run test:backend && npm run test:e2e"
+    "test": "npm run test:frontend && npm run test:backend && npm run test:e2e",
+    "benchmark": "node -e \"process.env.RUN_BENCHMARK='1'; require('child_process').spawnSync('npx', ['playwright', 'test', 'e2e/benchmarkKomprehensifV3.spec.js'], { stdio: 'inherit', shell: true })\""
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1"

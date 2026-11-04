@@ -2,15 +2,15 @@
   "navigasi": {
     "judulAplikasi": "PicLab Sevenz",
     "deskripsiAplikasi": "Digital Image Processing Application",
-    "tautanBelajar": "Learn (Phase 9)",
-    "keteranganBelajar": "Available in Phase 9",
+    "tautanBelajar": "Learn",
+    "keteranganBelajar": "Coming soon",
     "tautanPrivasi": "Privacy",
     "pilihBahasa": "Language"
   },
   "privasi": {
     "judul": "User Data Privacy & Security",
     "poin1": "Client-side image processing runs entirely inside your browser's memory. Your images never leave your local device.",
-    "poin2": "When server operations are enabled in later phases, images are only sent temporarily for in-memory computation and immediately discarded after the response finishes. We never store your images on disk or database.",
+    "poin2": "When server operations are enabled, images are only sent temporarily for in-memory computation and immediately discarded after the response finishes. We never store your images on disk or database.",
     "poin3": "Zero personal tracking, user accounts, or third-party analytics.",
     "tombolTutup": "Understood and Close"
   },
@@ -43,11 +43,147 @@
     "formatUnduh": "Format:",
     "unduhBerhasil": "Image successfully downloaded!"
   },
+  "kategori": {
+    "dasar": "Basic Operations",
+    "warna": "Color Operations",
+    "enhancement": "Image Enhancement"
+  },
   "panel": {
     "judulOperasi": "Operation Catalog",
-    "kosongOperasi": "Image operations will be implemented in Phase 2 (color, contrast, basic) and Phase 4 (binary, convolution, edges).",
-    "judulParameter": "Parameters & History",
-    "kosongParameter": "Parameter tuning and operation history (undo/redo) will activate once image operations are applied."
+    "kosongOperasi": "Select an image operation to view and adjust parameters.",
+    "cariOperasiPlaceholder": "Search operation name...",
+    "judulParameter": "Operation Parameters",
+    "kosongParameter": "Select an operation from the left panel to begin tuning processing parameters.",
+    "setelUlang": "Reset Parameters",
+    "judulHistogram": "Image Histogram",
+    "infoSatuOperasi": "One active operation at a time (applied directly to original image).",
+    "peringatanBatasDimensiJudul": "Safe Dimension Limit Warning",
+    "peringatanBatasDimensiDeskripsi": "Input values exceed maximum limit ({{maksSisi}} px per side or {{maksTotal}} total). Effective dimensions are clamped to {{lebar}} × {{tinggi}} px to prevent out-of-memory."
+  },
+  "operasi": {
+    "dasar": {
+      "kecerahan": {
+        "nama": "Brightness",
+        "deskripsi": "Adjust overall lightness or darkness of the image"
+      },
+      "kontras": {
+        "nama": "Contrast",
+        "deskripsi": "Enhance the difference between light and dark regions"
+      },
+      "negatif": {
+        "nama": "Negative",
+        "deskripsi": "Invert all photometric pixel intensity values"
+      },
+      "grayscale": {
+        "nama": "Grayscale",
+        "deskripsi": "Convert color image to grayscale using Rec.601 standard weights"
+      },
+      "flip": {
+        "nama": "Flip",
+        "deskripsi": "Reflect image orientation horizontally or vertically"
+      },
+      "rotasi": {
+        "nama": "Rotate 90°",
+        "deskripsi": "Rotate image by multiples of 90, 180, or 270 degrees"
+      },
+      "crop": {
+        "nama": "Crop",
+        "deskripsi": "Crop a rectangular sub-region by numeric coordinates"
+      },
+      "ubahUkuran": {
+        "nama": "Resize",
+        "deskripsi": "Resample image dimensions using pure geometric interpolation"
+      },
+      "inversiKustom": {
+        "nama": "Custom Inversion",
+        "deskripsi": "Partially inverts colors with dynamic intensity"
+      }
+    },
+    "warna": {
+      "pisahKanal": {
+        "nama": "RGB Channel Split",
+        "deskripsi": "Isolate Red, Green, or Blue channel in colored or grayscale mode"
+      },
+      "ruangWarna": {
+        "nama": "Color Space",
+        "deskripsi": "Decompose image into HSV color space channels or Grayscale"
+      },
+      "saturasi": {
+        "nama": "Saturation",
+        "deskripsi": "Adjust the intensity and richness of color hues"
+      },
+      "hue": {
+        "nama": "Hue Shift",
+        "deskripsi": "Rotate color angle along the HSV color spectrum circle"
+      },
+      "sepia": {
+        "nama": "Sepia Effect",
+        "deskripsi": "Apply a warm vintage sepia photographic tone"
+      },
+      "balance": {
+        "nama": "Color Balance",
+        "deskripsi": "Independently adjust gains for Red, Green, and Blue channels"
+      }
+    },
+    "enhancement": {
+      "ekualisasi": {
+        "nama": "Histogram Equalization",
+        "deskripsi": "Flatten pixel intensity CDF distribution to boost global contrast"
+      },
+      "pereganganKontras": {
+        "nama": "Contrast Stretching",
+        "deskripsi": "Normalize min-max dynamic range with percentile clipping"
+      },
+      "gamma": {
+        "nama": "Gamma Correction",
+        "deskripsi": "Adjust non-linear power-law photometric luminance response"
+      }
+    }
+  },
+  "parameter": {
+    "kecerahan": "Brightness Level",
+    "kontras": "Contrast Level",
+    "arahFlip": "Flip Direction",
+    "horizontal": "Horizontal",
+    "vertikal": "Vertical",
+    "keduanya": "Both Axes",
+    "sudutRotasi": "Rotation Angle",
+    "rotasi90": "90° Clockwise",
+    "rotasi180": "180° Full Turn",
+    "rotasi270": "270° Counter-Clockwise",
+    "posisiX": "X Position (Pixels)",
+    "posisiY": "Y Position (Pixels)",
+    "lebarPotong": "Crop Width",
+    "tinggiPotong": "Crop Height",
+    "lebarBaru": "New Width",
+    "tinggiBaru": "New Height",
+    "metodeInterpolasi": "Interpolation Method",
+    "bilinear": "Bilinear (Smooth)",
+    "tetanggaTerdekat": "Nearest Neighbor (Sharp)",
+    "pilihKanal": "Selected Channel",
+    "kanalMerah": "Red Channel (R)",
+    "kanalHijau": "Green Channel (G)",
+    "kanalBiru": "Blue Channel (B)",
+    "modeTampil": "Display Mode",
+    "tampilKeabuan": "Grayscale Level",
+    "tampilBerwarna": "Colored Isolation",
+    "pilihRuangWarna": "Select Color Space Channel",
+    "ruangGrayscale": "Luminance (Grayscale)",
+    "ruangHsvH": "Hue (Color Spectrum)",
+    "ruangHsvS": "Saturation (Richness)",
+    "ruangHsvV": "Value (Brightness)",
+    "saturasi": "Saturation Intensity",
+    "pergeseranHue": "Hue Rotation Degrees",
+    "intensitasSepia": "Sepia Intensity",
+    "penguatanMerah": "Red Gain (R)",
+    "penguatanHijau": "Green Gain (G)",
+    "penguatanBiru": "Blue Gain (B)",
+    "modeEkualisasi": "Equalization Mode",
+    "ekualisasiLuminans": "Luminance (Preserves Color)",
+    "ekualisasiPerKanal": "Independent RGB Channels",
+    "persentilPangkas": "Extreme Percentile Clipping",
+    "nilaiGamma": "Gamma Exponent Value",
+    "intensitas": "Effect Intensity"
   },
   "galat": {
     "judul": "Failed to Load File",
