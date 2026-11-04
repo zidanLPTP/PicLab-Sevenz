@@ -4,6 +4,29 @@ Semua perubahan penting pada proyek **PicLab Sevenz** akan didokumentasikan dala
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/) dan mengikuti prinsip [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.5.0] - 2026-11-04
+
+### Ditambahkan
+- **Mesin Operasi Spasial, Biner, & Konvolusi Murni (Tahap 4 — Penutupan MVP)**:
+  - 13 Operasi Citra Baru terdaftar di katalog bawaan (total 30 operasi):
+    - *Citra Biner*: `biner_manual` (ambang luminans Rec.601), `biner_otsu` (pengambangan optimal variansi antar-kelas dengan tie-breaker variansi seri), `biner_adaptif` (Mean-C lokal dinamis menggunakan Summed-Area Table / Citra Integral $O(1)$).
+    - *Smoothing*: `halus_mean` (penapis kotak integral $O(1)$ berkinerja independen terhadap radius), `halus_gaussian` (konvolusi separabel 1D horizontal lalu vertikal untuk efisiensi $O(2K)$), `halus_median` (penapis peringkat bebas alokasi per piksel, 3×3 dengan *sorting network* dan 5×5 dengan *insertion sort*).
+    - *Sharpening*: `tajam_unsharp` (penajaman mikrokontras berbasis selisih masker kabur Gaussian dengan ambang tonal), `tajam_kernel` (penajaman Laplacian diskrit 4-tetangga dan 8-tetangga).
+    - *Konvolusi Spasial*: `konvolusi_kernel` (konvolusi 2D sejati dengan pemutaran 180° terbukti matematis, replikasi piksel tepi, pembagi dinamis, dan offset bias).
+    - *Deteksi Tepi*: `tepi_sobel` (gradien diferensial terbobot), `tepi_prewitt` (gradien seragam), `tepi_roberts` (gradien diagonal 2×2), `tepi_laplacian` (turunan kedua isotropik untuk menemukan *zero-crossing*).
+  - Sanitasi dan penjepitan ketat parameter spasial (`KONFIGURASI_SPASIAL`): batas elemen matriks $[-100, 100]$, radius mean $[1, 50]$, sigma $[0.1, 30.0]$, jendela adaptif ganjil $[3, 151]$, dan penguatan tepi $[0.1, 10.0]$ (OWASP & ketahanan memori).
+- **Editor Matriks Kernel Interaktif & Aksesibel**:
+  - Komponen `EditorMatriksKernel.jsx` mendukung matriks 3×3 dan 5×5 dengan navigasi keyboard panah 2D (`ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`), komit pada Enter/blur, tombol ganti ukuran adaptif berpusat, dropdown 9 preset kernel standar, kalkulator jumlah bobot otomatis, serta umpan balik kesalahan non-warna (ikon + teks pesan WAI-ARIA `aria-invalid`).
+- **Kartu Belajar Konsep Akademis Dwibahasa**:
+  - Komponen `KartuBelajarOperasi.jsx` berupa akordion lipat (*collapsible*, default tertutup) di bilah kanan yang menampilkan nama akademis teknis, tujuan & kapan digunakan, rumus matematika notasi Unicode murni (tanpa dependensi pustaka berat), dan rincian parameter dwibahasa (ID & EN).
+- **Preset Tambahan untuk Pengguna Awam**:
+  - 3 preset baru: `pertajam` (Unsharp Masking), `siluet_tepi` (Sobel kontur terinversi), dan `hapus_noise` (Median filter) melengkapi total 8 preset siap pakai.
+- **Pengujian & Tolok Ukur Kinerja**:
+  - 28 pengujian unit baru di `frontend/src/uji/mesinTahap4.test.js` mencakup perhitungan manual citra sintetis kecil, pembuktian rotasi 180° konvolusi sejati vs korelasi, replikasi tepi, stabilitas Otsu pada citra datar, uji kasus batas 1×1 dan 2×2, serta verifikasi immutability dan preservasi kanal alfa pada seluruh 30 operasi.
+  - 8 pengujian E2E Playwright di `e2e/tahap4.spec.js` memvalidasi alur unggah citra tangga kontras, Otsu biner, Sobel, editor matriks 5×5, undo/redo matriks, preset, alur bilingual, keyboard accessibility, dan verifikasi MVP mandiri tanpa backend (0 network requests).
+  - Seluruh pengujian E2E terverifikasi stabil tanpa *flakiness* (24 dari 24 uji lolos pada 3 pengulangan).
+  - Tangkapan layar QA visual di `tangkapan-layar/` pada resolusi 1920×1080 dan 1280×800 untuk bahasa Indonesia dan Inggris.
+
 ## [0.4.0] - 2026-11-04
 
 ### Ditambahkan

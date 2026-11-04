@@ -49,18 +49,31 @@ PicLab-Sevenz/
 │   │   │   ├── AreaUnggah.jsx
 │   │   │   ├── BilahAksiKanvas.jsx
 │   │   │   ├── BilahAtas.jsx
+│   │   │   ├── DaftarLangkahPipeline.jsx
+│   │   │   ├── DaftarRiwayatPerubahan.jsx
+│   │   │   ├── EditorMatriksKernel.jsx
 │   │   │   ├── HistogramCitra.jsx
+│   │   │   ├── KartuBelajarOperasi.jsx
 │   │   │   ├── ModalPrivasi.jsx
 │   │   │   ├── PanelOperasi.jsx
 │   │   │   ├── PanelParameter.jsx
 │   │   │   └── PenggeserSebelumSesudah.jsx
 │   │   ├── halaman/     # Halaman aplikasi
-│   │   ├── mesin/       # Algoritma pemrosesan citra klien murni
+│   │   ├── mesin/       # Algoritma pemrosesan citra klien murni (30 operasi)
 │   │   │   ├── utilitasCitra.js
 │   │   │   ├── dasar.js
 │   │   │   ├── warna.js
 │   │   │   ├── enhancement.js
-│   │   │   ├── fixtureOperasiInversi.js
+│   │   │   ├── biner.js
+│   │   │   ├── smoothing.js
+│   │   │   ├── sharpening.js
+│   │   │   ├── konvolusi.js
+│   │   │   ├── tepi.js
+│   │   │   ├── spasial/
+│   │   │   │   └── utilitasKonvolusi.js
+│   │   │   ├── preset.js
+│   │   │   ├── eksekutorPipeline.js
+│   │   │   ├── pipeline.js
 │   │   │   └── katalogOperasi.js
 │   │   ├── tema/        # Sumber kebenaran tunggal token desain
 │   │   │   └── token.js
@@ -70,7 +83,7 @@ PicLab-Sevenz/
 │   │   ├── hook/        # Kustom React Hook
 │   │   ├── bahasa/      # Berkas internasionalisasi (id.json & en.json)
 │   │   ├── gaya/        # Gaya visual & utilitas CSS
-│   │   ├── utilitas/    # Validasi berkas biner (OWASP) & konfigurasi batas
+│   │   ├── utilitas/    # Validasi berkas biner (OWASP) & batas konfigurasi
 │   │   ├── uji/         # Pengujian frontend (Vitest + RTL)
 │   │   ├── Aplikasi.jsx # Komponen akar antarmuka editor tiga area
 │   │   └── main.jsx     # Titik masuk render React
@@ -154,9 +167,9 @@ npm --prefix frontend test
 npx playwright test
 ```
 
-### Benchmark Kinerja 17 Operasi & Latensi Slider:
+### Benchmark Kinerja & Pengujian Latensi Spasial:
 ```bash
-npm run benchmark
+$env:RUN_BENCHMARK="true"; npx playwright test e2e/benchmarkTahap4.spec.js
 ```
 
 ### Pengujian Backend (pytest):
@@ -185,4 +198,6 @@ cd ..
 - [x] **Tahap 0 — Fondasi repo** (Struktur repositori, Vite + React + Tailwind, FastAPI + endpoint `/kesehatan`, pengujian Vitest dan pytest, konfigurasi CI).
 - [x] **Tahap 1 — Kerangka editor dan sistem desain** (Sistem desain UI UX PRO MAX, token Tailwind, logo SVG & favicon, layout tiga area, validasi berkas klien OWASP, slider sebelum/sesudah, zoom/pan kanvas, unduh resolusi penuh, i18n ID/EN, pengujian Vitest dan E2E Playwright).
 - [x] **Tahap 2 — Mesin operasi klien: dasar, warna, enhancement** (Arsitektur fungsi murni `{ data, width, height }`, 17 operasi citra bawaan, Web Worker dengan pola "permintaan terbaru menang", preview responsif batas 1024 px, unduh resolusi penuh multi-format, visualisasi histogram RGB & luminans SVG mandiri, registri dinamis ekstensibel).
-- [ ] **Tahap 3 — Pipeline operasi, riwayat, undo/redo, dan preset** *(tahap berikutnya)*.
+- [x] **Tahap 3 — Pipeline operasi, riwayat, undo/redo, dan preset** (Tumpukan operasi non-destruktif berantai, reducer deterministik, riwayat snapshot ringan ~55 KB / 100 snapshot, prefix caching di worker, reorder seret & keyboard ARIA live, 5 preset awal).
+- [x] **Tahap 4 — Biner, konvolusi, smoothing, sharpening, deteksi tepi dasar (Penutupan MVP)** (13 operasi spasial/konvolusi baru total 30 operasi, konvolusi sejati pemutaran 180°, editor matriks 3×3 & 5×5 navigasi panah keyboard, kartu belajar konsep akademis dwibahasa, 3 preset baru, verifikasi standalone 0 network requests ke server).
+- [ ] **Tahap 5 — Integrasi backend, Canny, dan operasi server pertama** *(tahap berikutnya)*.
