@@ -131,14 +131,16 @@ Keputusan desain ini dihasilkan melalui skill **UI UX PRO MAX** berdasarkan anal
 
 ## 7. Komponen Inti (diisi di Tahap 1 dan dilengkapi di tahap berikutnya)
 
-Daftar komponen yang dibangun pada Tahap 1 dan Tahap 2:
+Daftar komponen yang dibangun pada Tahap 1, Tahap 2, dan Tahap 3:
 - `BilahAtas.jsx`: Bilah atas memuat logo PicLab Sevenz, pemilih bahasa (ID/EN), tautan Belajar (nonaktif dengan status jelas "Segera hadir"), dan tautan Privasi (membuka dialog informasi privasi).
 - `ModalPrivasi.jsx`: Dialog penjelasan privasi transparan dengan penguncian fokus (focus trap), penutupan tombol Escape, dan pengembalian fokus ke elemen pemicu.
-- `PanelOperasi.jsx`: Panel kiri editor yang menampilkan katalog operasi terstruktur per kategori (Dasar, Warna, Enhancement) lengkap dengan pencarian nama operasi ramah pengguna.
-- `PanelParameter.jsx`: Panel kanan editor yang merender kontrol parameter secara dinamis sesuai skema operasi (slider sinkron dengan input angka, pilihan, sakelar), tombol setel ulang, dan histogram citra lipat.
+- `PanelOperasi.jsx`: Panel kiri editor yang menampilkan 5 preset awal siap pakai (Hitam Putih, Kontras Tinggi, Hangat Klasik, Perbaiki Otomatis, Negatif) serta katalog operasi terstruktur per kategori (Dasar, Warna, Enhancement) dengan tombol "Tambah ke Pipeline" dan pencarian instan.
+- `PanelParameter.jsx`: Panel kanan editor yang merender kontrol parameter secara dinamis untuk langkah terpilih di pipeline (slider sinkron dengan input angka, pilihan, sakelar), integrasi komponen `DaftarLangkahPipeline`, `DaftarRiwayatPerubahan`, dan histogram citra lipat.
+- `DaftarLangkahPipeline.jsx`: Tumpukan operasi pipeline non-destruktif dengan nomor urut, penataan ulang langkah interaktif (seret-lepas HTML5 dan tombol naik/turun berbasis keyboard dengan pengumuman ARIA live `[data-testid="aria-pengumuman-pipeline"]`), sakelar aktif/nonaktif tanpa menghapus parameter, tombol hapus langkah, penanda langkah aktif terpilih, dan keadaan kosong dengan ajakan bertindak.
+- `DaftarRiwayatPerubahan.jsx`: Riwayat modifikasi berbasis tumpukan snapshot konfigurasi murni (ringan memori, <50 KB untuk 100 snapshot tanpa klona piksel bitmap). Berbentuk akordion kolapsibel, dapat melompat ke snapshot masa lalu/depan, dan menampilkan penanda posisi aktif.
 - `AreaKanvas.jsx`: Kanvas interaktif tengah dengan dukungan zoom roda mouse, tombol zoom (+, -, 100%, pas layar), geser (pan), dan ramah keyboard.
 - `PenggeserSebelumSesudah.jsx`: Komponen slider pembanding sebelum dan sesudah dengan bilah pemisah interaktif, label terbaca, dan atribut ARIA lengkap (`role="slider"`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax`).
-- `BilahAksiKanvas.jsx`: Bilah kontrol di bawah kanvas untuk menampilkan informasi berkas (nama citra, dimensi sebelum/sesudah, ukuran), tombol ganti citra, dan opsi unduh citra (PNG, JPG, WebP).
+- `BilahAksiKanvas.jsx`: Bilah kontrol di bawah kanvas untuk menampilkan informasi berkas (nama citra, dimensi sebelum/sesudah, ukuran), tombol ganti citra, tombol Undo & Redo (dengan status disable di ujung tumpukan), dan opsi unduh citra resolusi penuh (PNG, JPG, WebP).
 - `AreaUnggah.jsx`: Keadaan kosong editor yang menyediakan area seret-lepas (*drag and drop*), tombol jelajah berkas, rincian batasan format/ukuran, dan tombol jalan pintas untuk memuat gambar contoh.
 - `HistogramCitra.jsx`: Visualisasi frekuensi piksel kanal RGB dan Luminans mandiri berbasis SVG murni tanpa pustaka grafik eksternal.
 
