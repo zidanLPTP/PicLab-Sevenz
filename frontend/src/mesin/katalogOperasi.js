@@ -4,6 +4,8 @@
  * tanpa eval/new Function (kepatuhan OWASP & Agent.md bagian 7).
  */
 
+import { KONFIGURASI_SPASIAL } from '../utilitas/konfigurasiPipeline';
+
 import {
   operasiCrop,
   operasiFlip,
@@ -15,11 +17,6 @@ import {
   operasiUbahUkuran,
 } from './dasar';
 import {
-  operasiEkualisasi,
-  operasiGamma,
-  operasiPereganganKontras,
-} from './enhancement';
-import {
   operasiBalanceWarna,
   operasiHue,
   operasiPisahKanal,
@@ -27,21 +24,52 @@ import {
   operasiSaturasi,
   operasiSepia,
 } from './warna';
+import {
+  operasiEkualisasi,
+  operasiGamma,
+  operasiPereganganKontras,
+} from './enhancement';
+import {
+  operasiBinerAdaptif,
+  operasiBinerManual,
+  operasiBinerOtsu,
+} from './biner';
+import {
+  operasiHalusGaussian,
+  operasiHalusMean,
+  operasiHalusMedian,
+} from './smoothing';
+import {
+  operasiTajamKernel,
+  operasiTajamUnsharp,
+} from './sharpening';
+import { operasiKonvolusiKernel } from './konvolusi';
+import {
+  operasiTepiLaplacian,
+  operasiTepiPrewitt,
+  operasiTepiRoberts,
+  operasiTepiSobel,
+} from './tepi';
 
 /**
- * Daftar kategori operasi citra.
+ * Daftar kategori operasi citra (spec.md bagian 4).
  */
 export const KATEGORI_OPERASI = [
   { id: 'dasar', kunciLabel: 'kategori.dasar' },
   { id: 'warna', kunciLabel: 'kategori.warna' },
   { id: 'enhancement', kunciLabel: 'kategori.enhancement' },
+  { id: 'biner', kunciLabel: 'kategori.biner' },
+  { id: 'smoothing', kunciLabel: 'kategori.smoothing' },
+  { id: 'sharpening', kunciLabel: 'kategori.sharpening' },
+  { id: 'konvolusi', kunciLabel: 'kategori.konvolusi' },
+  { id: 'tepi', kunciLabel: 'kategori.tepi' },
 ];
 
 /**
- * Registri internal operasi citra bawaan.
+ * Registri internal operasi citra bawaan (30 operasi pada MVP Tahap 4).
  */
 const REGISTRI_OPERASI = [
-  // 1. Operasi Dasar
+  // 1. Operasi Dasar (8)
   operasiKecerahan,
   operasiKontras,
   operasiNegatif,
@@ -51,7 +79,7 @@ const REGISTRI_OPERASI = [
   operasiCrop,
   operasiUbahUkuran,
 
-  // 2. Operasi Warna
+  // 2. Operasi Warna (6)
   operasiPisahKanal,
   operasiRuangWarna,
   operasiSaturasi,
@@ -59,10 +87,33 @@ const REGISTRI_OPERASI = [
   operasiSepia,
   operasiBalanceWarna,
 
-  // 3. Operasi Enhancement
+  // 3. Operasi Enhancement (3)
   operasiEkualisasi,
   operasiPereganganKontras,
   operasiGamma,
+
+  // 4. Operasi Biner (3)
+  operasiBinerManual,
+  operasiBinerOtsu,
+  operasiBinerAdaptif,
+
+  // 5. Operasi Smoothing (3)
+  operasiHalusMean,
+  operasiHalusGaussian,
+  operasiHalusMedian,
+
+  // 6. Operasi Sharpening (2)
+  operasiTajamUnsharp,
+  operasiTajamKernel,
+
+  // 7. Operasi Konvolusi (1)
+  operasiKonvolusiKernel,
+
+  // 8. Operasi Deteksi Tepi (4)
+  operasiTepiSobel,
+  operasiTepiPrewitt,
+  operasiTepiRoberts,
+  operasiTepiLaplacian,
 ];
 
 // Temukan modul operasi kustom secara statis jika ada (ekstensibilitas modular)
@@ -124,7 +175,11 @@ export function ekstrakNilaiAwalParameter(operasi) {
   if (!operasi || !operasi.skemaParameter) return {};
   const nilaiAwal = {};
   for (const skema of operasi.skemaParameter) {
-    nilaiAwal[skema.id] = skema.nilaiAwal;
+    if (Array.isArray(skema.nilaiAwal)) {
+      nilaiAwal[skema.id] = [...skema.nilaiAwal];
+    } else {
+      nilaiAwal[skema.id] = skema.nilaiAwal;
+    }
   }
   return nilaiAwal;
 }
@@ -160,6 +215,39 @@ export function bersihkanParameter(operasi, parameter = {}) {
         hasil[skema.id] = skema.nilaiAwal;
       } else {
         hasil[skema.id] = valMasukan ?? skema.nilaiAwal;
+      }
+    } else if (skema.tipe === 'sakelar') {
+      if (valMasukan === undefined || valMasukan === null) {
+        hasil[skema.id] = Boolean(skema.nilaiAwal);
+      } else {
+        hasil[skema.id] = Boolean(valMasukan);
+      }
+    } else if (skema.tipe === 'matriks') {
+      let arr = valMasukan;
+      if (Array.isArray(arr) && Array.isArray(arr[0])) {
+        arr = arr.flat();
+      }
+      if (!Array.isArray(arr)) {
+        hasil[skema.id] = Array.isArray(skema.nilaiAwal)
+          ? [...skema.nilaiAwal]
+          : [];
+      } else {
+        const panjangHarapan = arr.length === 25 ? 25 : 9;
+        const aman = [];
+        for (let i = 0; i < panjangHarapan; i++) {
+          const v = Number(arr[i]);
+          if (!Number.isFinite(v)) {
+            aman.push(0);
+          } else {
+            aman.push(
+              Math.max(
+                KONFIGURASI_SPASIAL.NILAI_ELEMEN_MATRIKS_MIN,
+                Math.min(KONFIGURASI_SPASIAL.NILAI_ELEMEN_MATRIKS_MAX, v)
+              )
+            );
+          }
+        }
+        hasil[skema.id] = aman;
       }
     } else {
       hasil[skema.id] = valMasukan ?? skema.nilaiAwal;
