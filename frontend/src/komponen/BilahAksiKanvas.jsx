@@ -85,14 +85,14 @@ export default function BilahAksiKanvas({
         <button
           type="button"
           onClick={saatGantiGambar}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-teks-sekunder hover:text-teks-utama bg-slate-100 hover:bg-slate-200 border border-garis-panel rounded-md transition-colors focus:ring-2 focus:ring-primer focus:outline-none cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-teks-sekunder hover:text-teks-utama bg-latar-sorot hover:bg-latar-sorot-sedang border border-garis-panel rounded-md transition-colors focus:ring-2 focus:ring-primer focus:outline-none cursor-pointer"
         >
           <RefreshCw size={14} className="stroke-[1.75]" />
           <span className="hidden sm:inline">{t('bilahAksi.tombolGanti')}</span>
         </button>
 
         {/* Pemilih Format Unduhan */}
-        <div className="flex items-center gap-1.5 bg-slate-50 border border-garis-panel rounded-md px-2 py-1">
+        <div className="flex items-center gap-1.5 bg-latar-subtil border border-garis-panel rounded-md px-2 py-1">
           <label htmlFor="pilih-format" className="text-teks-redup text-[11px]">
             {t('bilahAksi.formatUnduh')}
           </label>

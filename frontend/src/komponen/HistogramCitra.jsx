@@ -2,6 +2,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { hitungHistogram } from '../mesin/utilitasCitra';
+import { TOKEN_TEMA } from '../tema/token';
 
 /**
  * Visualisasi histogram frekuensi piksel citra mandiri berbasis SVG murni.
@@ -44,12 +45,7 @@ export default function HistogramCitra({ citraSebelum, citraSesudah }) {
     return jalur;
   };
 
-  const warnaKanal = {
-    luminans: '#475569',
-    r: '#dc2626',
-    g: '#059669',
-    b: '#2563eb',
-  };
+  const warnaKanal = TOKEN_TEMA.warna.histogram;
 
   const maksHistogram = Math.max(
     histSebelum?.nilaiMaksimum || 1,
@@ -62,7 +58,7 @@ export default function HistogramCitra({ citraSebelum, citraSesudah }) {
       <button
         type="button"
         onClick={() => setTerbuka(!terbuka)}
-        className="w-full p-2.5 flex items-center justify-between font-bold text-teks-sekunder hover:bg-slate-50 transition-colors cursor-pointer select-none"
+        className="w-full p-2.5 flex items-center justify-between font-bold text-teks-sekunder hover:bg-latar-subtil transition-colors cursor-pointer select-none"
         aria-expanded={terbuka}
       >
         <span className="font-semibold text-teks-utama">
@@ -74,7 +70,7 @@ export default function HistogramCitra({ citraSebelum, citraSesudah }) {
       {terbuka && (
         <div className="p-3 border-t border-garis-panel space-y-3">
           {/* Tab Pemilih Kanal */}
-          <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-md text-[11px] font-medium">
+          <div className="flex items-center gap-1 bg-latar-sorot p-0.5 rounded-md text-[11px] font-medium">
             {[
               { id: 'luminans', label: 'Lum' },
               { id: 'r', label: 'R' },
@@ -103,7 +99,7 @@ export default function HistogramCitra({ citraSebelum, citraSesudah }) {
               <div className="flex justify-between text-[10px] text-teks-redup mb-1 font-semibold">
                 <span>{t('kanvas.sebelum')}</span>
               </div>
-              <div className="h-20 w-full bg-slate-50 border border-slate-200 rounded overflow-hidden">
+              <div className="h-20 w-full bg-latar-subtil border border-garis-panel rounded overflow-hidden">
                 <svg
                   viewBox="0 0 256 80"
                   className="w-full h-full"
@@ -131,7 +127,7 @@ export default function HistogramCitra({ citraSebelum, citraSesudah }) {
                 <div className="flex justify-between text-[10px] text-teks-redup mb-1 font-semibold">
                   <span>{t('kanvas.sesudah')}</span>
                 </div>
-                <div className="h-20 w-full bg-slate-50 border border-slate-200 rounded overflow-hidden">
+                <div className="h-20 w-full bg-latar-subtil border border-garis-panel rounded overflow-hidden">
                   <svg
                     viewBox="0 0 256 80"
                     className="w-full h-full"
@@ -159,3 +155,4 @@ export default function HistogramCitra({ citraSebelum, citraSesudah }) {
     </div>
   );
 }
+

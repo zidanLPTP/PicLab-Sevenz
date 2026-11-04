@@ -77,7 +77,7 @@ export default function ModalPrivasi({ terbuka, saatTutup, elemenPemicuRef }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-latar-overlay backdrop-blur-xs p-4 animate-fade-in"
       onClick={saatTutup}
     >
       <div
@@ -104,14 +104,14 @@ export default function ModalPrivasi({ terbuka, saatTutup, elemenPemicuRef }) {
             type="button"
             onClick={saatTutup}
             aria-label="Tutup"
-            className="p-1 rounded-md text-teks-redup hover:text-teks-utama hover:bg-slate-100 transition-colors focus:ring-2 focus:ring-primer focus:outline-none cursor-pointer"
+            className="p-1 rounded-md text-teks-redup hover:text-teks-utama hover:bg-latar-sorot transition-colors focus:ring-2 focus:ring-primer focus:outline-none cursor-pointer"
           >
             <X size={20} className="stroke-[1.75]" />
           </button>
         </div>
 
         <div className="space-y-4 text-sm text-teks-sekunder leading-relaxed mb-6">
-          <div className="p-3 bg-primer-lembut border border-teal-200 rounded-lg text-teal-900">
+          <div className="p-3 bg-primer-lembut border border-garis-primer rounded-lg text-teks-primer-gelap">
             <p className="font-medium">{t('privasi.poin1')}</p>
           </div>
           <p>{t('privasi.poin2')}</p>

@@ -96,20 +96,20 @@ export default function PanelParameter({
         {operasiAktif ? (
           <>
             {/* Kartu Informasi Operasi Aktif */}
-            <div className="p-3 bg-slate-50 border border-garis-panel rounded-lg space-y-1">
+            <div className="p-3 bg-latar-subtil border border-garis-panel rounded-lg space-y-1">
               <div className="font-bold text-sm text-teks-utama">
                 {t(operasiAktif.kunciNama)}
               </div>
               <div className="text-xs text-teks-redup leading-relaxed">
                 {t(operasiAktif.kunciDeskripsi)}
               </div>
-              <div className="pt-1.5 flex items-center gap-1 text-[11px] text-teal-700 font-mono">
+              <div className="pt-1.5 flex items-center gap-1 text-[11px] text-teks-primer font-mono">
                 <span className="font-semibold">{operasiAktif.namaTeknis}</span>
               </div>
             </div>
 
             {/* Banner Penjelasan Satu Operasi Aktif */}
-            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-[11px] flex items-start gap-1.5 leading-snug">
+            <div className="p-2.5 bg-latar-peringatan border border-garis-peringatan rounded-lg text-teks-peringatan text-[11px] flex items-start gap-1.5 leading-snug">
               <Info size={14} className="shrink-0 mt-0.5" />
               <span>{t('panel.infoSatuOperasi')}</span>
             </div>
@@ -119,13 +119,13 @@ export default function PanelParameter({
               <div
                 role="alert"
                 data-testid="peringatan-batas-dimensi"
-                className="p-2.5 bg-rose-50 border border-rose-300 rounded-lg text-rose-900 text-xs space-y-1"
+                className="p-2.5 bg-latar-bahaya border border-garis-bahaya rounded-lg text-teks-bahaya text-xs space-y-1"
               >
-                <div className="flex items-center gap-1.5 font-bold text-rose-800">
-                  <AlertTriangle size={15} className="shrink-0 text-rose-600" />
+                <div className="flex items-center gap-1.5 font-bold text-teks-bahaya">
+                  <AlertTriangle size={15} className="shrink-0 text-status-bahaya" />
                   <span>{t('panel.peringatanBatasDimensiJudul')}</span>
                 </div>
-                <p className="text-[11px] leading-relaxed text-rose-700">
+                <p className="text-[11px] leading-relaxed text-teks-bahaya-terang">
                   {t('panel.peringatanBatasDimensiDeskripsi', {
                     maksSisi: BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL,
                     maksTotal: '16 MP',
@@ -169,7 +169,7 @@ export default function PanelParameter({
                                   Number(e.target.value)
                                 )
                               }
-                              className="w-16 px-1.5 py-0.5 text-right text-xs font-mono font-bold bg-slate-50 border border-garis-panel rounded focus:ring-1 focus:ring-primer focus:outline-none"
+                              className="w-16 px-1.5 py-0.5 text-right text-xs font-mono font-bold bg-latar-subtil border border-garis-panel rounded focus:ring-1 focus:ring-primer focus:outline-none"
                             />
                             {skema.satuan && (
                               <span className="text-teks-redup text-[11px]">
@@ -224,7 +224,7 @@ export default function PanelParameter({
                                 Number(e.target.value)
                               )
                             }
-                            className="w-20 px-2 py-1 text-right text-xs font-mono font-bold bg-slate-50 border border-garis-panel rounded focus:ring-1 focus:ring-primer focus:outline-none"
+                            className="w-20 px-2 py-1 text-right text-xs font-mono font-bold bg-latar-subtil border border-garis-panel rounded focus:ring-1 focus:ring-primer focus:outline-none"
                           />
                           {skema.satuan && (
                             <span className="text-teks-redup text-[11px]">
@@ -252,7 +252,7 @@ export default function PanelParameter({
                           onChange={(e) =>
                             saatUbahParameter(skema.id, e.target.value)
                           }
-                          className="w-full px-2.5 py-1.5 bg-slate-50 border border-garis-panel rounded-md text-xs font-medium text-teks-utama focus:ring-2 focus:ring-primer focus:outline-none cursor-pointer"
+                          className="w-full px-2.5 py-1.5 bg-latar-subtil border border-garis-panel rounded-md text-xs font-medium text-teks-utama focus:ring-2 focus:ring-primer focus:outline-none cursor-pointer"
                         >
                           {skema.pilihan?.map((pil) => (
                             <option key={pil.nilai} value={pil.nilai}>
@@ -284,7 +284,7 @@ export default function PanelParameter({
         ) : (
           /* Keadaan Belum Ada Operasi Terpilih */
           <div className="flex flex-col items-center justify-center text-center text-teks-redup py-12">
-            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-teks-redup mb-3">
+            <div className="w-12 h-12 rounded-full bg-latar-sorot flex items-center justify-center text-teks-redup mb-3">
               <Sliders size={24} className="stroke-[1.75]" />
             </div>
             <p className="text-xs leading-relaxed max-w-[200px]">

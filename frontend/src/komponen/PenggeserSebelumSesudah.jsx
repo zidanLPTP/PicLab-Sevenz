@@ -202,10 +202,10 @@ export default function PenggeserSebelumSesudah({
       </div>
 
       {/* 4. Label Penanda Sebelum & Sesudah */}
-      <span className="absolute left-3 top-3 z-10 px-2 py-0.5 bg-slate-900/60 backdrop-blur-xs text-white text-[11px] font-semibold rounded pointer-events-none">
+      <span className="absolute left-3 top-3 z-10 px-2 py-0.5 bg-latar-gelap/60 backdrop-blur-xs text-white text-[11px] font-semibold rounded pointer-events-none">
         {t('kanvas.sebelum')}
       </span>
-      <span className="absolute right-3 top-3 z-10 px-2 py-0.5 bg-slate-900/60 backdrop-blur-xs text-white text-[11px] font-semibold rounded pointer-events-none">
+      <span className="absolute right-3 top-3 z-10 px-2 py-0.5 bg-latar-gelap/60 backdrop-blur-xs text-white text-[11px] font-semibold rounded pointer-events-none">
         {t('kanvas.sesudah')}
       </span>
     </div>

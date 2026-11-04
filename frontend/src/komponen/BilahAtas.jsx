@@ -40,12 +40,12 @@ export default function BilahAtas() {
               type="button"
               disabled
               aria-disabled="true"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-teks-redup bg-slate-50 border border-garis-panel rounded-md cursor-not-allowed opacity-75"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-teks-redup bg-latar-subtil border border-garis-panel rounded-md cursor-not-allowed opacity-75"
             >
               <BookOpen size={16} className="stroke-[1.75]" />
               <span>{t('navigasi.tautanBelajar')}</span>
             </button>
-            <div className="absolute right-0 top-full mt-1.5 hidden group-hover:flex items-center gap-1 bg-slate-800 text-white text-[11px] px-2.5 py-1 rounded shadow-md whitespace-nowrap z-30 pointer-events-none">
+            <div className="absolute right-0 top-full mt-1.5 hidden group-hover:flex items-center gap-1 bg-latar-gelap text-white text-[11px] px-2.5 py-1 rounded shadow-md whitespace-nowrap z-30 pointer-events-none">
               <Info size={12} />
               <span>{t('navigasi.keteranganBelajar')}</span>
             </div>
@@ -56,7 +56,7 @@ export default function BilahAtas() {
             ref={tombolPrivasiRef}
             type="button"
             onClick={() => setModalPrivasiTerbuka(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-teks-sekunder hover:text-primer hover:bg-slate-50 border border-transparent hover:border-garis-panel rounded-md transition-colors focus:ring-2 focus:ring-primer focus:outline-none cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-teks-sekunder hover:text-primer hover:bg-latar-subtil border border-transparent hover:border-garis-panel rounded-md transition-colors focus:ring-2 focus:ring-primer focus:outline-none cursor-pointer"
           >
             <ShieldCheck size={16} className="stroke-[1.75]" />
             <span>{t('navigasi.tautanPrivasi')}</span>
@@ -64,7 +64,7 @@ export default function BilahAtas() {
 
           {/* Pemilih Bahasa (ID / EN) */}
           <div
-            className="flex items-center bg-slate-100 p-0.5 rounded-md border border-garis-panel text-xs"
+            className="flex items-center bg-latar-sorot p-0.5 rounded-md border border-garis-panel text-xs"
             role="group"
             aria-label={t('navigasi.pilihBahasa')}
           >

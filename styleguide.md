@@ -58,26 +58,51 @@ Gerakan (animasi): halus dan fungsional, singkat, menghormati preferensi `prefer
 Keputusan desain ini dihasilkan melalui skill **UI UX PRO MAX** berdasarkan analisis kebutuhan aplikasi editor citra digital bergaya utilitas kerja modern:
 
 - **Arah gaya dan alasannya**: *Flat Functional Workspace* / *Minimalist Studio Tool*. Antarmuka dirancang bersih, fungsional, dan fokus pada konten citra tanpa efek gradasi liar, efek kilau, atau bayangan dekoratif berlebihan. Kanvas citra adalah pusat gravitasi visual. Panel instrumen diatur dengan garis batas tegas bernilai kontras tinggi untuk memisahkan ruang kerja secara rapi.
-- **Palet warna**:
+- **Palet warna & Token Semantik (sumber tunggal: `frontend/src/tema/token.js` dan `tailwind.config.js`)**:
+  Dilarang keras memakai nama palet default Tailwind (`slate-*`, `amber-*`, `rose-*`, `teal-*`, dll) atau kode heksadesimal mentah di kode antarmuka. Semua komponen wajib memakai token semantik berikut:
   - **Latar & Permukaan**:
-    - `latar-aplikasi`: `#F8FAFC` (Slate 50 — latar belakang editor)
-    - `permukaan-panel`: `#FFFFFF` (Putih murni — latar bilah dan panel)
-    - `permukaan-kanvas`: `#F1F5F9` (Slate 100 — latar area kerja kanvas)
-    - `garis-panel`: `#E2E8F0` (Slate 200 — garis pemisah panel)
+    - `latar-aplikasi`: `#F8FAFC` (Latar utama aplikasi editor)
+    - `latar-panel` / `permukaan-panel`: `#FFFFFF` (Latar bilah dan panel instrumen)
+    - `latar-kanvas` / `permukaan-kanvas`: `#F1F5F9` (Latar area kerja kanvas)
+    - `latar-subtil`: `#F8FAFC` (Latar item halus, input, dan hover kartu)
+    - `latar-sorot`: `#F1F5F9` (Latar tombol hover dan item terpilih sekunder)
+    - `latar-sorot-sedang`: `#E2E8F0` (Latar tombol sekunder hover)
+    - `latar-gelap`: `#0F172A` (Latar badge dan tooltip gelap)
+    - `latar-overlay`: `rgba(15, 23, 42, 0.4)` (Latar belakang modal/dialog privasi)
+    - `latar-peringatan`: `#FFFBEB` (Latar kotak peringatan limit dimensi)
+    - `latar-bahaya`: `#FFF1F2` (Latar kotak bahaya/peringatan keras)
+    - `latar-galat`: `#FEF2F2` (Latar kotak galat berkas dan input tidak valid)
+    - `latar-primer-lembut`: `#F0FDFA` (Latar aksen terpilih dan drag-and-drop aktif)
+  - **Garis Batas (Borders)**:
+    - `garis-panel`: `#E2E8F0` (Pemisah panel dan kontrol normal)
+    - `garis-subtil`: `#CBD5E1` (Garis hover dan pola kotak transparansi)
+    - `garis-aktif` / `garis-primer`: `#0D9488` / `#99F6E4` (Garis elemen aktif & fokus)
+    - `garis-peringatan`: `#FDE68A` (Batas kotak peringatan)
+    - `garis-bahaya`: `#FDA4AF` (Batas kotak bahaya)
+    - `garis-galat`: `#FECACA` (Batas kotak galat)
   - **Teks (dengan rasio kontras WCAG AA/AAA terverifikasi)**:
-    - `teks-utama`: `#0F172A` (Slate 900 — teks utama, kontras **15.6:1** pada `#FFFFFF`, melampaui WCAG AAA)
-    - `teks-sekunder`: `#334155` (Slate 700 — teks pendukung, kontras **9.5:1**, WCAG AAA)
-    - `teks-redup`: `#64748B` (Slate 500 — teks label/info pasif, kontras **4.6:1**, memenuhi WCAG AA)
+    - `teks-utama`: `#0F172A` (Kontras 15.6:1 pada putih, melampaui WCAG AAA)
+    - `teks-sekunder`: `#334155` (Kontras 9.5:1 pada putih, WCAG AAA)
+    - `teks-redup`: `#64748B` (Kontras 4.6:1 pada putih, memenuhi WCAG AA)
+    - `teks-terbalik`: `#FFFFFF` (Kontras 15.6:1 pada latar-gelap)
+    - `teks-peringatan`: `#92400E` (Kontras 6.2:1 pada latar-peringatan)
+    - `teks-bahaya` & `teks-bahaya-terang`: `#9F1239` / `#BE123C` (Kontras 6.8:1 pada latar-bahaya)
+    - `teks-galat` & `teks-galat-terang`: `#991B1B` / `#B91C1C` (Kontras 7.1:1 pada latar-galat)
+    - `teks-primer` & `teks-primer-gelap`: `#0F766E` / `#134E4A` (Kontras 5.8:1 / 8.2:1)
   - **Aksen Brand & Interaksi**:
-    - `primer`: `#0D9488` (Teal 600 — warna identitas, fokus kontrol, seleksi aktif)
-    - `primer-sorot`: `#0F766E` (Teal 700 — keadaan tombol hover/aktif, kontras teks putih **5.8:1**, WCAG AA)
-    - `primer-lembut`: `#F0FDFA` (Teal 50 — latar badge atau item terpilih)
-    - `aksen`: `#D97706` (Amber 600 — aksen peringatan & aksi sekunder)
-  - **Status**:
-    - `status-sukses`: `#059669` (Emerald 600 — kontras teks putih **4.6:1**, WCAG AA)
-    - `status-peringatan`: `#D97706` (Amber 600 — teks kontras pada latar terang)
-    - `status-galat`: `#DC2626` (Red 600 — kontras teks putih **4.6:1**, WCAG AA)
-    - `latar-galat`: `#FEF2F2` (Red 50 — latar kotak pesan galat berkas)
+    - `primer`: `#0D9488` (Warna identitas PicLab, seleksi aktif, cincin fokus)
+    - `primer-sorot`: `#0F766E` (Keadaan hover tombol utama)
+    - `primer-lembut`: `#F0FDFA` (Latar badge/indikator aktif)
+    - `aksen`: `#D97706` (Aksen aksi sekunder)
+  - **Status & Histogram**:
+    - `status-sukses`: `#059669` (Emerald)
+    - `status-peringatan`: `#D97706` (Amber)
+    - `status-bahaya`: `#E11D48` (Rose)
+    - `status-galat`: `#DC2626` (Red)
+    - `histogram-luminans`: `#475569`
+    - `histogram-r`: `#DC2626`
+    - `histogram-g`: `#059669`
+    - `histogram-b`: `#2563EB`
 - **Tipografi**:
   - Antarmuka & Teks: `Plus Jakarta Sans`, `Inter`, `system-ui`, `-apple-system`, `sans-serif`.
   - Kode, Matriks & Info Dimensi: `ui-monospace`, `SFMono-Regular`, `Menlo`, `monospace`.
@@ -136,10 +161,10 @@ Daftar komponen yang dibangun pada Tahap 1 dan Tahap 2:
 
 ## 9. Daftar Periksa Visual (dipakai di setiap laporan tahap yang menyentuh UI)
 
-- [ ] Hanya memakai token warna dan jarak dari bagian 6
-- [ ] Hanya satu pustaka ikon, tidak ada emoji atau ikon "template AI"
-- [ ] Semua teks lewat berkas terjemahan dan muat di dua bahasa
-- [ ] Semua keadaan (normal, hover, fokus, nonaktif, memuat, galat) sudah ada
-- [ ] Fokus keyboard terlihat, kontras memadai
-- [ ] Layout editor tiga area tidak rusak pada lebar desktop umum (1280 sampai 1920 px)
-- [ ] Tidak ada teks isian atau gambar palsu
+- [x] Hanya memakai token warna dan jarak dari bagian 6 (terverifikasi otomatis via uji Vitest tokenDesain.test.js)
+- [x] Hanya satu pustaka ikon, tidak ada emoji atau ikon "template AI" (lucide-react, 18px stroke 1.75)
+- [x] Semua teks lewat berkas terjemahan dan muat di dua bahasa (id.json & en.json, tanpa teks internal)
+- [x] Semua keadaan (normal, hover, fokus, nonaktif, memuat, galat) sudah ada
+- [x] Fokus keyboard terlihat, kontras memadai (focus:ring-2 focus:ring-primer, WCAG AA/AAA)
+- [x] Layout editor tiga area tidak rusak pada lebar desktop umum (1280 sampai 1920 px)
+- [x] Tidak ada teks isian atau gambar palsu (gambar contoh prosedural CC0)

@@ -1,6 +1,7 @@
 import { Maximize, Minimize, ZoomIn, ZoomOut } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { TOKEN_TEMA } from '../tema/token';
 import PenggeserSebelumSesudah from './PenggeserSebelumSesudah';
 
 /**
@@ -111,8 +112,7 @@ export default function AreaKanvas({
       <div
         className="absolute inset-0 opacity-15 pointer-events-none"
         style={{
-          backgroundImage:
-            'linear-gradient(45deg, #cbd5e1 25%, transparent 25%), linear-gradient(-45deg, #cbd5e1 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #cbd5e1 75%), linear-gradient(-45deg, transparent 75%, #cbd5e1 75%)',
+          backgroundImage: `linear-gradient(45deg, ${TOKEN_TEMA.warna.garis.subtil} 25%, transparent 25%), linear-gradient(-45deg, ${TOKEN_TEMA.warna.garis.subtil} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${TOKEN_TEMA.warna.garis.subtil} 75%), linear-gradient(-45deg, transparent 75%, ${TOKEN_TEMA.warna.garis.subtil} 75%)`,
           backgroundSize: '16px 16px',
           backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px',
         }}
@@ -144,7 +144,7 @@ export default function AreaKanvas({
           type="button"
           onClick={perkecil}
           aria-label={t('kanvas.perkecil')}
-          className="p-1 rounded hover:bg-slate-100 text-teks-sekunder hover:text-teks-utama transition-colors focus:ring-1 focus:ring-primer focus:outline-none cursor-pointer"
+          className="p-1 rounded hover:bg-latar-sorot text-teks-sekunder hover:text-teks-utama transition-colors focus:ring-1 focus:ring-primer focus:outline-none cursor-pointer"
         >
           <ZoomOut size={16} className="stroke-[1.75]" />
         </button>
@@ -157,7 +157,7 @@ export default function AreaKanvas({
           type="button"
           onClick={perbesar}
           aria-label={t('kanvas.perbesar')}
-          className="p-1 rounded hover:bg-slate-100 text-teks-sekunder hover:text-teks-utama transition-colors focus:ring-1 focus:ring-primer focus:outline-none cursor-pointer"
+          className="p-1 rounded hover:bg-latar-sorot text-teks-sekunder hover:text-teks-utama transition-colors focus:ring-1 focus:ring-primer focus:outline-none cursor-pointer"
         >
           <ZoomIn size={16} className="stroke-[1.75]" />
         </button>
@@ -168,7 +168,7 @@ export default function AreaKanvas({
           type="button"
           onClick={pasLayar}
           aria-label={t('kanvas.pasLayar')}
-          className="p-1 rounded hover:bg-slate-100 text-teks-sekunder hover:text-teks-utama transition-colors focus:ring-1 focus:ring-primer focus:outline-none cursor-pointer"
+          className="p-1 rounded hover:bg-latar-sorot text-teks-sekunder hover:text-teks-utama transition-colors focus:ring-1 focus:ring-primer focus:outline-none cursor-pointer"
           title={t('kanvas.pasLayar')}
         >
           <Minimize size={16} className="stroke-[1.75]" />
@@ -178,7 +178,7 @@ export default function AreaKanvas({
           type="button"
           onClick={reset100}
           aria-label={t('kanvas.skala100')}
-          className="p-1 rounded hover:bg-slate-100 text-teks-sekunder hover:text-teks-utama transition-colors focus:ring-1 focus:ring-primer focus:outline-none cursor-pointer"
+          className="p-1 rounded hover:bg-latar-sorot text-teks-sekunder hover:text-teks-utama transition-colors focus:ring-1 focus:ring-primer focus:outline-none cursor-pointer"
           title={t('kanvas.skala100')}
         >
           <Maximize size={16} className="stroke-[1.75]" />

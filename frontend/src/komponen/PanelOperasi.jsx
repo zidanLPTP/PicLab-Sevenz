@@ -39,7 +39,7 @@ export default function PanelOperasi({ operasiAktif, saatPilihOperasi }) {
           <h2 className="text-xs font-bold uppercase tracking-wider text-teks-sekunder">
             {t('panel.judulOperasi')}
           </h2>
-          <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-100 text-teks-redup rounded-full">
+          <span className="text-[11px] font-semibold px-2 py-0.5 bg-latar-sorot text-teks-redup rounded-full">
             {semuaOperasi.length}
           </span>
         </div>
@@ -55,7 +55,7 @@ export default function PanelOperasi({ operasiAktif, saatPilihOperasi }) {
             value={kataKunci}
             onChange={(e) => setKataKunci(e.target.value)}
             placeholder={t('panel.cariOperasiPlaceholder')}
-            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-garis-panel rounded-md text-xs text-teks-utama placeholder:text-teks-redup focus:outline-none focus:ring-2 focus:ring-primer focus:bg-white transition-all"
+            className="w-full pl-8 pr-3 py-1.5 bg-latar-subtil border border-garis-panel rounded-md text-xs text-teks-utama placeholder:text-teks-redup focus:outline-none focus:ring-2 focus:ring-primer focus:bg-white transition-all"
           />
         </div>
       </div>
@@ -84,7 +84,7 @@ export default function PanelOperasi({ operasiAktif, saatPilihOperasi }) {
                       className={`w-full text-left px-2.5 py-2 rounded-lg text-xs transition-all cursor-pointer flex items-center justify-between border ${
                         apakahAktif
                           ? 'bg-primer-lembut border-primer text-primer font-bold shadow-xs'
-                          : 'bg-transparent border-transparent hover:bg-slate-100 text-teks-utama'
+                          : 'bg-transparent border-transparent hover:bg-latar-sorot text-teks-utama'
                       }`}
                     >
                       <div className="truncate">
