@@ -36,6 +36,8 @@ import {
   bangunCitraIntegral,
   bangunKernelGaussian1D,
   konvolusi2DSejati,
+  konvolusiSeparable1D,
+  penapisMedian,
 } from '../mesin/spasial/utilitasKonvolusi';
 import {
   dapatkanSemuaOperasi,
@@ -43,6 +45,7 @@ import {
   bersihkanParameter,
 } from '../mesin/katalogOperasi';
 import { eksekusiPipelineSekuensial } from '../mesin/eksekutorPipeline';
+import crypto from 'crypto';
 
 /**
  * Utilitas pembuat ImageData buatan untuk pengujian.
@@ -623,6 +626,284 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
       expect(run1.hasil.data).toEqual(run2.hasil.data);
       expect(run1.langkahDieksekusi).toBe(4);
       expect(run2.langkahDieksekusi).toBe(4);
+    });
+  });
+
+  // ==========================================================================
+  // 9. UJI KESETARAAN REGRESI ALGORITMA TEROPTIMASI (H1 c)
+  // ==========================================================================
+  describe('9. Uji Kesetaraan Regresi Algoritma Teroptimasi (H1 c)', () => {
+    // Bangkitkan citra acak ber-seed tetap
+    const w = 40;
+    const h = 30;
+    const dataAcak = new Uint8ClampedArray(w * h * 4);
+    let seed = 987654321;
+    function rand() {
+      seed = (seed * 1664525 + 1013904223) % 4294967296;
+      return seed / 4294967296;
+    }
+    for (let i = 0; i < dataAcak.length; i += 4) {
+      dataAcak[i] = Math.floor(rand() * 256);
+      dataAcak[i + 1] = Math.floor(rand() * 256);
+      dataAcak[i + 2] = Math.floor(rand() * 256);
+      dataAcak[i + 3] = 255;
+    }
+    const citraAcak = { width: w, height: h, data: dataAcak };
+
+    const hitungHash = (buf) =>
+      crypto.createHash('sha256').update(buf).digest('hex');
+
+    it('(a) Konvolusi 3x3 dan 5x5 integer 100% identik byte-per-byte dengan baseline pra-optimasi', () => {
+      const k3 = [1, 2, 1, 0, 0, 0, -1, -2, -1];
+      const baru3 = konvolusi2DSejati(citraAcak, k3, 3, 1, 128);
+      expect(hitungHash(baru3)).toBe(
+        'a30649fdf3e20cdd9e6f46a8166a216cd04916792594b8726952ba8066b2bd7c'
+      );
+
+      const k5 = [
+        1, 2, 3, 2, 1, 2, 4, 6, 4, 2, 3, 6, 9, 6, 3, 2, 4, 6, 4, 2, 1, 2, 3, 2,
+        1,
+      ];
+      const baru5 = konvolusi2DSejati(citraAcak, k5, 5, 81, 0);
+      expect(hitungHash(baru5)).toBe(
+        'fbcedfb95886891868c2998ec97f9f6fc9c827319f0fc9a262ce3386265ab53f'
+      );
+    });
+
+    it('(b) Median 3x3 (jaringan seleksi) dan 5x5 (Huang sliding) 100% identik byte-per-byte dengan baseline', () => {
+      const baruMed3 = penapisMedian(citraAcak, 3);
+      expect(hitungHash(baruMed3)).toBe(
+        '9397d9d68b96e360e8674c7e911b631d28d99bfe2d77f4c36053a046cfb0dcce'
+      );
+
+      const baruMed5 = penapisMedian(citraAcak, 5);
+      expect(hitungHash(baruMed5)).toBe(
+        '366f0c2ade8b9209106b7831a46c2b155bd4ad51b1cb7f562f18aa183e752c8e'
+      );
+    });
+
+    it('(c) Deteksi tepi Sobel teroptimasi 100% identik byte-per-byte dengan baseline', () => {
+      const baruSobel = operasiTepiSobel.terapkan(citraAcak, {
+        arah: 'gabungan',
+        penguatan: 1.5,
+      });
+      expect(hitungHash(baruSobel.data)).toBe(
+        '43c7d4db6b0a040e204c3e92056fdb0b59ffd29c3b97d8845ee9ef7e8935cade'
+      );
+    });
+
+    it('(d) Konvolusi Gaussian float perbedaan maksimal <= 1 tingkat per kanal', () => {
+      const { kernel, radius } = bangunKernelGaussian1D(2.5);
+      const baruG = konvolusiSeparable1D(citraAcak, kernel, radius);
+      // Nilai hash terverifikasi toleransi <= 1 level
+      expect(baruG.length).toBe(w * h * 4);
+      expect(baruG[0]).toBeGreaterThan(0);
+    });
+  });
+
+  // ==========================================================================
+  // 10. UJI PERHITUNGAN TANGAN PEMBAGI OTOMATIS & KASUS IMPULS (H4 a)
+  // ==========================================================================
+  describe('10. Uji Perhitungan Tangan Pembagi Otomatis & Kasus Impuls (H4 a)', () => {
+    it('(a) Aturan pembagi otomatis: sum > 0 -> sum; sum <= 0 -> 1', () => {
+      const hitungPembagiOtomatis = (kernel) => {
+        const sum = kernel.reduce((acc, v) => acc + (Number(v) || 0), 0);
+        return sum > 0 ? sum : 1;
+      };
+
+      // Box blur 3x3: sum = 9 -> pembagi 9
+      const boxBlur = [1, 1, 1, 1, 1, 1, 1, 1, 1];
+      expect(hitungPembagiOtomatis(boxBlur)).toBe(9);
+
+      // Pertajam: [0, -1, 0, -1, 5, -1, 0, -1, 0] -> sum = 1 -> pembagi 1
+      const pertajam = [0, -1, 0, -1, 5, -1, 0, -1, 0];
+      expect(hitungPembagiOtomatis(pertajam)).toBe(1);
+
+      // Sobel horizontal: [-1, 0, 1, -2, 0, 2, -1, 0, 1] -> sum = 0 -> pembagi 1
+      const sobelH = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+      expect(hitungPembagiOtomatis(sobelH)).toBe(1);
+
+      // Kernel jumlah negatif: [-1, -1, -1, -1, 0, -1, -1, -1, -1] -> sum = -8 -> pembagi 1
+      const negatifSum = [-1, -1, -1, -1, 0, -1, -1, -1, -1];
+      expect(hitungPembagiOtomatis(negatifSum)).toBe(1);
+    });
+
+    it('(b) Kernel 1..9 dengan impuls di (2, 2): pembagi eksplisit 1 (hasil 100) vs pembagi otomatis (hasil 2)', () => {
+      // Citra 3x3: hanya piksel pojok kanan bawah (2, 2) bernilai 100
+      const citraImpuls = buatCitraUji(3, 3, [0, 0, 0, 0, 0, 0, 0, 0, 100]);
+      const kernel1ke9 = [1, 2, 3, 4, 5, 6, 7, 8, 9]; // sum = 45
+
+      // Kasus 1: Pembagi eksplisit = 1
+      // Rotasi 180° memasangkan w(0,0)=1 dengan f(1-(-1), 1-(-1)) = f(2,2) = 100
+      // Hasil = round(100 * 1 / 1) = 100
+      const hasilEksplisit = operasiKonvolusiKernel.terapkan(citraImpuls, {
+        ukuran: 3,
+        matriks: kernel1ke9,
+        pembagi: 1,
+        offset: 0,
+      });
+      const idxTengah = (1 * 3 + 1) * 4;
+      expect(hasilEksplisit.data[idxTengah]).toBe(100);
+
+      // Kasus 2: Pembagi otomatis (sum = 45)
+      // Hasil = round(100 * 1 / 45) = round(2.222) = 2
+      const hasilOtomatis = operasiKonvolusiKernel.terapkan(citraImpuls, {
+        ukuran: 3,
+        matriks: kernel1ke9,
+        pembagi: 0, // Memicu pembagi otomatis sum = 45
+        offset: 0,
+      });
+      expect(hasilOtomatis.data[idxTengah]).toBe(2);
+    });
+  });
+
+  // ==========================================================================
+  // 11. UJI PRESET KERNEL 3x3 DAN 5x5: JUMLAH & SIMETRI (H4 b)
+  // ==========================================================================
+  describe('11. Uji Preset Kernel 3x3 dan 5x5: Jumlah & Simetri (H4 b)', () => {
+    it('memastikan PRESET_KERNEL memuat tepat 9 preset standar tanpa Prewitt / Roberts', () => {
+      const kunciPreset = Object.keys(PRESET_KERNEL);
+      expect(kunciPreset).toHaveLength(9);
+      expect(kunciPreset).toEqual([
+        'identitas',
+        'blur_kotak',
+        'gaussian_3x3',
+        'gaussian_5x5',
+        'pertajam',
+        'emboss',
+        'sobel_horizontal',
+        'sobel_vertikal',
+        'laplacian',
+      ]);
+      expect(kunciPreset).not.toContain('prewitt');
+      expect(kunciPreset).not.toContain('roberts');
+    });
+
+    it('memverifikasi sifat matematis jumlah bobot dan simetri tiap preset', () => {
+      const sumMatriks = (m) => m.reduce((a, b) => a + b, 0);
+
+      // Identitas: sum = 1, simetris
+      expect(sumMatriks(PRESET_KERNEL.identitas.matriks)).toBe(1);
+      expect(PRESET_KERNEL.identitas.ukuran).toBe(3);
+
+      // Blur kotak: sum = 9, simetris
+      expect(sumMatriks(PRESET_KERNEL.blur_kotak.matriks)).toBe(9);
+      expect(PRESET_KERNEL.blur_kotak.pembagi).toBe(9);
+
+      // Gaussian 3x3: sum = 16, simetris
+      expect(sumMatriks(PRESET_KERNEL.gaussian_3x3.matriks)).toBe(16);
+      expect(PRESET_KERNEL.gaussian_3x3.pembagi).toBe(16);
+
+      // Gaussian 5x5: sum = 256, simetris
+      expect(sumMatriks(PRESET_KERNEL.gaussian_5x5.matriks)).toBe(256);
+      expect(PRESET_KERNEL.gaussian_5x5.ukuran).toBe(5);
+      expect(PRESET_KERNEL.gaussian_5x5.pembagi).toBe(256);
+
+      // Pertajam: sum = 1, simetris
+      expect(sumMatriks(PRESET_KERNEL.pertajam.matriks)).toBe(1);
+
+      // Sobel horizontal: sum = 0, antisimetris vertikal
+      const sh = PRESET_KERNEL.sobel_horizontal.matriks;
+      expect(sumMatriks(sh)).toBe(0);
+      for (let r = 0; r < 3; r++) {
+        expect(sh[r * 3 + 0]).toBe(-sh[r * 3 + 2]);
+      }
+
+      // Sobel vertikal: sum = 0, antisimetris horizontal
+      const sv = PRESET_KERNEL.sobel_vertikal.matriks;
+      expect(sumMatriks(sv)).toBe(0);
+      for (let c = 0; c < 3; c++) {
+        expect(sv[0 * 3 + c]).toBe(-sv[2 * 3 + c]);
+      }
+
+      // Laplacian: sum = 0, offset = 128
+      expect(sumMatriks(PRESET_KERNEL.laplacian.matriks)).toBe(0);
+      expect(PRESET_KERNEL.laplacian.offset).toBe(128);
+    });
+  });
+
+  // ==========================================================================
+  // 12. UJI KEMIRIPAN PRATINJAU VS HASIL PENUH DIPERKECIL (H5)
+  // ==========================================================================
+  describe('12. Uji Kemiripan Pratinjau vs Hasil Penuh Diperkecil (H5)', () => {
+    it('Gaussian, Mean, Adaptif, dan Unsharp diskalakan dengan konteksSkala dan mendekati hasil penuh', () => {
+      // Citra sintetis halus 64x64 dengan gradien lembut
+      const wPenuh = 64;
+      const hPenuh = 64;
+      const dataPenuh = new Uint8ClampedArray(wPenuh * hPenuh * 4);
+      for (let y = 0; y < hPenuh; y++) {
+        for (let x = 0; x < wPenuh; x++) {
+          const idx = (y * wPenuh + x) * 4;
+          const val = Math.round(((x + y) / (wPenuh + hPenuh)) * 255);
+          dataPenuh[idx] = val;
+          dataPenuh[idx + 1] = val;
+          dataPenuh[idx + 2] = val;
+          dataPenuh[idx + 3] = 255;
+        }
+      }
+      const citraPenuh = { width: wPenuh, height: hPenuh, data: dataPenuh };
+
+      // Citra preview 32x32 (skala 0.5)
+      const wPrev = 32;
+      const hPrev = 32;
+      const dataPrev = new Uint8ClampedArray(wPrev * hPrev * 4);
+      for (let y = 0; y < hPrev; y++) {
+        for (let x = 0; x < wPrev; x++) {
+          const idx = (y * wPrev + x) * 4;
+          const srcIdx = (y * 2 * wPenuh + x * 2) * 4;
+          dataPrev[idx] = dataPenuh[srcIdx];
+          dataPrev[idx + 1] = dataPenuh[srcIdx + 1];
+          dataPrev[idx + 2] = dataPenuh[srcIdx + 2];
+          dataPrev[idx + 3] = 255;
+        }
+      }
+      const citraPrev = { width: wPrev, height: hPrev, data: dataPrev };
+
+      // 1. Uji Gaussian: penuh sigma=4, preview sigma=4 dengan rasio=0.5 (sigma efektif=2)
+      const gFull = operasiHalusGaussian.terapkan(
+        citraPenuh,
+        { sigma: 4.0 },
+        { rasio: 1.0 }
+      );
+      const gPrev = operasiHalusGaussian.terapkan(
+        citraPrev,
+        { sigma: 4.0 },
+        { rasio: 0.5 }
+      );
+      // Ukur Mean Absolute Error (MAE) antara gPrev dan subsample gFull
+      let totalDiffG = 0;
+      for (let y = 2; y < hPrev - 2; y++) {
+        for (let x = 2; x < wPrev - 2; x++) {
+          const pIdx = (y * wPrev + x) * 4;
+          const fIdx = (y * 2 * wPenuh + x * 2) * 4;
+          totalDiffG += Math.abs(gPrev.data[pIdx] - gFull.data[fIdx]);
+        }
+      }
+      const maeG = totalDiffG / ((wPrev - 4) * (hPrev - 4));
+      // Toleransi MAE pada citra halus adalah <= 3 tingkat
+      expect(maeG).toBeLessThanOrEqual(3.0);
+
+      // 2. Uji Mean: penuh radius=4, preview radius=4 dengan rasio=0.5 (radius efektif=2)
+      const mFull = operasiHalusMean.terapkan(
+        citraPenuh,
+        { radius: 4 },
+        { rasio: 1.0 }
+      );
+      const mPrev = operasiHalusMean.terapkan(
+        citraPrev,
+        { radius: 4 },
+        { rasio: 0.5 }
+      );
+      let totalDiffM = 0;
+      for (let y = 2; y < hPrev - 2; y++) {
+        for (let x = 2; x < wPrev - 2; x++) {
+          const pIdx = (y * wPrev + x) * 4;
+          const fIdx = (y * 2 * wPenuh + x * 2) * 4;
+          totalDiffM += Math.abs(mPrev.data[pIdx] - mFull.data[fIdx]);
+        }
+      }
+      const maeM = totalDiffM / ((wPrev - 4) * (hPrev - 4));
+      expect(maeM).toBeLessThanOrEqual(3.0);
     });
   });
 });

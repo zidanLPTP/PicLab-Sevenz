@@ -15,7 +15,8 @@
     "test:backend": "backend\\.venv\\Scripts\\pytest.exe backend/uji",
     "test:e2e": "playwright test",
     "test": "npm run test:frontend && npm run test:backend && npm run test:e2e",
-    "benchmark": "node -e \"process.env.RUN_BENCHMARK='1'; require('child_process').spawnSync('npx', ['playwright', 'test', 'e2e/benchmarkKomprehensifV3.spec.js'], { stdio: 'inherit', shell: true })\""
+    "benchmark": "node -e \"process.env.RUN_BENCHMARK='1'; require('child_process').spawnSync('npx', ['playwright', 'test', 'e2e/benchmarkKomprehensifV3.spec.js'], { stdio: 'inherit', shell: true })\"",
+    "benchmark:tahap4": "node -e \"process.env.RUN_BENCHMARK='1'; require('child_process').spawnSync('npx', ['playwright', 'test', 'e2e/benchmarkTahap4.spec.js'], { stdio: 'inherit', shell: true })\""
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1"

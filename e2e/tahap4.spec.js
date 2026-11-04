@@ -133,13 +133,19 @@ test.describe('PicLab Sevenz — Pengujian E2E Tahap 4: Biner, Spasial, Konvolus
       };
     }, bufferUnduh.toString('base64'));
 
-    // Area seragam tidak memiliki gradien (nilai = 0)
-    expect(evaluasiTepi.datarKiri).toBe(0);
-    expect(evaluasiTepi.datarKanan).toBe(0);
+    // Hitung nilai eksak matematis di dalam pengujian (H6 ii):
+    // Pada citra tangga vertikal: sisi kiri (x=0..49) bernilai 40, sisi kanan (x=50..99) bernilai 220
+    // Area seragam (x=20 dan x=80): tetangga identik sehingga Gx = 0, Gy = 0 -> respon = 0
+    // Pada tepi batas x=49: tetangga kiri=40, tetangga kanan=220
+    // Gx = (220*1 + 220*2 + 220*1) - (40*1 + 40*2 + 40*1) = 880 - 160 = 720
+    // Gy = 0, Besaran = sqrt(720^2 + 0) = 720 -> clamp(720) = 255
+    const expectedDatar = 0;
+    const expectedTepi = 255;
 
-    // Batas perbatasan harus memiliki respon gradien yang sangat terang (> 0)
-    expect(evaluasiTepi.tepiTengah1).toBeGreaterThan(100);
-    expect(evaluasiTepi.tepiTengah2).toBeGreaterThan(100);
+    expect(evaluasiTepi.datarKiri).toBe(expectedDatar);
+    expect(evaluasiTepi.datarKanan).toBe(expectedDatar);
+    expect(evaluasiTepi.tepiTengah1).toBe(expectedTepi);
+    expect(evaluasiTepi.tepiTengah2).toBe(expectedTepi);
   });
 
   // ==========================================================================
@@ -151,7 +157,7 @@ test.describe('PicLab Sevenz — Pengujian E2E Tahap 4: Biner, Spasial, Konvolus
     await page.goto('/');
 
     const inputUnggah = page.locator('input[type="file"]');
-    await inputUnggah.setInputFiles(fileSintetis);
+    await inputUnggah.setInputFiles(fileTangga);
     await expect(page.getByRole('slider', { name: /penggeser/i })).toBeVisible();
 
     // Tambah operasi Konvolusi Kernel
@@ -163,37 +169,50 @@ test.describe('PicLab Sevenz — Pengujian E2E Tahap 4: Biner, Spasial, Konvolus
 
     // Beralih ke ukuran matriks 5x5
     await editorMatriks.getByRole('button', { name: '5×5' }).click();
-    const selMatriks = editorMatriks.locator('input[type="number"]');
-    // Matriks 5x5 memiliki 25 sel + 2 input (pembagi & offset) = 27 input number
-    await expect(selMatriks).toHaveCount(27);
+    const selMatriks = editorMatriks.locator('div[role="gridcell"] input');
+    // Matriks 5x5 memiliki tepat 25 sel grid
+    await expect(selMatriks).toHaveCount(25);
 
-    // Uji validasi input tak valid (masukkan huruf atau angka di luar batas)
+    // Uji validasi input tak valid: masukkan huruf dan angka di luar batas (H6 iv)
     const selPusat = selMatriks.nth(12); // Indeks 12 adalah baris 3 kolom 3 (pusat 5x5)
+    await selPusat.fill('abc'); // Huruf tidak valid
+    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(selPusat).toHaveAttribute('aria-invalid', 'true');
+
     await selPusat.fill('9999'); // Melampaui batas maksimum 100
     await expect(page.getByRole('alert')).toBeVisible();
     await expect(selPusat).toHaveAttribute('aria-invalid', 'true');
 
-    // Masukkan nilai yang valid: kernel identitas dengan bias offset +20
-    await editorMatriks.getByRole('button', { name: '3×3' }).click(); // Kembali ke 3x3
-    // Pilih preset identitas
-    const dropdownPreset = page.getByRole('combobox', {
-      name: 'Pilih Preset Kernel',
-    });
-    await dropdownPreset.selectOption('identitas');
+    // Beralih kembali ke 3x3 untuk menerapkan kernel asimetris kustom (H6 iii)
+    await editorMatriks.getByRole('button', { name: '3×3' }).click();
+    const selMatriks3 = editorMatriks.locator('div[role="gridcell"] input');
 
-    // Atur offset bias ke 20
+    // Masukkan kernel asimetris: baris 1 kolom 1 bernilai 1, baris 1 kolom 2 bernilai 2, lainnya 0
+    // [ 1, 2, 0 ]
+    // [ 0, 0, 0 ]
+    // [ 0, 0, 0 ]
+    // Pembagi = 1, Offset = 0
+    await selMatriks3.nth(0).fill('1');
+    await selMatriks3.nth(1).fill('2');
+    for (let s = 2; s < 9; s++) {
+      await selMatriks3.nth(s).fill('0');
+    }
+    const inputPembagi = page.locator('input[id$="-pembagi"]');
+    await inputPembagi.fill('1');
     const inputOffset = page.locator('input[id$="-offset"]');
-    await inputOffset.fill('20');
+    await inputOffset.fill('0');
     await inputOffset.dispatchEvent('blur');
 
-    // Unduh hasil dan periksa apakah nilai piksel bertambah tepat +20
+    // Unduh hasil dan periksa kecocokan titik tertentu terhadap hitungan tangan (H6 iii)
     const unduhPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Unduh Hasil' }).click();
     const unduhan = await unduhPromise;
     const pathUnduh = await unduhan.path();
     const bufferUnduh = await fs.promises.readFile(pathUnduh);
 
-    // Evaluasi piksel pojok (0,0) citra sintetis: nilai awal R=0, setelah offset +20 -> R=20
+    // Hitungan tangan:
+    // Pada citra tangga, area kiri (x=20, y=20) semua piksel bernilai 40
+    // Respons konvolusi = 40 * 1 + 40 * 2 = 120!
     const hasilHitung = await page.evaluate(async (base64) => {
       const blob = await fetch(`data:image/png;base64,${base64}`).then((r) =>
         r.blob()
@@ -204,11 +223,11 @@ test.describe('PicLab Sevenz — Pengujian E2E Tahap 4: Biner, Spasial, Konvolus
       canvas.height = bmp.height;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(bmp, 0, 0);
-      const p = ctx.getImageData(0, 0, 1, 1).data;
+      const p = ctx.getImageData(20, 20, 1, 1).data;
       return { r: p[0], a: p[3] };
     }, bufferUnduh.toString('base64'));
 
-    expect(hasilHitung.r).toBe(20);
+    expect(hasilHitung.r).toBe(120);
     expect(hasilHitung.a).toBe(255);
   });
 
@@ -229,7 +248,7 @@ test.describe('PicLab Sevenz — Pengujian E2E Tahap 4: Biner, Spasial, Konvolus
     await expect(editorMatriks).toBeVisible();
 
     // Ubah nilai sel (1,1) menjadi 3
-    const selPusat = editorMatriks.locator('input[type="number"]').nth(4); // Indeks 4 = pusat 3x3
+    const selPusat = editorMatriks.locator('div[role="gridcell"] input').nth(4); // Indeks 4 = pusat 3x3
     await selPusat.fill('3');
     await selPusat.dispatchEvent('blur');
 
