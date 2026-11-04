@@ -106,13 +106,10 @@ export default function EditorMatriksKernel({
       } else if (e.key === 'ArrowDown') {
         targetR = Math.min(ukuran - 1, r + 1);
         e.preventDefault();
-      } else if (e.key === 'ArrowLeft' && e.target.selectionStart === 0) {
+      } else if (e.key === 'ArrowLeft') {
         targetC = Math.max(0, c - 1);
         e.preventDefault();
-      } else if (
-        e.key === 'ArrowRight' &&
-        e.target.selectionStart === e.target.value.length
-      ) {
+      } else if (e.key === 'ArrowRight') {
         targetC = Math.min(ukuran - 1, c + 1);
         e.preventDefault();
       } else if (e.key === 'Enter') {
