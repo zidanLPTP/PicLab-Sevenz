@@ -287,7 +287,8 @@
     "labelMatriks": "Kernel Matrix Grid {{ukuran}} by {{ukuran}}",
     "selMatriks": "Row {{baris}}, Column {{kolom}}",
     "galatRentangMatriks": "Cell value must be a number between {{min}} and {{max}}",
-    "hitungJumlahBobot": "Calculate sum of weights (Σ = {{jumlah}})"
+    "hitungJumlahBobot": "Calculate sum of weights (Σ = {{jumlah}})",
+    "catatanKernelTetap": "Preview may differ from full resolution result due to constant kernel/window size on downscaled preview image."
   },
   "presetKernel": {
     "identitas": "Identity (Pass-through)",

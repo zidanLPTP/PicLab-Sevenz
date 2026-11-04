@@ -3,6 +3,7 @@
  * Semua operator deteksi tepi bekerja pada luminans Rec.601 dan menghasilkan citra monokrom (R=G=B).
  * Operator tepi menggunakan besaran gradien non-arah (|G| atau sqrt(Gx^2 + Gy^2)),
  * sehingga tanda arah gradien positif/negatif tidak berpengaruh pada intensitas tepi.
+ * Optimasi: Pemisahan interior loop bebas percabangan dengan border khusus.
  * Kanal alfa (A) selalu dipertahankan utuh tanpa alokasi memori per piksel.
  */
 
@@ -63,19 +64,65 @@ export const operasiTepiSobel = {
     const hasil = buatCitraKosong(width, height);
     const dst = hasil.data;
 
+    // 1. Interior: y in [1, height - 2], x in [1, width - 2]
+    for (let y = 1; y < height - 1; y++) {
+      const rowYm1 = (y - 1) * width;
+      const rowY = y * width;
+      const rowYp1 = (y + 1) * width;
+      let dstIdx = (rowY + 1) * 4;
+
+      for (let x = 1; x < width - 1; x++) {
+        const p00 = lum[rowYm1 + x - 1];
+        const p01 = lum[rowYm1 + x];
+        const p02 = lum[rowYm1 + x + 1];
+
+        const p10 = lum[rowY + x - 1];
+        const p12 = lum[rowY + x + 1];
+
+        const p20 = lum[rowYp1 + x - 1];
+        const p21 = lum[rowYp1 + x];
+        const p22 = lum[rowYp1 + x + 1];
+
+        const gx = p02 + 2 * p12 + p22 - (p00 + 2 * p10 + p20);
+        const gy = p20 + 2 * p21 + p22 - (p00 + 2 * p01 + p02);
+
+        let besaran;
+        if (arah === 'horizontal') {
+          besaran = Math.abs(gx);
+        } else if (arah === 'vertikal') {
+          besaran = Math.abs(gy);
+        } else {
+          besaran = Math.sqrt(gx * gx + gy * gy);
+        }
+
+        let nilai = clamp(Math.round(besaran * g));
+        if (inversi) nilai = 255 - nilai;
+
+        dst[dstIdx] = nilai;
+        dst[dstIdx + 1] = nilai;
+        dst[dstIdx + 2] = nilai;
+        dst[dstIdx + 3] = src[dstIdx + 3];
+        dstIdx += 4;
+      }
+    }
+
+    // 2. Borders
     for (let y = 0; y < height; y++) {
+      const isBorderY = y === 0 || y === height - 1;
       const ym1 = y > 0 ? y - 1 : 0;
       const yp1 = y < height - 1 ? y + 1 : height - 1;
-
       const rowY = y * width;
       const rowYm1 = ym1 * width;
       const rowYp1 = yp1 * width;
 
-      for (let x = 0; x < width; x++) {
+      const xs = isBorderY
+        ? Array.from({ length: width }, (_, i) => i)
+        : [0, width - 1];
+
+      for (const x of xs) {
         const xm1 = x > 0 ? x - 1 : 0;
         const xp1 = x < width - 1 ? x + 1 : width - 1;
 
-        // Ambil 8 tetangga luminans
         const p00 = lum[rowYm1 + xm1];
         const p01 = lum[rowYm1 + x];
         const p02 = lum[rowYm1 + xp1];
@@ -87,9 +134,6 @@ export const operasiTepiSobel = {
         const p21 = lum[rowYp1 + x];
         const p22 = lum[rowYp1 + xp1];
 
-        // Konvolusi sejati Sobel:
-        // Gx = (p02 + 2*p12 + p22) - (p00 + 2*p10 + p20)
-        // Gy = (p20 + 2*p21 + p22) - (p00 + 2*p01 + p02)
         const gx = p02 + 2 * p12 + p22 - (p00 + 2 * p10 + p20);
         const gy = p20 + 2 * p21 + p22 - (p00 + 2 * p01 + p02);
 
@@ -170,15 +214,62 @@ export const operasiTepiPrewitt = {
     const hasil = buatCitraKosong(width, height);
     const dst = hasil.data;
 
+    // 1. Interior: y in [1, height - 2], x in [1, width - 2]
+    for (let y = 1; y < height - 1; y++) {
+      const rowYm1 = (y - 1) * width;
+      const rowY = y * width;
+      const rowYp1 = (y + 1) * width;
+      let dstIdx = (rowY + 1) * 4;
+
+      for (let x = 1; x < width - 1; x++) {
+        const p00 = lum[rowYm1 + x - 1];
+        const p01 = lum[rowYm1 + x];
+        const p02 = lum[rowYm1 + x + 1];
+
+        const p10 = lum[rowY + x - 1];
+        const p12 = lum[rowY + x + 1];
+
+        const p20 = lum[rowYp1 + x - 1];
+        const p21 = lum[rowYp1 + x];
+        const p22 = lum[rowYp1 + x + 1];
+
+        const gx = p02 + p12 + p22 - (p00 + p10 + p20);
+        const gy = p20 + p21 + p22 - (p00 + p01 + p02);
+
+        let besaran;
+        if (arah === 'horizontal') {
+          besaran = Math.abs(gx);
+        } else if (arah === 'vertikal') {
+          besaran = Math.abs(gy);
+        } else {
+          besaran = Math.sqrt(gx * gx + gy * gy);
+        }
+
+        let nilai = clamp(Math.round(besaran * g));
+        if (inversi) nilai = 255 - nilai;
+
+        dst[dstIdx] = nilai;
+        dst[dstIdx + 1] = nilai;
+        dst[dstIdx + 2] = nilai;
+        dst[dstIdx + 3] = src[dstIdx + 3];
+        dstIdx += 4;
+      }
+    }
+
+    // 2. Borders
     for (let y = 0; y < height; y++) {
+      const isBorderY = y === 0 || y === height - 1;
       const ym1 = y > 0 ? y - 1 : 0;
       const yp1 = y < height - 1 ? y + 1 : height - 1;
-
       const rowY = y * width;
       const rowYm1 = ym1 * width;
       const rowYp1 = yp1 * width;
 
-      for (let x = 0; x < width; x++) {
+      const xs = isBorderY
+        ? Array.from({ length: width }, (_, i) => i)
+        : [0, width - 1];
+
+      for (const x of xs) {
         const xm1 = x > 0 ? x - 1 : 0;
         const xp1 = x < width - 1 ? x + 1 : width - 1;
 
@@ -274,12 +365,53 @@ export const operasiTepiRoberts = {
     const hasil = buatCitraKosong(width, height);
     const dst = hasil.data;
 
+    // 1. Interior: y in [0, height - 2], x in [0, width - 2]
+    for (let y = 0; y < height - 1; y++) {
+      const rowY = y * width;
+      const rowYp1 = (y + 1) * width;
+      let dstIdx = rowY * 4;
+
+      for (let x = 0; x < width - 1; x++) {
+        const p00 = lum[rowY + x];
+        const p01 = lum[rowY + x + 1];
+        const p10 = lum[rowYp1 + x];
+        const p11 = lum[rowYp1 + x + 1];
+
+        const gx = p00 - p11;
+        const gy = p01 - p10;
+
+        let besaran;
+        if (arah === 'horizontal') {
+          besaran = Math.abs(gx);
+        } else if (arah === 'vertikal') {
+          besaran = Math.abs(gy);
+        } else {
+          besaran = Math.sqrt(gx * gx + gy * gy);
+        }
+
+        let nilai = clamp(Math.round(besaran * g));
+        if (inversi) nilai = 255 - nilai;
+
+        dst[dstIdx] = nilai;
+        dst[dstIdx + 1] = nilai;
+        dst[dstIdx + 2] = nilai;
+        dst[dstIdx + 3] = src[dstIdx + 3];
+        dstIdx += 4;
+      }
+    }
+
+    // 2. Borders (bottom row & right column)
     for (let y = 0; y < height; y++) {
-      const yp1 = y < height - 1 ? y + 1 : height - 1;
+      const isBottom = y === height - 1;
+      const yp1 = isBottom ? height - 1 : y + 1;
       const rowY = y * width;
       const rowYp1 = yp1 * width;
 
-      for (let x = 0; x < width; x++) {
+      const xs = isBottom
+        ? Array.from({ length: width }, (_, i) => i)
+        : [width - 1];
+
+      for (const x of xs) {
         const xp1 = x < width - 1 ? x + 1 : width - 1;
 
         const p00 = lum[rowY + x];
@@ -287,7 +419,6 @@ export const operasiTepiRoberts = {
         const p10 = lum[rowYp1 + x];
         const p11 = lum[rowYp1 + xp1];
 
-        // Rumus Roberts Cross 2x2
         const gx = p00 - p11;
         const gy = p01 - p10;
 
@@ -367,15 +498,61 @@ export const operasiTepiLaplacian = {
     const hasil = buatCitraKosong(width, height);
     const dst = hasil.data;
 
+    // 1. Interior: y in [1, height - 2], x in [1, width - 2]
+    for (let y = 1; y < height - 1; y++) {
+      const rowYm1 = (y - 1) * width;
+      const rowY = y * width;
+      const rowYp1 = (y + 1) * width;
+      let dstIdx = (rowY + 1) * 4;
+
+      for (let x = 1; x < width - 1; x++) {
+        const p11 = lum[rowY + x];
+        let resp;
+
+        if (varian === 'tetangga4') {
+          const p01 = lum[rowYm1 + x];
+          const p10 = lum[rowY + x - 1];
+          const p12 = lum[rowY + x + 1];
+          const p21 = lum[rowYp1 + x];
+          resp = Math.abs(p01 + p10 + p12 + p21 - 4 * p11);
+        } else {
+          const p00 = lum[rowYm1 + x - 1];
+          const p01 = lum[rowYm1 + x];
+          const p02 = lum[rowYm1 + x + 1];
+          const p10 = lum[rowY + x - 1];
+          const p12 = lum[rowY + x + 1];
+          const p20 = lum[rowYp1 + x - 1];
+          const p21 = lum[rowYp1 + x];
+          const p22 = lum[rowYp1 + x + 1];
+          const sum8 = p00 + p01 + p02 + p10 + p12 + p20 + p21 + p22;
+          resp = Math.abs(sum8 - 8 * p11);
+        }
+
+        let nilai = clamp(Math.round(resp * g));
+        if (inversi) nilai = 255 - nilai;
+
+        dst[dstIdx] = nilai;
+        dst[dstIdx + 1] = nilai;
+        dst[dstIdx + 2] = nilai;
+        dst[dstIdx + 3] = src[dstIdx + 3];
+        dstIdx += 4;
+      }
+    }
+
+    // 2. Borders
     for (let y = 0; y < height; y++) {
+      const isBorderY = y === 0 || y === height - 1;
       const ym1 = y > 0 ? y - 1 : 0;
       const yp1 = y < height - 1 ? y + 1 : height - 1;
-
       const rowY = y * width;
       const rowYm1 = ym1 * width;
       const rowYp1 = yp1 * width;
 
-      for (let x = 0; x < width; x++) {
+      const xs = isBorderY
+        ? Array.from({ length: width }, (_, i) => i)
+        : [0, width - 1];
+
+      for (const x of xs) {
         const xm1 = x > 0 ? x - 1 : 0;
         const xp1 = x < width - 1 ? x + 1 : width - 1;
 

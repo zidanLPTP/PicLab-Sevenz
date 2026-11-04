@@ -442,6 +442,24 @@ export default function PanelParameter({
               </div>
             )}
 
+            {/* Catatan Keterbatasan Pratinjau untuk Operasi Berkernel Tetap (H5) */}
+            {[
+              'konvolusi_kernel',
+              'tepi_sobel',
+              'tepi_prewitt',
+              'tepi_roberts',
+              'tepi_laplacian',
+              'halus_median',
+            ].includes(operasiTerpilih.id) && (
+              <div
+                className="flex items-start gap-1.5 p-2 bg-latar-subtil/80 border border-garis-panel/80 rounded-md text-[11px] text-teks-redup leading-relaxed"
+                data-testid="catatan-kernel-tetap"
+              >
+                <Info size={13} className="shrink-0 mt-0.5 text-primer" />
+                <span>{t('parameter.catatanKernelTetap')}</span>
+              </div>
+            )}
+
             {/* Kartu Belajar Konsep & Rumus Operasi Terpilih (Tahap 4) */}
             <div className="pt-2">
               <KartuBelajarOperasi operasi={operasiTerpilih} />

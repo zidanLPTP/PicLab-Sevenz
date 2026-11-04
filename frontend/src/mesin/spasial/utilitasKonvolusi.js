@@ -1,7 +1,8 @@
 /**
  * Utilitas Matematika Pemrosesan Citra Spasial & Konvolusi (spec.md bagian 4 & Tahap 4).
  * Seluruh fungsi berkarakter murni (pure functions) dengan replikasi piksel tepi,
- * alokasi memori minimal, zero-allocation di dalam loop per piksel, dan penjagaan alfa.
+ * pemisahan area interior bebas percabangan, alokasi memori minimal,
+ * zero-allocation di dalam loop per piksel, dan penjagaan alfa.
  */
 
 import { clamp, hitungLuminansRec601 } from '../utilitasCitra';
@@ -22,6 +23,7 @@ export function ambilIndeksReplikasiTepi(x, y, width, height) {
 
 /**
  * Konvolusi 2D Sejati (True Convolution) dengan Kernel Dibalik 180 Derajat.
+ * Optimasi: Interior loop bebas pengecekan koordinat dan branching dengan precomputed tap offsets.
  * Rumus inti: g(x,y) = clamp(round(Σ_s Σ_t w(s,t) * f(x-s, y-t) / pembagi + offset))
  *
  * @param {object} citra { width, height, data }
@@ -44,7 +46,7 @@ export function konvolusi2DSejati(
   const dst = bufferKeluar || new Uint8ClampedArray(src.length);
   const radius = Math.floor(ukuranUkuranK / 2);
 
-  // Hitung pembagi efektif
+  // Hitung pembagi efektif: sum(kernel) jika > 0, selain itu 1
   let div = Number(pembagi);
   if (!Number.isFinite(div) || div === 0) {
     let sumBobot = 0;
@@ -54,52 +56,96 @@ export function konvolusi2DSejati(
   const invDiv = 1 / div;
   const bias = Number.isFinite(offset) ? offset : 0;
 
-  // Lakukan konvolusi sejati: kernel dibalik 180°
-  // w(s,t) pada posisi kernel (ki, kj) berinteraksi dengan f(x-s, y-t)
-  // Untuk kernel 1D indeks ki*K + kj dengan ki, kj in [0..K-1]:
-  // offset koordinat relatif adalah s = ki - radius, t = kj - radius
-  // f(x - s, y - t) = f(x - (ki - radius), y - (kj - radius))
-  const len = kernel.length;
-  const sOffset = new Int32Array(len);
-  const tOffset = new Int32Array(len);
+  // Siapkan tap bukan-nol untuk area interior (pembalikan 180° konvolusi sejati)
+  const nonZeroWeights = [];
+  const nonZeroOffsets = [];
   for (let ki = 0; ki < ukuranUkuranK; ki++) {
     for (let kj = 0; kj < ukuranUkuranK; kj++) {
       const idx = ki * ukuranUkuranK + kj;
-      sOffset[idx] = -(ki - radius); // Pembalikan 180° (konvolusi sejati)
-      tOffset[idx] = -(kj - radius);
+      const bobot = kernel[idx];
+      if (bobot !== 0) {
+        nonZeroWeights.push(bobot);
+        const dy = -(ki - radius);
+        const dx = -(kj - radius);
+        nonZeroOffsets.push((dy * width + dx) * 4);
+      }
+    }
+  }
+  const numTaps = nonZeroWeights.length;
+
+  // 1. Proses Area Interior (x in [radius, width - radius), y in [radius, height - radius))
+  const yEnd = height - radius;
+  const xEnd = width - radius;
+
+  for (let y = radius; y < yEnd; y++) {
+    let dstIdx = (y * width + radius) * 4;
+    let srcCenter = dstIdx;
+
+    for (let x = radius; x < xEnd; x++) {
+      let r = 0;
+      let g = 0;
+      let b = 0;
+
+      for (let t = 0; t < numTaps; t++) {
+        const p = srcCenter + nonZeroOffsets[t];
+        const w = nonZeroWeights[t];
+        r += src[p] * w;
+        g += src[p + 1] * w;
+        b += src[p + 2] * w;
+      }
+
+      dst[dstIdx] = clamp(Math.round(r * invDiv + bias));
+      dst[dstIdx + 1] = clamp(Math.round(g * invDiv + bias));
+      dst[dstIdx + 2] = clamp(Math.round(b * invDiv + bias));
+      dst[dstIdx + 3] = src[srcCenter + 3];
+
+      dstIdx += 4;
+      srcCenter += 4;
     }
   }
 
+  // 2. Proses Area Tepi (Border) dengan replikasi koordinat
   for (let y = 0; y < height; y++) {
-    const yOffset = y * width;
-    for (let x = 0; x < width; x++) {
-      const dstIdx = (yOffset + x) * 4;
+    const isBorderY = y < radius || y >= yEnd;
+    if (isBorderY) {
+      for (let x = 0; x < width; x++) prosesSatuPikselBorder(x, y);
+    } else {
+      for (let x = 0; x < radius; x++) prosesSatuPikselBorder(x, y);
+      for (let x = xEnd; x < width; x++) prosesSatuPikselBorder(x, y);
+    }
+  }
 
-      let rSum = 0;
-      let gSum = 0;
-      let bSum = 0;
+  function prosesSatuPikselBorder(x, y) {
+    const dstIdx = (y * width + x) * 4;
+    let r = 0;
+    let g = 0;
+    let b = 0;
 
-      for (let k = 0; k < len; k++) {
-        const bobot = kernel[k];
+    for (let ki = 0; ki < ukuranUkuranK; ki++) {
+      const s = -(ki - radius);
+      const srcY = y + s;
+      const cy = srcY < 0 ? 0 : srcY >= height ? height - 1 : srcY;
+      const cyOff = cy * width;
+
+      for (let kj = 0; kj < ukuranUkuranK; kj++) {
+        const bobot = kernel[ki * ukuranUkuranK + kj];
         if (bobot === 0) continue;
 
-        const srcX = x + tOffset[k];
-        const srcY = y + sOffset[k];
-
+        const t = -(kj - radius);
+        const srcX = x + t;
         const cx = srcX < 0 ? 0 : srcX >= width ? width - 1 : srcX;
-        const cy = srcY < 0 ? 0 : srcY >= height ? height - 1 : srcY;
-        const srcIdx = (cy * width + cx) * 4;
+        const srcIdx = (cyOff + cx) * 4;
 
-        rSum += src[srcIdx] * bobot;
-        gSum += src[srcIdx + 1] * bobot;
-        bSum += src[srcIdx + 2] * bobot;
+        r += src[srcIdx] * bobot;
+        g += src[srcIdx + 1] * bobot;
+        b += src[srcIdx + 2] * bobot;
       }
-
-      dst[dstIdx] = clamp(Math.round(rSum * invDiv + bias));
-      dst[dstIdx + 1] = clamp(Math.round(gSum * invDiv + bias));
-      dst[dstIdx + 2] = clamp(Math.round(bSum * invDiv + bias));
-      dst[dstIdx + 3] = src[dstIdx + 3]; // Kanal alfa dipertahankan utuh
     }
+
+    dst[dstIdx] = clamp(Math.round(r * invDiv + bias));
+    dst[dstIdx + 1] = clamp(Math.round(g * invDiv + bias));
+    dst[dstIdx + 2] = clamp(Math.round(b * invDiv + bias));
+    dst[dstIdx + 3] = src[dstIdx + 3];
   }
 
   return dst;
@@ -140,7 +186,8 @@ export function bangunKernelGaussian1D(sigma) {
 /**
  * Konvolusi Terpisah 2D (Separable Convolution) untuk Penapis Gaussian & Kotak.
  * Memproses lintasan horizontal (1D) lalu lintasan vertikal (1D) per kanal RGB.
- * Kompleksitas: O(2 * K * W * H).
+ * Menggunakan satu buffer Float32Array kontinu untuk menghemat alokasi memori
+ * serta perulangan berurutan ramah cache (row-major).
  *
  * @param {object} citra { width, height, data }
  * @param {Float32Array} kernel1D Bobot kernel ternormalisasi
@@ -151,65 +198,117 @@ export function konvolusiSeparable1D(citra, kernel1D, radius) {
   const { width, height, data: src } = citra;
   const totalPiksel = width * height;
   const dst = new Uint8ClampedArray(src.length);
-
-  // Buffer sementara Float32 untuk hasil lintasan horizontal
-  // Hanya menyimpan 3 kanal (R, G, B) untuk menghemat RAM
-  const bufferR = new Float32Array(totalPiksel);
-  const bufferG = new Float32Array(totalPiksel);
-  const bufferB = new Float32Array(totalPiksel);
-
+  // Satu buffer Float32Array terinterleave RGB untuk meminimalkan beban alokasi memori
+  const bufferRGB = new Float32Array(totalPiksel * 3);
   const kSize = 2 * radius + 1;
 
-  // Lintasan 1: Horizontal (Sumbu X)
+  // Lintasan 1: Horizontal
   for (let y = 0; y < height; y++) {
-    const yOffset = y * width;
-    for (let x = 0; x < width; x++) {
+    const ySrcOff = y * width * 4;
+    const yBufOff = y * width * 3;
+
+    // Interior X
+    const xEnd = width - radius;
+    for (let x = radius; x < xEnd; x++) {
       let r = 0;
       let g = 0;
       let b = 0;
-
+      let sIdx = ySrcOff + (x - radius) * 4;
       for (let k = 0; k < kSize; k++) {
         const bobot = kernel1D[k];
-        const srcX = x + (k - radius);
-        const cx = srcX < 0 ? 0 : srcX >= width ? width - 1 : srcX;
-        const srcIdx = (yOffset + cx) * 4;
-
-        r += src[srcIdx] * bobot;
-        g += src[srcIdx + 1] * bobot;
-        b += src[srcIdx + 2] * bobot;
+        r += src[sIdx] * bobot;
+        g += src[sIdx + 1] * bobot;
+        b += src[sIdx + 2] * bobot;
+        sIdx += 4;
       }
+      const bIdx = yBufOff + x * 3;
+      bufferRGB[bIdx] = r;
+      bufferRGB[bIdx + 1] = g;
+      bufferRGB[bIdx + 2] = b;
+    }
 
-      const bufIdx = yOffset + x;
-      bufferR[bufIdx] = r;
-      bufferG[bufIdx] = g;
-      bufferB[bufIdx] = b;
+    // Border X
+    for (let x = 0; x < Math.min(radius, width); x++) {
+      prosesBorderX(x, y, ySrcOff, yBufOff);
+    }
+    for (let x = Math.max(radius, width - radius); x < width; x++) {
+      prosesBorderX(x, y, ySrcOff, yBufOff);
     }
   }
 
-  // Lintasan 2: Vertikal (Sumbu Y)
-  for (let y = 0; y < height; y++) {
-    const yOffset = y * width;
+  function prosesBorderX(x, y, ySrcOff, yBufOff) {
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    for (let k = 0; k < kSize; k++) {
+      const bobot = kernel1D[k];
+      const srcX = x + (k - radius);
+      const cx = srcX < 0 ? 0 : srcX >= width ? width - 1 : srcX;
+      const srcIdx = ySrcOff + cx * 4;
+      r += src[srcIdx] * bobot;
+      g += src[srcIdx + 1] * bobot;
+      b += src[srcIdx + 2] * bobot;
+    }
+    const bIdx = yBufOff + x * 3;
+    bufferRGB[bIdx] = r;
+    bufferRGB[bIdx + 1] = g;
+    bufferRGB[bIdx + 2] = b;
+  }
+
+  // Lintasan 2: Vertikal (Iterasi row-major ramah cache)
+  const yEnd = height - radius;
+  const stride = width * 3;
+
+  for (let y = radius; y < yEnd; y++) {
+    const dstRow = y * width * 4;
+    const bufRowBase = (y - radius) * width * 3;
+
     for (let x = 0; x < width; x++) {
       let r = 0;
       let g = 0;
       let b = 0;
+      let bIdx = bufRowBase + x * 3;
+      for (let k = 0; k < kSize; k++) {
+        const bobot = kernel1D[k];
+        r += bufferRGB[bIdx] * bobot;
+        g += bufferRGB[bIdx + 1] * bobot;
+        b += bufferRGB[bIdx + 2] * bobot;
+        bIdx += stride;
+      }
+      const dstIdx = dstRow + x * 4;
+      dst[dstIdx] = clamp(Math.round(r));
+      dst[dstIdx + 1] = clamp(Math.round(g));
+      dst[dstIdx + 2] = clamp(Math.round(b));
+      dst[dstIdx + 3] = src[dstIdx + 3];
+    }
+  }
 
+  // Border Y
+  for (let y = 0; y < Math.min(radius, height); y++) prosesBorderY(y);
+  for (let y = Math.max(radius, height - radius); y < height; y++) {
+    prosesBorderY(y);
+  }
+
+  function prosesBorderY(y) {
+    const dstRow = y * width * 4;
+    for (let x = 0; x < width; x++) {
+      let r = 0;
+      let g = 0;
+      let b = 0;
       for (let k = 0; k < kSize; k++) {
         const bobot = kernel1D[k];
         const srcY = y + (k - radius);
         const cy = srcY < 0 ? 0 : srcY >= height ? height - 1 : srcY;
-        const bufIdx = cy * width + x;
-
-        r += bufferR[bufIdx] * bobot;
-        g += bufferG[bufIdx] * bobot;
-        b += bufferB[bufIdx] * bobot;
+        const bIdx = cy * width * 3 + x * 3;
+        r += bufferRGB[bIdx] * bobot;
+        g += bufferRGB[bIdx + 1] * bobot;
+        b += bufferRGB[bIdx + 2] * bobot;
       }
-
-      const dstIdx = (yOffset + x) * 4;
+      const dstIdx = dstRow + x * 4;
       dst[dstIdx] = clamp(Math.round(r));
       dst[dstIdx + 1] = clamp(Math.round(g));
       dst[dstIdx + 2] = clamp(Math.round(b));
-      dst[dstIdx + 3] = src[dstIdx + 3]; // Alfa dipertahankan
+      dst[dstIdx + 3] = src[dstIdx + 3];
     }
   }
 
@@ -217,32 +316,29 @@ export function konvolusiSeparable1D(citra, kernel1D, radius) {
 }
 
 /**
- * Membangun Citra Integral 2D (Summed-Area Table) untuk kanal tertentu atau luminans.
- * I(x, y) = Σ_{i=0}^{x-1} Σ_{j=0}^{y-1} f(i, j)
+ * Membangun Citra Integral 2D (Summed-Area Table) untuk komputasi jendela O(1).
  *
- * @param {Uint8ClampedArray|Uint8Array} dataBuffer Buffer data piksel
- * @param {number} width
- * @param {number} height
- * @param {number} [kanal=0] Offset kanal (0=R, 1=G, 2=B, atau -1 jika buffer 1D monokrom)
- * @returns {Float64Array} Buffer integral berukuran (width + 1) * (height + 1)
+ * @param {Uint8ClampedArray|Uint8Array} srcData Buffer sumber
+ * @param {number} width Lebar citra
+ * @param {number} height Tinggi citra
+ * @param {number} kanal Indeks kanal (-1 jika buffer 1D monokrom, 0=R, 1=G, 2=B)
+ * @returns {Float64Array} Buffer citra integral berukuran (width + 1) * (height + 1)
  */
-export function bangunCitraIntegral(dataBuffer, width, height, kanal = -1) {
-  const strideX = kanal >= 0 ? 4 : 1;
-  const offsetKanal = kanal >= 0 ? kanal : 0;
+export function bangunCitraIntegral(srcData, width, height, kanal = -1) {
   const wInt = width + 1;
   const hInt = height + 1;
   const integral = new Float64Array(wInt * hInt);
 
   for (let y = 0; y < height; y++) {
-    let rowSum = 0;
-    const yIntOffset = (y + 1) * wInt;
-    const yPrevOffset = y * wInt;
-    const ySrcOffset = y * width;
+    let barisSum = 0;
+    const ySrc = y * width;
+    const yInt = (y + 1) * wInt;
+    const yIntPrev = y * wInt;
 
     for (let x = 0; x < width; x++) {
-      const srcIdx = (ySrcOffset + x) * strideX + offsetKanal;
-      rowSum += dataBuffer[srcIdx];
-      integral[yIntOffset + (x + 1)] = integral[yPrevOffset + (x + 1)] + rowSum;
+      const srcIdx = kanal === -1 ? ySrc + x : (ySrc + x) * 4 + kanal;
+      barisSum += srcData[srcIdx];
+      integral[yInt + (x + 1)] = integral[yIntPrev + (x + 1)] + barisSum;
     }
   }
 
@@ -250,44 +346,29 @@ export function bangunCitraIntegral(dataBuffer, width, height, kanal = -1) {
 }
 
 /**
- * Mengambil jumlah nilai dalam jendela persegi panjang [x1, y1]..[x2, y2] dari citra integral.
- * O(1) konstan per jendela.
- *
- * @param {Float64Array} integral
- * @param {number} wInt Lebar citra integral (width + 1)
- * @param {number} x1 Koordinat kiri
- * @param {number} y1 Koordinat atas
- * @param {number} x2 Koordinat kanan (inklusif)
- * @param {number} y2 Koordinat bawah (inklusif)
- * @returns {number}
+ * Mengambil jumlah nilai dalam jendela persegi [x1, y1] sampai [x2, y2] dari citra integral.
+ * Rumus: I(x2, y2) - I(x1-1, y2) - I(x2, y1-1) + I(x1-1, y1-1)
  */
 export function ambilJumlahJendelaIntegral(integral, wInt, x1, y1, x2, y2) {
-  const rx2 = x2 + 1;
-  const ry2 = y2 + 1;
-  const rx1 = x1;
-  const ry1 = y1;
-
-  const a = integral[ry2 * wInt + rx2];
-  const b = integral[ry1 * wInt + rx2];
-  const c = integral[ry2 * wInt + rx1];
-  const d = integral[ry1 * wInt + rx1];
-
-  return a - b - c + d;
+  const A = integral[y1 * wInt + x1];
+  const B = integral[y1 * wInt + (x2 + 1)];
+  const C = integral[(y2 + 1) * wInt + x1];
+  const D = integral[(y2 + 1) * wInt + (x2 + 1)];
+  return D - B - C + A;
 }
 
 /**
- * Penapis Mean (Box Blur) menggunakan citra integral untuk kinerja tinggi O(1) per piksel.
+ * Penapis Rata-Rata Berbasis Citra Integral (O(1) Box Filter).
  *
  * @param {object} citra { width, height, data }
- * @param {number} radius Radius jendela kotak (ukuran = 2*radius + 1)
+ * @param {number} radius Radius jendela
  * @returns {Uint8ClampedArray}
  */
 export function penapisMeanIntegral(citra, radius) {
   const { width, height, data: src } = citra;
-  const r = Math.max(1, Math.round(radius));
   const dst = new Uint8ClampedArray(src.length);
+  const r = Math.max(1, Math.round(radius));
 
-  // Bangun citra integral untuk 3 kanal RGB
   const intR = bangunCitraIntegral(src, width, height, 0);
   const intG = bangunCitraIntegral(src, width, height, 1);
   const intB = bangunCitraIntegral(src, width, height, 2);
@@ -320,43 +401,10 @@ export function penapisMeanIntegral(citra, radius) {
 }
 
 /**
- * Sorting network 9 elemen untuk mencari nilai median 3x3 secara cepat tanpa alokasi memori.
- * @param {Uint8Array} arr Array 9 elemen
- * @returns {number} Nilai median (elemen indeks 4 setelah terurut)
- */
-function median9(arr) {
-  const swap = (i, j) => {
-    if (arr[i] > arr[j]) {
-      const tmp = arr[i];
-      arr[i] = arr[j];
-      arr[j] = tmp;
-    }
-  };
-  swap(1, 2);
-  swap(4, 5);
-  swap(7, 8);
-  swap(0, 1);
-  swap(3, 4);
-  swap(6, 7);
-  swap(1, 2);
-  swap(4, 5);
-  swap(7, 8);
-  swap(0, 3);
-  swap(5, 8);
-  swap(4, 7);
-  swap(3, 6);
-  swap(1, 4);
-  swap(2, 5);
-  swap(4, 7);
-  swap(4, 2);
-  swap(6, 4);
-  swap(4, 2);
-  return arr[4];
-}
-
-/**
  * Penapis Median (Median Filter) 3x3 dan 5x5 per kanal dengan replikasi tepi.
- * Menghilangkan noise bintik (salt-and-pepper) tanpa mengaburkan tepi tajam.
+ * - Jendela 3x3: Jaringan SELEKSI median-of-9 (19 pembanding tanpa alokasi / closure).
+ * - Jendela 5x5: Algoritma Huang Sliding Histogram (256-bin rolling histogram per baris).
+ * Menghilangkan noise salt-and-pepper tanpa mengaburkan tepi tajam.
  *
  * @param {object} citra { width, height, data }
  * @param {number} ukuranUkuran 3 atau 5
@@ -366,65 +414,608 @@ export function penapisMedian(citra, ukuranUkuran) {
   const { width, height, data: src } = citra;
   const dst = new Uint8ClampedArray(src.length);
   const k = ukuranUkuran === 5 ? 5 : 3;
-  const radius = Math.floor(k / 2);
-  const totalElemen = k * k;
-  const medianIdx = Math.floor(totalElemen / 2);
 
-  // Buffer lokal tetap untuk menghindari alokasi per piksel
-  const jendelaR = new Uint8Array(totalElemen);
-  const jendelaG = new Uint8Array(totalElemen);
-  const jendelaB = new Uint8Array(totalElemen);
+  if (k === 3) {
+    // ------------------------------------------------------------------------
+    // MEDIAN 3x3: Jaringan Seleksi Median-of-9 (19 pembanding inlined)
+    // ------------------------------------------------------------------------
+    for (let y = 0; y < height; y++) {
+      const isEdgeY = y === 0 || y === height - 1;
+      const y0 = y === 0 ? 0 : y - 1;
+      const y1 = y;
+      const y2 = y === height - 1 ? height - 1 : y + 1;
+      const r0 = y0 * width * 4;
+      const r1 = y1 * width * 4;
+      const r2 = y2 * width * 4;
 
-  for (let y = 0; y < height; y++) {
-    const yOffset = y * width;
-    for (let x = 0; x < width; x++) {
-      let count = 0;
+      if (isEdgeY) {
+        for (let x = 0; x < width; x++) {
+          const x0 = (x === 0 ? 0 : x - 1) * 4;
+          const x1 = x * 4;
+          const x2 = (x === width - 1 ? width - 1 : x + 1) * 4;
 
-      for (let dy = -radius; dy <= radius; dy++) {
-        const cy = y + dy < 0 ? 0 : y + dy >= height ? height - 1 : y + dy;
-        const cyOffset = cy * width;
+          for (let ch = 0; ch < 3; ch++) {
+            let p0 = src[r0 + x0 + ch],
+              p1 = src[r0 + x1 + ch],
+              p2 = src[r0 + x2 + ch];
+            let p3 = src[r1 + x0 + ch],
+              p4 = src[r1 + x1 + ch],
+              p5 = src[r1 + x2 + ch];
+            let p6 = src[r2 + x0 + ch],
+              p7 = src[r2 + x1 + ch],
+              p8 = src[r2 + x2 + ch];
 
-        for (let dx = -radius; dx <= radius; dx++) {
-          const cx = x + dx < 0 ? 0 : x + dx >= width ? width - 1 : x + dx;
-          const srcIdx = (cyOffset + cx) * 4;
+            let tmp;
+            if (p1 > p2) {
+              tmp = p1;
+              p1 = p2;
+              p2 = tmp;
+            }
+            if (p4 > p5) {
+              tmp = p4;
+              p4 = p5;
+              p5 = tmp;
+            }
+            if (p7 > p8) {
+              tmp = p7;
+              p7 = p8;
+              p8 = tmp;
+            }
+            if (p0 > p1) {
+              tmp = p0;
+              p0 = p1;
+              p1 = tmp;
+            }
+            if (p3 > p4) {
+              tmp = p3;
+              p3 = p4;
+              p4 = tmp;
+            }
+            if (p6 > p7) {
+              tmp = p6;
+              p6 = p7;
+              p7 = tmp;
+            }
+            if (p1 > p2) {
+              tmp = p1;
+              p1 = p2;
+              p2 = tmp;
+            }
+            if (p4 > p5) {
+              tmp = p4;
+              p4 = p5;
+              p5 = tmp;
+            }
+            if (p7 > p8) {
+              tmp = p7;
+              p7 = p8;
+              p8 = tmp;
+            }
+            if (p0 > p3) {
+              tmp = p0;
+              p0 = p3;
+              p3 = tmp;
+            }
+            if (p5 > p8) {
+              tmp = p5;
+              p5 = p8;
+              p8 = tmp;
+            }
+            if (p4 > p7) {
+              tmp = p4;
+              p4 = p7;
+              p7 = tmp;
+            }
+            if (p3 > p6) {
+              tmp = p3;
+              p3 = p6;
+              p6 = tmp;
+            }
+            if (p1 > p4) {
+              tmp = p1;
+              p1 = p4;
+              p4 = tmp;
+            }
+            if (p2 > p5) {
+              tmp = p2;
+              p2 = p5;
+              p5 = tmp;
+            }
+            if (p4 > p7) {
+              tmp = p4;
+              p4 = p7;
+              p7 = tmp;
+            }
+            if (p4 > p2) {
+              tmp = p4;
+              p4 = p2;
+              p2 = tmp;
+            }
+            if (p6 > p4) {
+              tmp = p6;
+              p6 = p4;
+              p4 = tmp;
+            }
+            if (p4 > p2) {
+              tmp = p4;
+              p4 = p2;
+              p2 = tmp;
+            }
 
-          jendelaR[count] = src[srcIdx];
-          jendelaG[count] = src[srcIdx + 1];
-          jendelaB[count] = src[srcIdx + 2];
-          count++;
+            dst[r1 + x1 + ch] = p4;
+          }
+          dst[r1 + x1 + 3] = src[r1 + x1 + 3];
+        }
+      } else {
+        // Border kiri (x = 0)
+        {
+          const x0 = 0,
+            x1 = 0,
+            x2 = 4;
+          for (let ch = 0; ch < 3; ch++) {
+            let p0 = src[r0 + x0 + ch],
+              p1 = src[r0 + x1 + ch],
+              p2 = src[r0 + x2 + ch];
+            let p3 = src[r1 + x0 + ch],
+              p4 = src[r1 + x1 + ch],
+              p5 = src[r1 + x2 + ch];
+            let p6 = src[r2 + x0 + ch],
+              p7 = src[r2 + x1 + ch],
+              p8 = src[r2 + x2 + ch];
+
+            let tmp;
+            if (p1 > p2) {
+              tmp = p1;
+              p1 = p2;
+              p2 = tmp;
+            }
+            if (p4 > p5) {
+              tmp = p4;
+              p4 = p5;
+              p5 = tmp;
+            }
+            if (p7 > p8) {
+              tmp = p7;
+              p7 = p8;
+              p8 = tmp;
+            }
+            if (p0 > p1) {
+              tmp = p0;
+              p0 = p1;
+              p1 = tmp;
+            }
+            if (p3 > p4) {
+              tmp = p3;
+              p3 = p4;
+              p4 = tmp;
+            }
+            if (p6 > p7) {
+              tmp = p6;
+              p6 = p7;
+              p7 = tmp;
+            }
+            if (p1 > p2) {
+              tmp = p1;
+              p1 = p2;
+              p2 = tmp;
+            }
+            if (p4 > p5) {
+              tmp = p4;
+              p4 = p5;
+              p5 = tmp;
+            }
+            if (p7 > p8) {
+              tmp = p7;
+              p7 = p8;
+              p8 = tmp;
+            }
+            if (p0 > p3) {
+              tmp = p0;
+              p0 = p3;
+              p3 = tmp;
+            }
+            if (p5 > p8) {
+              tmp = p5;
+              p5 = p8;
+              p8 = tmp;
+            }
+            if (p4 > p7) {
+              tmp = p4;
+              p4 = p7;
+              p7 = tmp;
+            }
+            if (p3 > p6) {
+              tmp = p3;
+              p3 = p6;
+              p6 = tmp;
+            }
+            if (p1 > p4) {
+              tmp = p1;
+              p1 = p4;
+              p4 = tmp;
+            }
+            if (p2 > p5) {
+              tmp = p2;
+              p2 = p5;
+              p5 = tmp;
+            }
+            if (p4 > p7) {
+              tmp = p4;
+              p4 = p7;
+              p7 = tmp;
+            }
+            if (p4 > p2) {
+              tmp = p4;
+              p4 = p2;
+              p2 = tmp;
+            }
+            if (p6 > p4) {
+              tmp = p6;
+              p6 = p4;
+              p4 = tmp;
+            }
+            if (p4 > p2) {
+              tmp = p4;
+              p4 = p2;
+              p2 = tmp;
+            }
+
+            dst[r1 + x1 + ch] = p4;
+          }
+          dst[r1 + x1 + 3] = src[r1 + x1 + 3];
+        }
+
+        // Interior x in [1, width - 2]
+        let pC = r1 + 4;
+        let pT = r0 + 4;
+        let pB = r2 + 4;
+
+        for (let x = 1; x < width - 1; x++) {
+          for (let ch = 0; ch < 3; ch++) {
+            let p0 = src[pT - 4 + ch],
+              p1 = src[pT + ch],
+              p2 = src[pT + 4 + ch];
+            let p3 = src[pC - 4 + ch],
+              p4 = src[pC + ch],
+              p5 = src[pC + 4 + ch];
+            let p6 = src[pB - 4 + ch],
+              p7 = src[pB + ch],
+              p8 = src[pB + 4 + ch];
+
+            let tmp;
+            if (p1 > p2) {
+              tmp = p1;
+              p1 = p2;
+              p2 = tmp;
+            }
+            if (p4 > p5) {
+              tmp = p4;
+              p4 = p5;
+              p5 = tmp;
+            }
+            if (p7 > p8) {
+              tmp = p7;
+              p7 = p8;
+              p8 = tmp;
+            }
+            if (p0 > p1) {
+              tmp = p0;
+              p0 = p1;
+              p1 = tmp;
+            }
+            if (p3 > p4) {
+              tmp = p3;
+              p3 = p4;
+              p4 = tmp;
+            }
+            if (p6 > p7) {
+              tmp = p6;
+              p6 = p7;
+              p7 = tmp;
+            }
+            if (p1 > p2) {
+              tmp = p1;
+              p1 = p2;
+              p2 = tmp;
+            }
+            if (p4 > p5) {
+              tmp = p4;
+              p4 = p5;
+              p5 = tmp;
+            }
+            if (p7 > p8) {
+              tmp = p7;
+              p7 = p8;
+              p8 = tmp;
+            }
+            if (p0 > p3) {
+              tmp = p0;
+              p0 = p3;
+              p3 = tmp;
+            }
+            if (p5 > p8) {
+              tmp = p5;
+              p5 = p8;
+              p8 = tmp;
+            }
+            if (p4 > p7) {
+              tmp = p4;
+              p4 = p7;
+              p7 = tmp;
+            }
+            if (p3 > p6) {
+              tmp = p3;
+              p3 = p6;
+              p6 = tmp;
+            }
+            if (p1 > p4) {
+              tmp = p1;
+              p1 = p4;
+              p4 = tmp;
+            }
+            if (p2 > p5) {
+              tmp = p2;
+              p2 = p5;
+              p5 = tmp;
+            }
+            if (p4 > p7) {
+              tmp = p4;
+              p4 = p7;
+              p7 = tmp;
+            }
+            if (p4 > p2) {
+              tmp = p4;
+              p4 = p2;
+              p2 = tmp;
+            }
+            if (p6 > p4) {
+              tmp = p6;
+              p6 = p4;
+              p4 = tmp;
+            }
+            if (p4 > p2) {
+              tmp = p4;
+              p4 = p2;
+              p2 = tmp;
+            }
+
+            dst[pC + ch] = p4;
+          }
+          dst[pC + 3] = src[pC + 3];
+          pC += 4;
+          pT += 4;
+          pB += 4;
+        }
+
+        // Border kanan (x = width - 1)
+        {
+          const x0 = (width - 2) * 4,
+            x1 = (width - 1) * 4,
+            x2 = (width - 1) * 4;
+          for (let ch = 0; ch < 3; ch++) {
+            let p0 = src[r0 + x0 + ch],
+              p1 = src[r0 + x1 + ch],
+              p2 = src[r0 + x2 + ch];
+            let p3 = src[r1 + x0 + ch],
+              p4 = src[r1 + x1 + ch],
+              p5 = src[r1 + x2 + ch];
+            let p6 = src[r2 + x0 + ch],
+              p7 = src[r2 + x1 + ch],
+              p8 = src[r2 + x2 + ch];
+
+            let tmp;
+            if (p1 > p2) {
+              tmp = p1;
+              p1 = p2;
+              p2 = tmp;
+            }
+            if (p4 > p5) {
+              tmp = p4;
+              p4 = p5;
+              p5 = tmp;
+            }
+            if (p7 > p8) {
+              tmp = p7;
+              p7 = p8;
+              p8 = tmp;
+            }
+            if (p0 > p1) {
+              tmp = p0;
+              p0 = p1;
+              p1 = tmp;
+            }
+            if (p3 > p4) {
+              tmp = p3;
+              p3 = p4;
+              p4 = tmp;
+            }
+            if (p6 > p7) {
+              tmp = p6;
+              p6 = p7;
+              p7 = tmp;
+            }
+            if (p1 > p2) {
+              tmp = p1;
+              p1 = p2;
+              p2 = tmp;
+            }
+            if (p4 > p5) {
+              tmp = p4;
+              p4 = p5;
+              p5 = tmp;
+            }
+            if (p7 > p8) {
+              tmp = p7;
+              p7 = p8;
+              p8 = tmp;
+            }
+            if (p0 > p3) {
+              tmp = p0;
+              p0 = p3;
+              p3 = tmp;
+            }
+            if (p5 > p8) {
+              tmp = p5;
+              p5 = p8;
+              p8 = tmp;
+            }
+            if (p4 > p7) {
+              tmp = p4;
+              p4 = p7;
+              p7 = tmp;
+            }
+            if (p3 > p6) {
+              tmp = p3;
+              p3 = p6;
+              p6 = tmp;
+            }
+            if (p1 > p4) {
+              tmp = p1;
+              p1 = p4;
+              p4 = tmp;
+            }
+            if (p2 > p5) {
+              tmp = p2;
+              p2 = p5;
+              p5 = tmp;
+            }
+            if (p4 > p7) {
+              tmp = p4;
+              p4 = p7;
+              p7 = tmp;
+            }
+            if (p4 > p2) {
+              tmp = p4;
+              p4 = p2;
+              p2 = tmp;
+            }
+            if (p6 > p4) {
+              tmp = p6;
+              p6 = p4;
+              p4 = tmp;
+            }
+            if (p4 > p2) {
+              tmp = p4;
+              p4 = p2;
+              p2 = tmp;
+            }
+
+            dst[r1 + x1 + ch] = p4;
+          }
+          dst[r1 + x1 + 3] = src[r1 + x1 + 3];
         }
       }
-
-      let medR, medG, medB;
-      if (k === 3) {
-        medR = median9(jendelaR);
-        medG = median9(jendelaG);
-        medB = median9(jendelaB);
-      } else {
-        // Insertion sort lokal untuk 25 elemen (efisien untuk n kecil)
-        const sort25 = (arr) => {
-          for (let i = 1; i < 25; i++) {
-            const key = arr[i];
-            let j = i - 1;
-            while (j >= 0 && arr[j] > key) {
-              arr[j + 1] = arr[j];
-              j--;
-            }
-            arr[j + 1] = key;
-          }
-          return arr[medianIdx];
-        };
-        medR = sort25(jendelaR);
-        medG = sort25(jendelaG);
-        medB = sort25(jendelaB);
-      }
-
-      const dstIdx = (yOffset + x) * 4;
-      dst[dstIdx] = medR;
-      dst[dstIdx + 1] = medG;
-      dst[dstIdx + 2] = medB;
-      dst[dstIdx + 3] = src[dstIdx + 3];
     }
+  } else {
+    // ------------------------------------------------------------------------
+    // MEDIAN 5x5: Algoritma Huang Sliding Histogram
+    // ------------------------------------------------------------------------
+    const radius = 2;
+    const targetRank = 13; // (25 + 1) / 2
+
+    for (let ch = 0; ch < 3; ch++) {
+      const hist = new Int32Array(256);
+
+      for (let y = 0; y < height; y++) {
+        hist.fill(0);
+        const ym2 = y >= 2 ? y - 2 : 0;
+        const ym1 = y >= 1 ? y - 1 : 0;
+        const yp1 = y < height - 1 ? y + 1 : height - 1;
+        const yp2 = y < height - 2 ? y + 2 : height - 1;
+
+        const r0 = ym2 * width * 4 + ch;
+        const r1 = ym1 * width * 4 + ch;
+        const r2 = y * width * 4 + ch;
+        const r3 = yp1 * width * 4 + ch;
+        const r4 = yp2 * width * 4 + ch;
+
+        // Inisialisasi histogram kolom -2..2
+        for (let dx = -radius; dx <= radius; dx++) {
+          const cx = dx < 0 ? 0 : dx >= width ? width - 1 : dx;
+          const xOff = cx * 4;
+          hist[src[r0 + xOff]]++;
+          hist[src[r1 + xOff]]++;
+          hist[src[r2 + xOff]]++;
+          hist[src[r3 + xOff]]++;
+          hist[src[r4 + xOff]]++;
+        }
+
+        let count = 0;
+        let med = 0;
+        while (med < 256) {
+          count += hist[med];
+          if (count >= targetRank) break;
+          med++;
+        }
+
+        let dstIdx = y * width * 4 + ch;
+        dst[dstIdx] = med;
+
+        // Geser sepanjang baris X
+        for (let x = 1; x < width; x++) {
+          dstIdx += 4;
+          const xOut = x - radius - 1;
+          const cxOut = xOut < 0 ? 0 : xOut;
+          const outOff = cxOut * 4;
+
+          const pOut0 = src[r0 + outOff];
+          const pOut1 = src[r1 + outOff];
+          const pOut2 = src[r2 + outOff];
+          const pOut3 = src[r3 + outOff];
+          const pOut4 = src[r4 + outOff];
+
+          hist[pOut0]--;
+          if (pOut0 <= med) count--;
+          hist[pOut1]--;
+          if (pOut1 <= med) count--;
+          hist[pOut2]--;
+          if (pOut2 <= med) count--;
+          hist[pOut3]--;
+          if (pOut3 <= med) count--;
+          hist[pOut4]--;
+          if (pOut4 <= med) count--;
+
+          const xIn = x + radius;
+          const cxIn = xIn >= width ? width - 1 : xIn;
+          const inOff = cxIn * 4;
+
+          const pIn0 = src[r0 + inOff];
+          const pIn1 = src[r1 + inOff];
+          const pIn2 = src[r2 + inOff];
+          const pIn3 = src[r3 + inOff];
+          const pIn4 = src[r4 + inOff];
+
+          hist[pIn0]++;
+          if (pIn0 <= med) count++;
+          hist[pIn1]++;
+          if (pIn1 <= med) count++;
+          hist[pIn2]++;
+          if (pIn2 <= med) count++;
+          hist[pIn3]++;
+          if (pIn3 <= med) count++;
+          hist[pIn4]++;
+          if (pIn4 <= med) count++;
+
+          if (count < targetRank) {
+            while (count < targetRank && med < 255) {
+              med++;
+              count += hist[med];
+            }
+          } else {
+            while (count - hist[med] >= targetRank && med > 0) {
+              count -= hist[med];
+              med--;
+            }
+          }
+          dst[dstIdx] = med;
+        }
+      }
+    }
+  }
+
+  // Pertahankan kanal alfa
+  for (let i = 3; i < src.length; i += 4) {
+    dst[i] = src[i];
   }
 
   return dst;
@@ -439,12 +1030,13 @@ export function penapisMedian(citra, ukuranUkuran) {
  */
 export function ekstrakLuminansRec601(citra) {
   const { width, height, data: src } = citra;
-  const len = width * height;
-  const lum = new Uint8Array(len);
+  const total = width * height;
+  const lum = new Uint8Array(total);
 
   for (let i = 0, j = 0; i < src.length; i += 4, j++) {
     lum[j] = hitungLuminansRec601(src[i], src[i + 1], src[i + 2]);
   }
+
   return lum;
 }
 

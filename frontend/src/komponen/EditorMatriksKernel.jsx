@@ -251,11 +251,13 @@ export default function EditorMatriksKernel({
           <option value="" disabled>
             {t('parameter.presetKernelPlaceholder')}
           </option>
-          {Object.entries(PRESET_KERNEL).map(([kunci, val]) => (
-            <option key={kunci} value={kunci}>
-              {t(val.kunciLabel)}
-            </option>
-          ))}
+          {Object.entries(PRESET_KERNEL)
+            .filter(([, val]) => val.ukuran === ukuran)
+            .map(([kunci, val]) => (
+              <option key={kunci} value={kunci}>
+                {t(val.kunciLabel)}
+              </option>
+            ))}
         </select>
 
         {/* Tombol Reset */}
@@ -288,8 +290,8 @@ export default function EditorMatriksKernel({
                 <div key={idx} role="gridcell" className="relative">
                   <input
                     ref={(el) => (inputRefs.current[idx] = el)}
-                    type="number"
-                    step="any"
+                    type="text"
+                    inputMode="numeric"
                     value={val}
                     onChange={(e) => ubahNilaiSel(idx, e.target.value)}
                     onBlur={() => saatKomitParameter()}

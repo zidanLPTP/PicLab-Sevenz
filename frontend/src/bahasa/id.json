@@ -287,7 +287,8 @@
     "labelMatriks": "Kisi Matriks Kernel {{ukuran}} kali {{ukuran}}",
     "selMatriks": "Baris {{baris}}, Kolom {{kolom}}",
     "galatRentangMatriks": "Nilai sel harus berupa angka antara {{min}} dan {{max}}",
-    "hitungJumlahBobot": "Hitung jumlah seluruh bobot (Σ = {{jumlah}})"
+    "hitungJumlahBobot": "Hitung jumlah seluruh bobot (Σ = {{jumlah}})",
+    "catatanKernelTetap": "Pratinjau dapat berbeda dari hasil resolusi penuh karena ukuran jendela/kernel konstan pada citra yang diperkecil."
   },
   "presetKernel": {
     "identitas": "Identitas (Tanpa Efek)",
