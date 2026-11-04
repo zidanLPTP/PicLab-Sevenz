@@ -7,7 +7,7 @@ import {
   klonaDaftarLangkah,
   reducerPipeline,
 } from '../mesin/pipeline';
-import { DAFTAR_PRESET } from '../mesin/preset';
+import { DAFTAR_PRESET, validasiStrukturPreset } from '../mesin/preset';
 import { buatCitraKosong } from '../mesin/utilitasCitra';
 import { KONFIGURASI_PIPELINE } from '../utilitas/konfigurasiPipeline';
 
@@ -1036,8 +1036,15 @@ describe('Model Pipeline, Reducer Murni, & Eksekusi Berantai (Tahap 3)', () => {
   });
 
   describe('5. Validasi Integritas 5 Preset Awal', () => {
-    it('seluruh 5 preset menghasilkan langkah valid dan dapat dieksekusi tanpa galat', () => {
-      const citra = buatCitraKosong(50, 50);
+    it('seluruh 5 preset menghasilkan langkah valid, dapat dieksekusi tanpa galat, dan bebas dari NaN', () => {
+      const citra = buatCitraKosong(8, 8);
+      // Isi beberapa nilai non-nol pada citra uji
+      for (let i = 0; i < citra.data.length; i += 4) {
+        citra.data[i] = (i * 7) % 256;
+        citra.data[i + 1] = (i * 13) % 256;
+        citra.data[i + 2] = (i * 19) % 256;
+        citra.data[i + 3] = 255;
+      }
 
       expect(DAFTAR_PRESET).toHaveLength(5);
 
@@ -1048,58 +1055,121 @@ describe('Model Pipeline, Reducer Murni, & Eksekusi Berantai (Tahap 3)', () => {
 
         // Eksekusi setiap preset
         const { hasil } = eksekusiPipelineSekuensial(pr.langkah, citra);
-        expect(hasil.width).toBe(50);
-        expect(hasil.height).toBe(50);
+        expect(hasil.width).toBe(8);
+        expect(hasil.height).toBe(8);
         expect(hasil.data).toBeInstanceOf(Uint8ClampedArray);
+
+        // Verifikasi tidak ada NaN atau nilai non-finit pada piksel hasil
+        for (let i = 0; i < hasil.data.length; i++) {
+          const val = hasil.data[i];
+          expect(Number.isFinite(val)).toBe(true);
+          expect(Number.isNaN(val)).toBe(false);
+        }
       }
     });
 
-    it('F5: validitas preset ketat - memeriksa idOperasi di katalog dan parameter terhadap skemaParameter', () => {
+    it('G1 d: validasi struktur ketat seluruh preset (katalog, skema, tanpa kunci asing, rentang)', () => {
       expect(DAFTAR_PRESET).toHaveLength(5);
 
       for (const pr of DAFTAR_PRESET) {
-        expect(pr.id).toBeDefined();
-        expect(pr.kunciNama).toBeDefined();
-        expect(pr.kunciDeskripsi).toBeDefined();
-        expect(pr.langkah.length).toBeGreaterThan(0);
-
-        for (const langkah of pr.langkah) {
-          // 1. Periksa idOperasi terdaftar di katalog operasi
-          const op = dapatkanOperasiBerdasarkanId(langkah.idOperasi);
-          expect(
-            op,
-            `Operasi "${langkah.idOperasi}" pada preset "${pr.id}" harus terdaftar di katalog!`
-          ).toBeDefined();
-
-          // 2. Periksa setiap parameter langkah terdaftar pada skemaParameter operasi
-          const skemaMap = new Map(
-            (op.skemaParameter || []).map((s) => [s.id, s])
-          );
-          for (const [kunciParam, nilaiParam] of Object.entries(
-            langkah.parameter
-          )) {
-            const skema = skemaMap.get(kunciParam);
-            expect(
-              skema,
-              `Parameter "${kunciParam}" pada operasi "${langkah.idOperasi}" di preset "${pr.id}" tidak ditemukan dalam skema!`
-            ).toBeDefined();
-
-            // 3. Periksa validitas nilai parameter terhadap batasan tipe skema
-            if (skema.tipe === 'slider' || skema.tipe === 'angka') {
-              expect(typeof nilaiParam).toBe('number');
-              if (skema.min !== undefined) {
-                expect(nilaiParam).toBeGreaterThanOrEqual(skema.min);
-              }
-              if (skema.max !== undefined) {
-                expect(nilaiParam).toBeLessThanOrEqual(skema.max);
-              }
-            } else if (skema.tipe === 'pilihan') {
-              const nilaiPilihan = (skema.pilihan || []).map((o) => o.nilai);
-              expect(nilaiPilihan).toContain(nilaiParam);
-            }
-          }
-        }
+        const hasilValidasi = validasiStrukturPreset(
+          pr,
+          dapatkanOperasiBerdasarkanId
+        );
+        expect(
+          hasilValidasi.valid,
+          `Preset "${pr.id}" memiliki galat validasi: ${hasilValidasi.galat.join(', ')}`
+        ).toBe(true);
+        expect(hasilValidasi.galat).toEqual([]);
       }
+    });
+
+    it('G1 d: UJI NEGATIF - pembuktian validasi gagal jika preset berisi ID tak dikenal, kunci asing, atau rentang tak valid', () => {
+      // Kasus 1: ID operasi tidak dikenal (misal 'warna_temperatur')
+      const presetIdTakDikenal = {
+        id: 'uji_salah_id',
+        kunciNama: 'preset.uji',
+        kunciDeskripsi: 'preset.uji',
+        langkah: [
+          { idOperasi: 'warna_temperatur', parameter: {}, aktif: true },
+        ],
+      };
+      const res1 = validasiStrukturPreset(
+        presetIdTakDikenal,
+        dapatkanOperasiBerdasarkanId
+      );
+      expect(res1.valid).toBe(false);
+      expect(
+        res1.galat.some((g) => g.includes("Operasi 'warna_temperatur'"))
+      ).toBe(true);
+
+      // Kasus 2: Kunci parameter asing (misal 'persentilBawah' pada peregangan kontras)
+      const presetKunciAsing = {
+        id: 'uji_kunci_asing',
+        kunciNama: 'preset.uji',
+        kunciDeskripsi: 'preset.uji',
+        langkah: [
+          {
+            idOperasi: 'enhancement_peregangan_kontras',
+            parameter: { persentilBawah: 1, pemangkasan: 1.5 },
+            aktif: true,
+          },
+        ],
+      };
+      const res2 = validasiStrukturPreset(
+        presetKunciAsing,
+        dapatkanOperasiBerdasarkanId
+      );
+      expect(res2.valid).toBe(false);
+      expect(
+        res2.galat.some((g) =>
+          g.includes("Kunci parameter asing 'persentilBawah'")
+        )
+      ).toBe(true);
+
+      // Kasus 3: Nilai parameter di luar rentang skema (misal pemangkasan 10, padahal max 5)
+      const presetDiLuarRentang = {
+        id: 'uji_rentang',
+        kunciNama: 'preset.uji',
+        kunciDeskripsi: 'preset.uji',
+        langkah: [
+          {
+            idOperasi: 'enhancement_peregangan_kontras',
+            parameter: { pemangkasan: 10 },
+            aktif: true,
+          },
+        ],
+      };
+      const res3 = validasiStrukturPreset(
+        presetDiLuarRentang,
+        dapatkanOperasiBerdasarkanId
+      );
+      expect(res3.valid).toBe(false);
+      expect(
+        res3.galat.some((g) => g.includes('melebihi batas maksimum (5)'))
+      ).toBe(true);
+
+      // Kasus 4: Parameter bertipe slider tetapi diisi bukan angka finit
+      const presetBukanAngka = {
+        id: 'uji_nan',
+        kunciNama: 'preset.uji',
+        kunciDeskripsi: 'preset.uji',
+        langkah: [
+          {
+            idOperasi: 'dasar_kontras',
+            parameter: { kontras: 'bukan_angka' },
+            aktif: true,
+          },
+        ],
+      };
+      const res4 = validasiStrukturPreset(
+        presetBukanAngka,
+        dapatkanOperasiBerdasarkanId
+      );
+      expect(res4.valid).toBe(false);
+      expect(
+        res4.galat.some((g) => g.includes('harus berupa angka finit'))
+      ).toBe(true);
     });
   });
 });

@@ -10,13 +10,14 @@ test.describe('PicLab Sevenz — Benchmark Pipeline 5 Langkah & Tangkapan Layar 
 
     await page.goto('/');
 
-    // 1. Eksekusi benchmark pipeline 5 langkah di worker langsung pada resolusi penuh 12 MP & preview 1024x768
+    // 1. Eksekusi benchmark pipeline 5 langkah di Web Worker secara terisolasi
+    // Mengukur komputasi murni di Web Worker pada preview 1024x768 dan citra 12 MP (4000x3000)
     const hasilWorker = await page.evaluate(async () => {
       const { jalankanPipeline } = await import(
         '/src/pekerja/pengelolaPekerja.js'
       );
 
-      // Buat citra 12 MP sintetis (4000x3000)
+      // Buat citra 12 MP sintetis (4000x3000) dengan gradien warna nyata
       const c12 = document.createElement('canvas');
       c12.width = 4000;
       c12.height = 3000;
@@ -35,7 +36,7 @@ test.describe('PicLab Sevenz — Benchmark Pipeline 5 Langkah & Tangkapan Layar 
         height: 3000,
       };
 
-      // Preview 1024x768
+      // Buat citra preview 1024x768 dari citra 12 MP
       const cPrev = document.createElement('canvas');
       cPrev.width = 1024;
       cPrev.height = 768;
@@ -48,77 +49,78 @@ test.describe('PicLab Sevenz — Benchmark Pipeline 5 Langkah & Tangkapan Layar 
         height: 768,
       };
 
-      // Pipeline 5 langkah:
-      // Langkah 0: Kecerahan
-      // Langkah 1: Kontras
-      // Langkah 2: Saturasi
-      // Langkah 3: Negatif Citra
-      // Langkah 4: Gamma
-      const buatPipeline5 = (valLangkah1 = 20, valLangkah5 = 1.2) => [
+      // Pipeline 5 langkah terdaftar:
+      // Langkah 0: dasar_kecerahan
+      // Langkah 1: dasar_kontras
+      // Langkah 2: warna_saturasi
+      // Langkah 3: dasar_negatif
+      // Langkah 4: warna_balance
+      const buatPipeline5 = (valLangkah0 = 20, valLangkah4Merah = 15) => [
         {
-          id: 'kecerahan-1',
+          id: 'kecerahan-0',
           idOperasi: 'dasar_kecerahan',
           aktif: true,
-          parameter: { kecerahan: valLangkah1 },
+          parameter: { kecerahan: valLangkah0 },
         },
         {
-          id: 'kontras-2',
+          id: 'kontras-1',
           idOperasi: 'dasar_kontras',
           aktif: true,
           parameter: { kontras: 25 },
         },
         {
-          id: 'saturasi-3',
+          id: 'saturasi-2',
           idOperasi: 'warna_saturasi',
           aktif: true,
           parameter: { saturasi: 15 },
         },
         {
-          id: 'negatif-4',
+          id: 'negatif-3',
           idOperasi: 'dasar_negatif',
           aktif: true,
           parameter: {},
         },
         {
-          id: 'gamma-5',
-          idOperasi: 'enhancement_gamma',
+          id: 'balance-4',
+          idOperasi: 'warna_balance',
           aktif: true,
-          parameter: { gamma: valLangkah5 },
+          parameter: { merah: valLangkah4Merah, hijau: 5, biru: -10 },
         },
       ];
 
-      // Pemanasan
+      // Pemanasan Web Worker (Warm-up)
       await jalankanPipeline(
-        buatPipeline5(20, 1.2),
+        buatPipeline5(20, 15),
         citraPreview,
         { rasio: 1.0 },
         true
       );
 
-      // (A) Ukur Worst-Case: Langkah 0 diubah (semua 5 langkah dihitung)
-      const durasiWorstCasePreview = [];
-      for (let i = 0; i < 15; i++) {
-        const val = 10 + i;
-        const p = buatPipeline5(val, 1.2);
+      // (A) Konfigurasi 1: Worst-Case (Langkah 0 diubah -> cache prefix panjang 0 -> semua 5 langkah dihitung ulang)
+      // Pengulangan: 30 kali
+      const durasiWorstCaseWorker = [];
+      for (let i = 0; i < 30; i++) {
+        const p = buatPipeline5(10 + (i % 20), 15);
         const t0 = performance.now();
         await jalankanPipeline(p, citraPreview, { rasio: 1.0 }, true);
-        durasiWorstCasePreview.push(performance.now() - t0);
+        durasiWorstCaseWorker.push(performance.now() - t0);
       }
 
-      // (B) Ukur Best-Case (Prefix Cache Hit): Hanya langkah ke-5 diubah (langkah 0-3 dari cache)
-      const durasiCachePreview = [];
-      for (let i = 0; i < 25; i++) {
-        const valGamma = 1.0 + i * 0.05;
-        const p = buatPipeline5(24, valGamma);
+      // (B) Konfigurasi 2: Cache Hit (Langkah ke-5 diubah -> langkah 0..3 diambil dari cache -> hanya 1 langkah dihitung)
+      // Pengulangan: 30 kali
+      const durasiCacheHitWorker = [];
+      for (let i = 0; i < 30; i++) {
+        const valMerah = 5 + (i % 20);
+        const p = buatPipeline5(20, valMerah);
         const t0 = performance.now();
         await jalankanPipeline(p, citraPreview, { rasio: 1.0 }, true);
-        durasiCachePreview.push(performance.now() - t0);
+        durasiCacheHitWorker.push(performance.now() - t0);
       }
 
-      // (C) Unduh Resolusi Penuh 12 MP (Eksekusi 5 langkah tanpa cache intermediate)
+      // (C) Konfigurasi 3: Unduh Resolusi Penuh 12 MP (4000x3000, eksekusi sekuensial 5 langkah tanpa intermediate cache)
       const tAwalUnduh = performance.now();
       const resPenuh = await jalankanPipeline(
-        buatPipeline5(25, 1.2),
+        buatPipeline5(20, 15),
         citraPenuh,
         { rasio: 1.0 },
         false
@@ -136,8 +138,8 @@ test.describe('PicLab Sevenz — Benchmark Pipeline 5 Langkah & Tangkapan Layar 
       };
 
       return {
-        previewWorstCase: hitungStat(durasiWorstCasePreview),
-        previewCacheHit: hitungStat(durasiCachePreview),
+        previewWorstCaseWorker: hitungStat(durasiWorstCaseWorker),
+        previewCacheHitWorker: hitungStat(durasiCacheHitWorker),
         durasiUnduh12MPMs: parseFloat(durasiUnduh12MP.toFixed(2)),
         lebarHasilPenuh: resPenuh.hasil.width,
         tinggiHasilPenuh: resPenuh.hasil.height,
@@ -146,11 +148,11 @@ test.describe('PicLab Sevenz — Benchmark Pipeline 5 Langkah & Tangkapan Layar 
 
     expect(hasilWorker.lebarHasilPenuh).toBe(4000);
     expect(hasilWorker.tinggiHasilPenuh).toBe(3000);
-    expect(hasilWorker.previewCacheHit.median).toBeLessThan(
-      hasilWorker.previewWorstCase.median
+    expect(hasilWorker.previewCacheHitWorker.median).toBeLessThan(
+      hasilWorker.previewWorstCaseWorker.median
     );
 
-    // 2. Pasang PerformanceObserver longtask di UI saat slider digeser interaktif
+    // 2. Pasang PerformanceObserver untuk longtask & profil latensi ujung-ke-ujung di UI
     await page.evaluate(() => {
       window.__longtasks = [];
       const obs = new PerformanceObserver((list) => {
@@ -165,46 +167,79 @@ test.describe('PicLab Sevenz — Benchmark Pipeline 5 Langkah & Tangkapan Layar 
       obs.observe({ entryTypes: ['longtask'] });
     });
 
-    // Muat citra contoh di UI
+    // Buka gambar contoh di antarmuka pengguna
     await page.getByRole('button', { name: 'Gunakan Gambar Contoh' }).click();
     await expect(page.getByRole('slider')).toBeVisible();
 
-    // Tambah 3 langkah ke pipeline
-    await page
-      .getByTestId('tombol-tambah-operasi-dasar_kecerahan')
-      .click();
-    await page.getByTestId('tombol-tambah-operasi-dasar_kontras').click();
-    await page
-      .getByTestId('tombol-tambah-operasi-warna_saturasi')
-      .click();
+    // Terapkan preset Hitam Putih (2 langkah) + tambah 1 langkah Kecerahan = total 3 langkah pipeline
+    await page.getByTestId('tombol-preset-hitam_putih').click();
+    await page.getByTestId('tombol-tambah-operasi-dasar_kecerahan').click();
 
-    // Geser slider saturasi bolak-balik 30 kali
-    const sliderSaturasi = page.locator('#param-saturasi');
+    // Bersihkan catatan profil sebelum pengukuran interaktif slider
+    await page.evaluate(() => {
+      window.__catatanProfil = [];
+    });
+
+    // Geser slider kecerahan interaktif 30 kali untuk mengukur latensi ujung ke ujung & longtasks
+    const sliderKecerahan = page.locator('#param-kecerahan');
     for (let i = 0; i < 30; i++) {
-      const val = (i % 20) - 10;
-      await sliderSaturasi.fill(val.toString());
-      await sliderSaturasi.dispatchEvent('input');
+      const val = ((i * 3) % 40) - 20;
+      await sliderKecerahan.fill(val.toString());
+      await sliderKecerahan.dispatchEvent('input');
+      await page.waitForTimeout(20);
     }
-    await sliderSaturasi.dispatchEvent('pointerup');
+    await sliderKecerahan.dispatchEvent('pointerup');
 
-    // Tunggu jeda idle render
+    // Tunggu idle render peramban
     await page.waitForTimeout(300);
 
-    const dataLongtask = await page.evaluate(() => window.__longtasks);
-    const longtaskCount = dataLongtask.length;
-    const longtaskMaksMs =
-      longtaskCount > 0
-        ? Math.max(...dataLongtask.map((t) => t.duration))
-        : 0;
+    const dataProfilUi = await page.evaluate(() => {
+      const longtasks = window.__longtasks || [];
+      const catatan = window.__catatanProfil || [];
+
+      // Hitung total latensi ujung-ke-ujung per event
+      const latensiE2E = catatan.map(
+        (c) =>
+          c.faseInputKeKirim +
+          c.faseKirimKeWorker +
+          c.faseKomputasiWorker +
+          c.faseTransferBalik +
+          c.faseRenderReact
+      );
+
+      const hitungStat = (arr) => {
+        if (arr.length === 0) return { median: 0, p95: 0 };
+        const s = [...arr].sort((a, b) => a - b);
+        const med = s[Math.floor(s.length / 2)];
+        const p95 = s[Math.floor(s.length * 0.95)];
+        return {
+          median: parseFloat(med.toFixed(2)),
+          p95: parseFloat(p95.toFixed(2)),
+        };
+      };
+
+      const longtaskMaks =
+        longtasks.length > 0 ? Math.max(...longtasks.map((t) => t.duration)) : 0;
+
+      return {
+        latensiE2E: hitungStat(latensiE2E),
+        jumlahSampelE2E: latensiE2E.length,
+        longtaskCount: longtasks.length,
+        longtaskMaksMs: parseFloat(longtaskMaks.toFixed(2)),
+      };
+    });
 
     const dataHasil = {
-      ...hasilWorker,
-      uiLongtasksCount: longtaskCount,
-      uiLongtaskMaksMs: parseFloat(longtaskMaksMs.toFixed(2)),
+      workerPreviewWorstCaseMs: hasilWorker.previewWorstCaseWorker,
+      workerPreviewCacheHitMs: hasilWorker.previewCacheHitWorker,
+      workerUnduh12MPMs: hasilWorker.durasiUnduh12MPMs,
+      uiLatensiUjungKeUjungMs: dataProfilUi.latensiE2E,
+      uiLongtasksCount: dataProfilUi.longtaskCount,
+      uiLongtaskMaksMs: dataProfilUi.longtaskMaksMs,
     };
 
     console.log(
-      'BENCHMARK_PIPELINE_HASIL:',
+      'BENCHMARK_PIPELINE_HASIL_REVISI2:',
       JSON.stringify(dataHasil, null, 2)
     );
 
@@ -217,7 +252,12 @@ test.describe('PicLab Sevenz — Benchmark Pipeline 5 Langkah & Tangkapan Layar 
   test('Tangkapan Layar QA Visual Tahap 3 (1280px & 1920px, ID & EN)', async ({
     page,
   }) => {
-    // A. Bahasa Indonesia
+    // Pastikan folder tangkapan-layar ada
+    if (!fs.existsSync('tangkapan-layar')) {
+      fs.mkdirSync('tangkapan-layar', { recursive: true });
+    }
+
+    // A. Pengujian Bahasa Indonesia
     await page.goto('/');
     await page.evaluate(() => localStorage.setItem('piclab_bahasa', 'id'));
     await page.reload();
@@ -226,46 +266,43 @@ test.describe('PicLab Sevenz — Benchmark Pipeline 5 Langkah & Tangkapan Layar 
     await page.getByRole('button', { name: 'Gunakan Gambar Contoh' }).click();
     await expect(page.getByRole('slider')).toBeVisible();
 
-    // Tambah beberapa langkah pipeline
+    // Terapkan SATU PRESET (Hitam Putih: 2 langkah) + 1 langkah Kecerahan = total 3 langkah pipeline
+    await page.getByTestId('tombol-preset-hitam_putih').click();
     await page
       .getByTestId('tombol-tambah-operasi-dasar_kecerahan')
       .click();
-    await page.getByTestId('tombol-tambah-operasi-dasar_kontras').click();
-    await page
-      .getByTestId('tombol-tambah-operasi-warna_saturasi')
-      .click();
 
-    // Buka accordion riwayat perubahan
+    // Buka akordion riwayat perubahan
     await page.getByRole('button', { name: /Riwayat Perubahan/i }).click();
     await expect(page.locator('button:has-text("#1")')).toBeVisible();
 
-    // Tangkapan layar 1280x800 ID
+    // Ambil tangkapan layar 1280x800 ID
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.screenshot({
       path: 'tangkapan-layar/tahap3-1280px-id.png',
       fullPage: true,
     });
 
-    // Tangkapan layar 1920x1080 ID
+    // Ambil tangkapan layar 1920x1080 ID
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.screenshot({
       path: 'tangkapan-layar/tahap3-1920px-id.png',
       fullPage: true,
     });
 
-    // B. Bahasa Inggris
+    // B. Pengujian Bahasa Inggris
     const tombolBahasa = page.getByRole('button', { name: 'EN', exact: true });
     await tombolBahasa.click();
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(300);
 
-    // Tangkapan layar 1280x800 EN
+    // Ambil tangkapan layar 1280x800 EN
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.screenshot({
       path: 'tangkapan-layar/tahap3-1280px-en.png',
       fullPage: true,
     });
 
-    // Tangkapan layar 1920x1080 EN
+    // Ambil tangkapan layar 1920x1080 EN
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.screenshot({
       path: 'tangkapan-layar/tahap3-1920px-en.png',

@@ -93,4 +93,109 @@ describe('Penegakan Sistem Desain & Token Warna (styleguide.md bagian 6 & 9)', (
       `Ditemukan kode HEX mentah di berkas frontend/src: ${JSON.stringify(pelanggaran)}`
     ).toEqual([]);
   });
+
+  it('G3: semua kelas utilitas warna (bg-, text-, border-, ring-) di frontend/src terdaftar di konfigurasi tema TOKEN_TEMA', () => {
+    // 1. Ekstrak seluruh token warna yang valid dari TOKEN_TEMA
+    const daftarTokenWarnaValid = new Set();
+
+    // Utilitas bawaan Tailwind yang diizinkan
+    const utilitasBawaanTailwind = new Set([
+      'transparent',
+      'white',
+      'black',
+      'current',
+      'inherit',
+      // Text sizing & alignment
+      'xs',
+      'sm',
+      'base',
+      'lg',
+      'xl',
+      '2xl',
+      '3xl',
+      'left',
+      'center',
+      'right',
+      'justify',
+      // Border widths & styles
+      '0',
+      '2',
+      '4',
+      '8',
+      't',
+      'b',
+      'l',
+      'r',
+      'x',
+      'y',
+      'solid',
+      'dashed',
+      'dotted',
+      'double',
+      'none',
+      // Ring utilities
+      'inset',
+      'offset-0',
+      'offset-1',
+      'offset-2',
+      'offset-4',
+    ]);
+
+    for (const [kelompok, nilai] of Object.entries(TOKEN_TEMA.warna)) {
+      if (typeof nilai === 'object' && nilai !== null) {
+        for (const [subKunci] of Object.entries(nilai)) {
+          if (subKunci === 'DEFAULT') {
+            daftarTokenWarnaValid.add(kelompok);
+          } else {
+            daftarTokenWarnaValid.add(`${kelompok}-${subKunci}`);
+          }
+        }
+      } else {
+        daftarTokenWarnaValid.add(kelompok);
+      }
+    }
+
+    const direktoriSrc = path.resolve(__dirname, '..');
+    const semuaBerkas = kumpulkanBerkasSumber(direktoriSrc);
+
+    // Pola mencocokkan: (prefix:)*(bg|text|border|ring)-(namaToken[/opasitas]?)
+    const polaKelas =
+      /\b(?:[a-zA-Z0-9_-]+:)*(bg|text|border|ring)-([a-zA-Z0-9_-]+)(?:\/[0-9]+)?\b/g;
+
+    const kelasTakTerdaftar = [];
+
+    for (const jalur of semuaBerkas) {
+      const namaRelatif = path.relative(direktoriSrc, jalur);
+      const isi = fs.readFileSync(jalur, 'utf-8');
+
+      let match;
+      while ((match = polaKelas.exec(isi)) !== null) {
+        const [, prefix, namaToken] = match;
+
+        // Lewati jika merupakan utilitas layout/ukuran bawaan Tailwind
+        if (utilitasBawaanTailwind.has(namaToken)) {
+          continue;
+        }
+
+        // Khusus ring: ring-1, ring-2, dll adalah utilitas bawaan
+        if (prefix === 'ring' && /^[0-9]+$/.test(namaToken)) {
+          continue;
+        }
+
+        // Periksa apakah namaToken ada di daftar token tema yang terdefinisi
+        if (!daftarTokenWarnaValid.has(namaToken)) {
+          kelasTakTerdaftar.push({
+            berkas: namaRelatif,
+            kelasLengkap: match[0],
+            token: namaToken,
+          });
+        }
+      }
+    }
+
+    expect(
+      kelasTakTerdaftar,
+      `Ditemukan kelas warna tak dikenal di frontend/src yang tidak ada di TOKEN_TEMA: ${JSON.stringify(kelasTakTerdaftar, null, 2)}`
+    ).toEqual([]);
+  });
 });

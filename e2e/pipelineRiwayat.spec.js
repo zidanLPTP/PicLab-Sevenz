@@ -306,4 +306,116 @@ test.describe('PicLab Sevenz — Pengujian E2E Tahap 3: Pipeline & Riwayat Perub
     await page.keyboard.press('Control+z');
     await expect(slider).toHaveValue('0');
   });
+
+  test('G1 e. E2E Penerapan 5 Preset Melalui UI, Verifikasi Langkah, & Dekode Piksel Unduhan', async ({
+    page,
+  }) => {
+    const errorKonsol = [];
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') errorKonsol.push(msg.text());
+    });
+
+    await page.goto('/');
+
+    // 1. Unggah citra uji 100x100 dengan nilai piksel diketahui
+    // Citra uji-100x100.png: piksel pada (50, 50) bernilai [100, 150, 200, 255]
+    const pathUji = path.resolve('frontend/public/contoh/uji-100x100.png');
+    await page.locator('#input-citra-unggah').setInputFiles(pathUji);
+    await expect(page.getByRole('slider', { name: /penggeser/i })).toBeVisible();
+
+    // Utilitas untuk mengunduh dan membaca piksel tengah
+    const unduhDanBacaPikselTengah = async () => {
+      const unduhanPromise = page.waitForEvent('download');
+      await page.getByRole('button', { name: 'Unduh Hasil' }).click();
+      const unduhan = await unduhanPromise;
+      const pathUnduh = await unduhan.path();
+      const bufferUnduh = await fs.promises.readFile(pathUnduh);
+
+      return page.evaluate(async (base64) => {
+        const blob = await fetch(`data:image/png;base64,${base64}`).then((r) =>
+          r.blob()
+        );
+        const bmp = await createImageBitmap(blob);
+        const canvas = document.createElement('canvas');
+        canvas.width = bmp.width;
+        canvas.height = bmp.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(bmp, 0, 0);
+        const p = ctx.getImageData(
+          Math.floor(bmp.width / 2),
+          Math.floor(bmp.height / 2),
+          1,
+          1
+        ).data;
+        return { r: p[0], g: p[1], b: p[2], a: p[3] };
+      }, bufferUnduh.toString('base64'));
+    };
+
+    // Daftar 5 Preset untuk diuji satu per satu
+    const skenarioPreset = [
+      {
+        id: 'hitam_putih',
+        namaLangkahDiharapkan: ['Grayscale', 'Kontras'],
+        verifikasiPiksel: (p) => {
+          // Hitam Putih: R === G === B
+          expect(p.r).toBe(p.g);
+          expect(p.g).toBe(p.b);
+        },
+      },
+      {
+        id: 'kontras_tinggi',
+        namaLangkahDiharapkan: ['Kontras', 'Saturasi'],
+        verifikasiPiksel: (p) => {
+          expect(p.a).toBe(255);
+        },
+      },
+      {
+        id: 'hangat_klasik',
+        namaLangkahDiharapkan: ['Sepia', 'Keseimbangan Warna'],
+        verifikasiPiksel: (p) => {
+          expect(p.a).toBe(255);
+        },
+      },
+      {
+        id: 'perbaiki_otomatis',
+        namaLangkahDiharapkan: ['Peregangan Kontras', 'Saturasi'],
+        verifikasiPiksel: (p) => {
+          expect(p.a).toBe(255);
+        },
+      },
+      {
+        id: 'negatif',
+        namaLangkahDiharapkan: ['Negatif Citra'],
+        verifikasiPiksel: (p) => {
+          // Nilai asli pada (50, 50): R=100, G=150, B=200
+          // Nilai negatif eksak = 255 - nilai asli
+          expect(p.r).toBe(255 - 100); // 155
+          expect(p.g).toBe(255 - 150); // 105
+          expect(p.b).toBe(255 - 200); // 55
+          expect(p.a).toBe(255);
+        },
+      },
+    ];
+
+    for (const skenario of skenarioPreset) {
+      // Klik tombol preset
+      await page.getByTestId(`tombol-preset-${skenario.id}`).click();
+
+      // Pastikan langkah-langkah preset muncul di panel pipeline
+      for (const namaLangkah of skenario.namaLangkahDiharapkan) {
+        await expect(
+          page.locator(`div:has-text("${namaLangkah}")`).first()
+        ).toBeVisible();
+      }
+
+      // Jika ada verifikasi piksel unduhan (khususnya Hitam Putih dan Negatif)
+      if (skenario.id === 'hitam_putih' || skenario.id === 'negatif') {
+        const pikselHasil = await unduhDanBacaPikselTengah();
+        skenario.verifikasiPiksel(pikselHasil);
+      }
+    }
+
+    // Pastikan tidak ada galat konsol selama pengujian ke-5 preset
+    expect(errorKonsol).toHaveLength(0);
+  });
 });
