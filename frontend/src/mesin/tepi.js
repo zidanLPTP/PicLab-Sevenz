@@ -356,8 +356,7 @@ export const operasiTepiLaplacian = {
     },
   ],
   terapkan(citra, parameter = {}) {
-    const varian =
-      parameter.varian === 'tetangga8' ? 'tetangga8' : 'tetangga4';
+    const varian = parameter.varian === 'tetangga8' ? 'tetangga8' : 'tetangga4';
     let g = Number(parameter.penguatan);
     if (!Number.isFinite(g)) g = 1.0;
     g = Math.max(0.5, Math.min(5.0, g));
@@ -399,8 +398,7 @@ export const operasiTepiLaplacian = {
           const p21 = lum[rowYp1 + x];
           const p22 = lum[rowYp1 + xp1];
 
-          const sum8 =
-            p00 + p01 + p02 + p10 + p12 + p20 + p21 + p22;
+          const sum8 = p00 + p01 + p02 + p10 + p12 + p20 + p21 + p22;
           resp = Math.abs(sum8 - 8 * p11);
         }
 

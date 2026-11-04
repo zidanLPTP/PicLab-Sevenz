@@ -19,10 +19,7 @@ import {
   PRESET_KERNEL,
   normalisasiMatriksKernel,
 } from '../mesin/konvolusi';
-import {
-  operasiTajamKernel,
-  operasiTajamUnsharp,
-} from '../mesin/sharpening';
+import { operasiTajamKernel, operasiTajamUnsharp } from '../mesin/sharpening';
 import {
   operasiHalusGaussian,
   operasiHalusMean,
@@ -38,14 +35,9 @@ import {
   ambilIndeksReplikasiTepi,
   bangunCitraIntegral,
   bangunKernelGaussian1D,
-  hitungAmbangOtsu,
   konvolusi2DSejati,
-  konvolusiSeparable1D,
-  penapisMeanIntegral,
-  penapisMedian,
 } from '../mesin/spasial/utilitasKonvolusi';
 import {
-  dapatkanOperasiBerdasarkanId,
   dapatkanSemuaOperasi,
   ekstrakNilaiAwalParameter,
   bersihkanParameter,
@@ -87,11 +79,7 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
       // [ 0, 0, 0 ]
       // [ 0, 0, 0 ]
       // [ 0, 0, 100 ]
-      const citra = buatCitraUji(3, 3, [
-        0, 0, 0,
-        0, 0, 0,
-        0, 0, 100,
-      ]);
+      const citra = buatCitraUji(3, 3, [0, 0, 0, 0, 0, 0, 0, 0, 100]);
 
       // Kernel asimetris w berukuran 3x3:
       // [ 1, 2, 3 ]
@@ -102,11 +90,7 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
       // u=-1, v=-1: w(-1,-1)=1 dikali f(1 - (-1), 1 - (-1)) = f(2, 2) = 100!
       // Jadi kontribusi f(2,2) dikalikan dengan w(0,0) = 1 (elemen kiri-atas kernel)!
       // Sebaliknya, jika korelasi (tanpa pemutaran 180°), f(2,2) dikalikan w(2,2) = 9.
-      const kernelAsimetris = [
-        1, 2, 3,
-        4, 5, 6,
-        7, 8, 9,
-      ];
+      const kernelAsimetris = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
       const hasil = konvolusi2DSejati(citra, kernelAsimetris, 3, 1, 0);
 
@@ -234,11 +218,7 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
       // [ 0,  0,  0 ]
       // [ 0, 90,  0 ]
       // [ 0,  0,  0 ]
-      const citra = buatCitraUji(3, 3, [
-        0, 0, 0,
-        0, 90, 0,
-        0, 0, 0,
-      ]);
+      const citra = buatCitraUji(3, 3, [0, 0, 0, 0, 90, 0, 0, 0, 0]);
 
       const hasil = operasiHalusMean.terapkan(citra, { radius: 1 });
       // Jendela 3x3 mencakup 9 piksel dengan total jumlah 90.
@@ -247,13 +227,14 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
     });
 
     it('halus_gaussian: melakukan blur separabel 1D tanpa distorsi', () => {
-      const citra = buatCitraUji(5, 5, [
-        0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0,
-        0, 0, 100, 0, 0,
-        0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0,
-      ]);
+      const citra = buatCitraUji(
+        5,
+        5,
+        [
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0,
+        ]
+      );
 
       const hasil = operasiHalusGaussian.terapkan(citra, { sigma: 1.0 });
       // Titik tengah menyebar ke tetangga secara simetris
@@ -275,11 +256,7 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
       // [ 50,  50, 50 ]
       // [ 50, 255, 50 ]
       // [ 50,  50, 50 ]
-      const citra = buatCitraUji(3, 3, [
-        50, 50, 50,
-        50, 255, 50,
-        50, 50, 50,
-      ]);
+      const citra = buatCitraUji(3, 3, [50, 50, 50, 50, 255, 50, 50, 50, 50]);
 
       const hasil = operasiHalusMedian.terapkan(citra, { ukuran: 3 });
       // Nilai median dari sembilan elemen [50, 50, 50, 50, 50, 50, 50, 50, 255] adalah 50!
@@ -298,13 +275,14 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
   // ==========================================================================
   describe('Operasi Sharpening (tajam_unsharp, tajam_kernel)', () => {
     it('tajam_unsharp: mempertajam detail kontras dengan rumus f + k*(f - blur)', () => {
-      const citra = buatCitraUji(5, 5, [
-        50, 50, 50, 50, 50,
-        50, 50, 50, 50, 50,
-        50, 50, 150, 50, 50,
-        50, 50, 50, 50, 50,
-        50, 50, 50, 50, 50,
-      ]);
+      const citra = buatCitraUji(
+        5,
+        5,
+        [
+          50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 150, 50, 50, 50, 50,
+          50, 50, 50, 50, 50, 50, 50, 50,
+        ]
+      );
 
       const hasil = operasiTajamUnsharp.terapkan(citra, {
         sigma: 1.0,
@@ -318,18 +296,16 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
     });
 
     it('tajam_kernel: menerapkan penajaman berbasis Laplacian 4-tetangga dan 8-tetangga', () => {
-      const citra = buatCitraUji(3, 3, [
-        50, 50, 50,
-        50, 100, 50,
-        50, 50, 50,
-      ]);
+      const citra = buatCitraUji(3, 3, [50, 50, 50, 50, 100, 50, 50, 50, 50]);
 
       // Laplacian 4-tetangga kernel:
       // [  0, -1,  0 ]
       // [ -1,  5, -1 ]
       // [  0, -1,  0 ]
       // Pusat = 5*100 - (50+50+50+50) = 500 - 200 = 300 -> clamp ke 255
-      const hasil4 = operasiTajamKernel.terapkan(citra, { model: '4_tetangga' });
+      const hasil4 = operasiTajamKernel.terapkan(citra, {
+        model: '4_tetangga',
+      });
       expect(hasil4.data[16]).toBe(255);
 
       // Laplacian 8-tetangga kernel:
@@ -337,7 +313,9 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
       // [ -1,  9, -1 ]
       // [ -1, -1, -1 ]
       // Pusat = 9*100 - 8*50 = 900 - 400 = 500 -> clamp ke 255
-      const hasil8 = operasiTajamKernel.terapkan(citra, { model: '8_tetangga' });
+      const hasil8 = operasiTajamKernel.terapkan(citra, {
+        model: '8_tetangga',
+      });
       expect(hasil8.data[16]).toBe(255);
     });
   });
@@ -351,7 +329,14 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
       expect(k1[1]).toBe(0); // NaN replaced with 0
 
       // Input 2D array
-      const k2 = normalisasiMatriksKernel([[1, 2, 3], [4, 5, 6], [7, 8, 9]], 3);
+      const k2 = normalisasiMatriksKernel(
+        [
+          [1, 2, 3],
+          [4, 5, 6],
+          [7, 8, 9],
+        ],
+        3
+      );
       expect(k2.length).toBe(9);
       expect(k2[4]).toBe(5);
 
@@ -400,10 +385,22 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
       const citraRata = buatCitraUji(6, 6, new Array(36).fill(150));
 
       const detektor = [
-        { op: operasiTepiSobel, param: { arah: 'gabungan', penguatan: 1.0, inversi: false } },
-        { op: operasiTepiPrewitt, param: { arah: 'gabungan', penguatan: 1.0, inversi: false } },
-        { op: operasiTepiRoberts, param: { arah: 'gabungan', penguatan: 1.0, inversi: false } },
-        { op: operasiTepiLaplacian, param: { model: '4_tetangga', penguatan: 1.0, inversi: false } },
+        {
+          op: operasiTepiSobel,
+          param: { arah: 'gabungan', penguatan: 1.0, inversi: false },
+        },
+        {
+          op: operasiTepiPrewitt,
+          param: { arah: 'gabungan', penguatan: 1.0, inversi: false },
+        },
+        {
+          op: operasiTepiRoberts,
+          param: { arah: 'gabungan', penguatan: 1.0, inversi: false },
+        },
+        {
+          op: operasiTepiLaplacian,
+          param: { model: '4_tetangga', penguatan: 1.0, inversi: false },
+        },
       ];
 
       for (const { op, param } of detektor) {
@@ -417,12 +414,11 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
 
     it('tepi_sobel: mendeteksi tepi tangga vertikal dan menghitung gradien horizontal', () => {
       // Citra 4x4 dengan tangga kontras vertikal: sisi kiri (x=0,1) bernilai 50, sisi kanan (x=2,3) bernilai 200
-      const citraTangga = buatCitraUji(4, 4, [
-        50, 50, 200, 200,
-        50, 50, 200, 200,
-        50, 50, 200, 200,
-        50, 50, 200, 200,
-      ]);
+      const citraTangga = buatCitraUji(
+        4,
+        4,
+        [50, 50, 200, 200, 50, 50, 200, 200, 50, 50, 200, 200, 50, 50, 200, 200]
+      );
 
       const hasilSobel = operasiTepiSobel.terapkan(citraTangga, {
         arah: 'horizontal',
@@ -442,11 +438,7 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
     });
 
     it('tepi_roberts: mendeteksi diskontinuitas diagonal pada pasangan 2x2', () => {
-      const citra = buatCitraUji(3, 3, [
-        100, 0, 0,
-        0, 0, 0,
-        0, 0, 0,
-      ]);
+      const citra = buatCitraUji(3, 3, [100, 0, 0, 0, 0, 0, 0, 0, 0]);
 
       const hasil = operasiTepiRoberts.terapkan(citra, {
         arah: 'gabungan',
@@ -460,11 +452,7 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
     });
 
     it('tepi_laplacian: merespon diskontinuitas turunan kedua dan mendukung inversi', () => {
-      const citra = buatCitraUji(3, 3, [
-        0, 0, 0,
-        0, 100, 0,
-        0, 0, 0,
-      ]);
+      const citra = buatCitraUji(3, 3, [0, 0, 0, 0, 100, 0, 0, 0, 0]);
 
       const hasilBiasa = operasiTepiLaplacian.terapkan(citra, {
         model: '8_tetangga',
@@ -536,15 +524,9 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
         width: 3,
         height: 3,
         data: new Uint8ClampedArray([
-          10, 10, 10, 0,
-          20, 20, 20, 128,
-          30, 30, 30, 255,
-          40, 40, 40, 64,
-          50, 50, 50, 192,
-          60, 60, 60, 255,
-          70, 70, 70, 32,
-          80, 80, 80, 96,
-          90, 90, 90, 200,
+          10, 10, 10, 0, 20, 20, 20, 128, 30, 30, 30, 255, 40, 40, 40, 64, 50,
+          50, 50, 192, 60, 60, 60, 255, 70, 70, 70, 32, 80, 80, 80, 96, 90, 90,
+          90, 200,
         ]),
       };
 
@@ -552,7 +534,12 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
         const param = ekstrakNilaiAwalParameter(op);
         const hasil = op.terapkan(citraAlfa, param);
 
-        if (hasil.width === 3 && hasil.height === 3 && op.id !== 'dasar_flip' && op.id !== 'dasar_rotasi') {
+        if (
+          hasil.width === 3 &&
+          hasil.height === 3 &&
+          op.id !== 'dasar_flip' &&
+          op.id !== 'dasar_rotasi'
+        ) {
           // Piksel tengah (x=1, y=1) indeks alfa = 16 + 3 = 19
           expect(hasil.data[19]).toBe(192);
           // Piksel kiri atas alfa = 3
@@ -597,18 +584,37 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
   // ==========================================================================
   describe('Simulasi Pipeline Berantai & Prefix Cache dengan Operasi Baru', () => {
     it('hasil eksekusi berulang dari snapshot pipeline spasial menghasilkan data identik (deterministik)', () => {
-      const citra = buatCitraUji(4, 4, [
-        10, 20, 30, 40,
-        50, 60, 70, 80,
-        90, 100, 110, 120,
-        130, 140, 150, 160,
-      ]);
+      const citra = buatCitraUji(
+        4,
+        4,
+        [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160]
+      );
 
       const langkahPipeline = [
-        { id: '1', idOperasi: 'halus_mean', parameter: { radius: 1 }, aktif: true },
-        { id: '2', idOperasi: 'tajam_unsharp', parameter: { sigma: 1.0, jumlah: 1.5, ambang: 0 }, aktif: true },
-        { id: '3', idOperasi: 'tepi_sobel', parameter: { arah: 'gabungan', penguatan: 1.0, inversi: false }, aktif: true },
-        { id: '4', idOperasi: 'biner_otsu', parameter: { inversi: false }, aktif: true },
+        {
+          id: '1',
+          idOperasi: 'halus_mean',
+          parameter: { radius: 1 },
+          aktif: true,
+        },
+        {
+          id: '2',
+          idOperasi: 'tajam_unsharp',
+          parameter: { sigma: 1.0, jumlah: 1.5, ambang: 0 },
+          aktif: true,
+        },
+        {
+          id: '3',
+          idOperasi: 'tepi_sobel',
+          parameter: { arah: 'gabungan', penguatan: 1.0, inversi: false },
+          aktif: true,
+        },
+        {
+          id: '4',
+          idOperasi: 'biner_otsu',
+          parameter: { inversi: false },
+          aktif: true,
+        },
       ];
 
       const run1 = eksekusiPipelineSekuensial(langkahPipeline, citra);

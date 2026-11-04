@@ -1,4 +1,4 @@
-import { BookOpen, ChevronDown, ChevronUp, Code2, Sparkles } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
  * - Penjelasan parameter operasi
  */
 export default function KartuBelajarOperasi({ operasi }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [terbuka, setTerbuka] = useState(false);
 
   if (!operasi) return null;

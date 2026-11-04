@@ -1,4 +1,4 @@
-import { AlertCircle, Calculator, Grid, RotateCcw } from 'lucide-react';
+import { AlertCircle, Calculator, RotateCcw } from 'lucide-react';
 import React, { useCallback, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PRESET_KERNEL } from '../mesin/konvolusi';

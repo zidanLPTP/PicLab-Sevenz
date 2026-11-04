@@ -39,10 +39,7 @@ import {
   operasiHalusMean,
   operasiHalusMedian,
 } from './smoothing';
-import {
-  operasiTajamKernel,
-  operasiTajamUnsharp,
-} from './sharpening';
+import { operasiTajamKernel, operasiTajamUnsharp } from './sharpening';
 import { operasiKonvolusiKernel } from './konvolusi';
 import {
   operasiTepiLaplacian,

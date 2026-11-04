@@ -139,25 +139,16 @@ export const operasiTajamKernel = {
     },
   ],
   terapkan(citra, parameter = {}) {
-    const jenis =
-      parameter.jenis === 'tetangga8' ? 'tetangga8' : 'tetangga4';
+    const jenis = parameter.jenis === 'tetangga8' ? 'tetangga8' : 'tetangga4';
     let k = Number(parameter.kekuatan);
     if (!Number.isFinite(k)) k = 1.0;
     k = Math.max(0.1, Math.min(3.0, k));
 
     let kernel;
     if (jenis === 'tetangga4') {
-      kernel = [
-        0, -k, 0,
-        -k, 1 + 4 * k, -k,
-        0, -k, 0,
-      ];
+      kernel = [0, -k, 0, -k, 1 + 4 * k, -k, 0, -k, 0];
     } else {
-      kernel = [
-        -k, -k, -k,
-        -k, 1 + 8 * k, -k,
-        -k, -k, -k,
-      ];
+      kernel = [-k, -k, -k, -k, 1 + 8 * k, -k, -k, -k, -k];
     }
 
     const data = konvolusi2DSejati(citra, kernel, 3, 1, 0);

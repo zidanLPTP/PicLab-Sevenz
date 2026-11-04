@@ -36,11 +36,8 @@ export const PRESET_KERNEL = {
     kunciLabel: 'presetKernel.gaussian5x5',
     ukuran: 5,
     matriks: [
-      1, 4, 6, 4, 1,
-      4, 16, 24, 16, 4,
-      6, 24, 36, 24, 6,
-      4, 16, 24, 16, 4,
-      1, 4, 6, 4, 1,
+      1, 4, 6, 4, 1, 4, 16, 24, 16, 4, 6, 24, 36, 24, 6, 4, 16, 24, 16, 4, 1, 4,
+      6, 4, 1,
     ],
     pembagi: 256,
     offset: 0,

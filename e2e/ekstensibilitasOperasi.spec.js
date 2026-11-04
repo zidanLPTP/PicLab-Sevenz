@@ -21,7 +21,7 @@ test.describe('Verifikasi Ekstensibilitas Registri Statis & Web Worker (Tanpa Ev
       .locator('aside')
       .first()
       .locator('span.rounded-full');
-    await expect(badgeJumlahOperasi).toHaveText('18');
+    await expect(badgeJumlahOperasi).toHaveText('31');
 
     // 3. Verifikasi tombol operasi fixture muncul di panel operasi tanpa eval
     const tombolOperasiKustom = page.getByRole('button', {

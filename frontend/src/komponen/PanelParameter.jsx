@@ -237,7 +237,7 @@ export default function PanelParameter({
                           id={`param-${skema.id}`}
                           data-testid={`sakelar-${skema.id}`}
                           onClick={() => {
-                            const valBaru = !Boolean(nilai);
+                            const valBaru = !nilai;
                             saatUbahParameter(
                               langkahTerpilih.id,
                               {

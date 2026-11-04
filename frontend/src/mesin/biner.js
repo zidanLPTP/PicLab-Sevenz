@@ -195,7 +195,14 @@ export const operasiBinerAdaptif = {
         const x2 = Math.min(width - 1, x + r);
         const area = (x2 - x1 + 1) * (y2 - y1 + 1);
 
-        const sumLum = ambilJumlahJendelaIntegral(integral, wInt, x1, y1, x2, y2);
+        const sumLum = ambilJumlahJendelaIntegral(
+          integral,
+          wInt,
+          x1,
+          y1,
+          x2,
+          y2
+        );
         const ambangLokal = sumLum / area - c;
 
         const srcIdx = (yOffset + x) * 4;
