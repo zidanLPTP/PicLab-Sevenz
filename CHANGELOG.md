@@ -4,6 +4,23 @@ Semua perubahan penting pada proyek **PicLab Sevenz** akan didokumentasikan dala
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/) dan mengikuti prinsip [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.3.1] - 2026-11-04
+
+### Diperbaiki
+- **Penegakan Token Sistem Desain & Pengujian Regresi Warna (V5)**:
+  - Mengeliminasi seluruh penggunaan kelas warna default Tailwind (`slate-*`, `amber-*`, `rose-*`, `teal-*`, dsb) dan kode heksadesimal mentah di dalam kode komponen `frontend/src/komponen/`.
+  - Membangun modul `frontend/src/tema/token.js` sebagai sumber kebenaran tunggal (*single source of truth*) yang dipadukan ke dalam `tailwind.config.js` dan didokumentasikan di `styleguide.md` bagian 6.
+  - Menambahkan pengujian Vitest otomatis `tokenDesain.test.js` untuk mencegah regresi warna di masa mendatang.
+- **Ekstensibilitas Nyata & Sinkronisasi Registri Web Worker (V6)**:
+  - Membangun mekanisme sinkronisasi dua arah antara thread utama dan Web Worker melalui protokol pesan dinamis `{ tipe: 'DAFTARKAN_OPERASI' }`.
+  - Menerapkan pendaftaran dinamis reaktif via `langganRegistri` pada `PanelOperasi.jsx` sehingga operasi baru langsung muncul dan memperbarui indikator jumlah operasi di antarmuka.
+  - Membuktikan prinsip "penambahan operasi cukup lewat satu berkas definisi" melalui fixture `frontend/src/mesin/fixtureOperasiInversi.js` dan pengujian E2E Playwright `ekstensibilitasOperasi.spec.js` yang memvalidasi operasi kustom dieksekusi di dalam Web Worker (`faseKomputasiWorker > 0`).
+- **Validasi Metodologi Benchmark & Baseline Komparatif Sebanding (V1, V2, V3, V4)**:
+  - Mengoreksi metodologi benchmark dengan menggunakan citra foto warna nyata 12 MP (`foto-4000x3000.png`, hanya 0.0016% piksel abu-abu) dan citra acak berwarna penuh (`acak-4000x3000.png`) serta parameter uji aktif non-nol (misal `pergeseran: 60` untuk hue, `kecerahan: 30` untuk kecerahan).
+  - Melakukan pengukuran baseline sebanding pada komit `2129605` melalui *git worktree* untuk membuktikan dampak optimasi algoritma inlined tanpa alokasi objek dan jalur render kanvas langsung (zero PNG encoding).
+  - Mengukur latensi ujung-ke-ujung slider secara presisi menggunakan kait penyelesaian visual `requestAnimationFrame` dan `putImageData`.
+  - Menghilangkan longtask berulang selama pergeseran slider (dari 54 longtask pada baseline menjadi hanya 2-4 lonjakan mikro tak berulang pada batas 50 ms).
+
 ## [0.3.0] - 2026-11-03
 
 ### Ditambahkan

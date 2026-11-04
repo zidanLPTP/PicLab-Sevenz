@@ -60,7 +60,10 @@ PicLab-Sevenz/
 │   │   │   ├── dasar.js
 │   │   │   ├── warna.js
 │   │   │   ├── enhancement.js
+│   │   │   ├── fixtureOperasiInversi.js
 │   │   │   └── katalogOperasi.js
+│   │   ├── tema/        # Sumber kebenaran tunggal token desain
+│   │   │   └── token.js
 │   │   ├── pekerja/     # Web Worker untuk pemrosesan citra non-blocking
 │   │   │   ├── pekerjaCitra.js
 │   │   │   └── pengelolaPekerja.js
