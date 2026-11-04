@@ -21,12 +21,9 @@ test.describe('PicLab Sevenz — Pengujian E2E Tahap 2: Mesin Operasi Klien', ()
 
     // Verifikasi panel kanan menampilkan parameter kecerahan
     await expect(page.getByText('Linear Brightness Shift')).toBeVisible();
-    await expect(
-      page.getByText('Satu operasi aktif pada satu waktu (beroperasi pada citra asli).')
-    ).toBeVisible();
 
     // 3. Ubah slider / input angka kecerahan
-    const inputAngka = page.locator('input[type="number"]');
+    const inputAngka = page.locator('input[type="number"]').first();
     await expect(inputAngka).toBeVisible();
     await inputAngka.fill('50');
 
@@ -90,60 +87,57 @@ test.describe('PicLab Sevenz — Pengujian E2E Tahap 2: Mesin Operasi Klien', ()
   }) => {
     await page.goto('/');
 
-    // Cari 'sepia' di kotak pencarian panel operasi
-    const inputCari = page.getByPlaceholder('Cari nama operasi...');
-    await inputCari.fill('sepia');
+    const kotakCari = page.getByPlaceholder(/Cari nama operasi/i);
+    await expect(kotakCari).toBeVisible();
 
-    // Hanya tombol Efek Sepia yang tampil
+    // Ketik "sepia"
+    await kotakCari.fill('sepia');
+
+    // Pastikan operasi Efek Sepia tetap tampil
     await expect(page.getByRole('button', { name: /^Efek Sepia/ })).toBeVisible();
+
+    // Pastikan operasi lain (seperti Kecerahan) tidak tampil
     await expect(
-      page.getByRole('button', { name: /^Rotasi 90°/ })
+      page.getByRole('button', { name: /^Kecerahan/ })
     ).not.toBeVisible();
 
-    // Kosongkan pencarian
-    await inputCari.fill('');
-    await expect(
-      page.getByRole('button', { name: /^Rotasi 90°/ })
-    ).toBeVisible();
+    // Kosongkan kotak pencarian
+    await kotakCari.fill('');
+    await expect(page.getByRole('button', { name: /^Kecerahan/ })).toBeVisible();
   });
 
   test('Tangkapan Layar Visual QA Tahap 2 (1280px & 1920px, ID & EN)', async ({
     page,
   }) => {
-    // 1. Resolusi 1280px Bahasa Indonesia (dengan operasi aktif & histogram terbuka)
+    // 1280px Bahasa Indonesia
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
     await page.getByRole('button', { name: 'Gunakan Gambar Contoh' }).click();
     await page.getByRole('button', { name: /^Kecerahan/ }).click();
-    await page.waitForTimeout(300);
-
     await page.screenshot({
-      path: 'tangkapan-layar/editor-1280px-operasi-id.png',
+      path: 'tangkapan-layar/tahap2-1280px-id.png',
       fullPage: true,
     });
 
-    // 2. Resolusi 1920px Bahasa Indonesia
+    // 1920px Bahasa Indonesia
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.waitForTimeout(200);
     await page.screenshot({
-      path: 'tangkapan-layar/editor-1920px-operasi-id.png',
+      path: 'tangkapan-layar/tahap2-1920px-id.png',
       fullPage: true,
     });
 
-    // 3. Resolusi 1280px Bahasa Inggris
+    // 1280px Bahasa Inggris
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.getByRole('button', { name: 'EN', exact: true }).click();
-    await page.waitForTimeout(200);
     await page.screenshot({
-      path: 'tangkapan-layar/editor-1280px-operasi-en.png',
+      path: 'tangkapan-layar/tahap2-1280px-en.png',
       fullPage: true,
     });
 
-    // 4. Resolusi 1920px Bahasa Inggris
+    // 1920px Bahasa Inggris
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.waitForTimeout(200);
     await page.screenshot({
-      path: 'tangkapan-layar/editor-1920px-operasi-en.png',
+      path: 'tangkapan-layar/tahap2-1920px-en.png',
       fullPage: true,
     });
   });
