@@ -41,7 +41,10 @@
     "tombolGanti": "Ganti Gambar",
     "tombolUnduh": "Unduh Hasil",
     "formatUnduh": "Format:",
-    "unduhBerhasil": "Citra berhasil diunduh!"
+    "unduhBerhasil": "Citra berhasil diunduh!",
+    "undo": "Urungkan (Undo)",
+    "redo": "Ulangi (Redo)",
+    "petunjukPintasan": "Ctrl+Z untuk urungkan, Ctrl+Shift+Z untuk ulangi"
   },
   "kategori": {
     "dasar": "Operasi Dasar",
@@ -194,5 +197,56 @@
     "GALAT_BERKAS_RUSAK": "Berkas citra rusak atau tidak dapat didekode oleh peramban. Silakan coba berkas lainnya.",
     "GALAT_SVG_DITOLAK": "Format vektor SVG tidak didukung demi keamanan. Harap gunakan citra raster (JPG, PNG, WebP, BMP).",
     "tombolCobaLagi": "Coba Unggah Berkas Lain"
+  },
+  "preset": {
+    "judul": "Preset Awal",
+    "hitamPutih": {
+      "nama": "Hitam Putih",
+      "deskripsi": "Konversi grayscale Rec.601 dengan penguatan kontras"
+    },
+    "kontrasTinggi": {
+      "nama": "Kontras Tinggi",
+      "deskripsi": "Tingkatkan kontras dan saturasi untuk tampilan tajam"
+    },
+    "hangatKlasik": {
+      "nama": "Hangat Klasik",
+      "deskripsi": "Tone sepia lembut dengan penguatan warna merah & kuning"
+    },
+    "perbaikiOtomatis": {
+      "nama": "Perbaiki Otomatis",
+      "deskripsi": "Peregangan kontras adaptif dan sedikit saturasi"
+    },
+    "negatif": {
+      "nama": "Negatif",
+      "deskripsi": "Pembalikan nilai fotometrik klise citra"
+    }
+  },
+  "pipeline": {
+    "judul": "Rangkaian Operasi",
+    "tambah": "Tambah ke Pipeline",
+    "kosong": "Belum ada efek diterapkan. Pilih operasi dari panel kiri untuk mulai.",
+    "hapus": "Hapus langkah",
+    "aktif": "Aktif",
+    "nonaktif": "Nonaktif",
+    "naik": "Pindahkan langkah ke atas",
+    "turun": "Pindahkan langkah ke bawah",
+    "resetSemua": "Kosongkan Pipeline",
+    "konfirmasiReset": "Apakah Anda yakin ingin mengosongkan seluruh langkah operasi?",
+    "langkahTerpilih": "Parameter Langkah Terpilih",
+    "pemberitahuanPindah": "Langkah {{nama}} dipindahkan dari urutan {{dari}} ke {{ke}}",
+    "batasTercapai": "Batas maksimum 30 langkah tercapai"
+  },
+  "riwayat": {
+    "judul": "Riwayat Perubahan",
+    "kondisiAwal": "Kondisi Awal Citra",
+    "tambahLangkah": "Tambah Langkah",
+    "hapusLangkah": "Hapus Langkah",
+    "ubahParameter": "Ubah Parameter",
+    "aktifkanLangkah": "Aktifkan Langkah",
+    "nonaktifkanLangkah": "Nonaktifkan Langkah",
+    "pindahUrutan": "Pindah Urutan Langkah",
+    "kosongkanPipeline": "Kosongkan Pipeline",
+    "muatPreset": "Muat Preset",
+    "entriAktif": "(Posisi Saat Ini)"
   }
 }

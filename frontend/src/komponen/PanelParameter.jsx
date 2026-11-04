@@ -1,29 +1,70 @@
-import { AlertTriangle, Info, RotateCcw, Sliders } from 'lucide-react';
-import React, { useMemo } from 'react';
+import { AlertTriangle, Info, RotateCcw } from 'lucide-react';
+import React, { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { dapatkanOperasiBerdasarkanId } from '../mesin/katalogOperasi';
 import { BATASAN_BERKAS } from '../utilitas/konfigurasiBerkas';
+import { KONFIGURASI_PIPELINE } from '../utilitas/konfigurasiPipeline';
+import DaftarLangkahPipeline from './DaftarLangkahPipeline';
+import DaftarRiwayatPerubahan from './DaftarRiwayatPerubahan';
 import HistogramCitra from './HistogramCitra';
 
 /**
- * Panel Kanan Editor: Pengatur Parameter Operasi Terpilih & Visualisasi Histogram.
- * Merender kontrol secara dinamis berdasarkan skema parameter operasi.
+ * Panel Kanan Editor: Pengatur Rangkaian Pipeline, Parameter Langkah Terpilih,
+ * Visualisasi Histogram, dan Daftar Riwayat Perubahan (Tahap 3).
  */
 export default function PanelParameter({
-  operasiAktif,
-  parameter,
+  langkah = [],
+  langkahTerpilihId = null,
+  operasiAktif = null,
+  parameter = {},
+  saatPilihLangkah,
+  saatHapusLangkah,
+  saatToggleAktif,
+  saatPindahLangkah,
+  saatKosongkanPipeline,
   saatUbahParameter,
+  saatKomitParameter,
   saatSetelUlangParameter,
+  riwayat = [],
+  indeksRiwayat = 0,
+  saatLompatRiwayat,
   citraSebelum,
   citraSesudah,
 }) {
   const { t } = useTranslation();
+  const timerDebounceKeyboardRef = useRef(null);
+
+  // Temukan objek langkah yang sedang dipilih untuk penyuntingan parameter
+  // Mendukung fallback ke operasiAktif & parameter untuk kompatibilitas uji Tahap 1/2
+  const langkahTerpilih = useMemo(() => {
+    if (langkah && langkah.length > 0) {
+      return langkah.find((l) => l.id === langkahTerpilihId) || null;
+    }
+    if (operasiAktif) {
+      return {
+        id: 'langkah_tunggal',
+        idOperasi: operasiAktif.id,
+        parameter: parameter || {},
+        aktif: true,
+      };
+    }
+    return null;
+  }, [langkah, langkahTerpilihId, operasiAktif, parameter]);
+
+  const operasiTerpilih = useMemo(() => {
+    if (operasiAktif) return operasiAktif;
+    if (!langkahTerpilih) return null;
+    return dapatkanOperasiBerdasarkanId(langkahTerpilih.idOperasi);
+  }, [langkahTerpilih, operasiAktif]);
 
   // Evaluasi apakah parameter dimensi melampaui batas aman (P6: penjepitan terlihat)
   const melebihiBatasDimensi = useMemo(() => {
-    if (!operasiAktif) return null;
-    if (operasiAktif.id === 'dasar_ubah_ukuran') {
-      const w = Number(parameter.lebarBaru);
-      const h = Number(parameter.tinggiBaru);
+    if (!langkahTerpilih || !operasiTerpilih) return null;
+    const param = langkahTerpilih.parameter || {};
+
+    if (operasiTerpilih.id === 'dasar_ubah_ukuran') {
+      const w = Number(param.lebarBaru);
+      const h = Number(param.tinggiBaru);
       if (
         w > BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL ||
         h > BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL ||
@@ -47,9 +88,9 @@ export default function PanelParameter({
         }
         return { lebarDijepit: targetW, tinggiDijepit: targetH };
       }
-    } else if (operasiAktif.id === 'dasar_crop') {
-      const w = Number(parameter.lebar);
-      const h = Number(parameter.tinggi);
+    } else if (operasiTerpilih.id === 'dasar_crop') {
+      const w = Number(param.lebar);
+      const h = Number(param.tinggi);
       if (
         w > BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL ||
         h > BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL
@@ -67,7 +108,7 @@ export default function PanelParameter({
       }
     }
     return null;
-  }, [operasiAktif, parameter]);
+  }, [langkahTerpilih, operasiTerpilih]);
 
   return (
     <aside
@@ -79,10 +120,10 @@ export default function PanelParameter({
         <h2 className="text-xs font-bold uppercase tracking-wider text-teks-sekunder">
           {t('panel.judulParameter')}
         </h2>
-        {operasiAktif && operasiAktif.skemaParameter?.length > 0 && (
+        {langkahTerpilih && operasiTerpilih?.skemaParameter?.length > 0 && (
           <button
             type="button"
-            onClick={saatSetelUlangParameter}
+            onClick={() => saatSetelUlangParameter(langkahTerpilih.id)}
             className="flex items-center gap-1 text-[11px] font-semibold text-teks-redup hover:text-primer transition-colors cursor-pointer"
             title={t('panel.setelUlang')}
           >
@@ -93,42 +134,45 @@ export default function PanelParameter({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
-        {operasiAktif ? (
-          <>
-            {/* Kartu Informasi Operasi Aktif */}
+        {/* 1. Rangkaian Operasi Pipeline */}
+        <DaftarLangkahPipeline
+          langkah={langkah}
+          langkahTerpilihId={langkahTerpilihId}
+          saatPilihLangkah={saatPilihLangkah}
+          saatHapusLangkah={saatHapusLangkah}
+          saatToggleAktif={saatToggleAktif}
+          saatPindahLangkah={saatPindahLangkah}
+          saatKosongkanPipeline={saatKosongkanPipeline}
+        />
+
+        {/* 2. Pengatur Parameter Langkah Terpilih */}
+        {langkahTerpilih && operasiTerpilih && (
+          <div className="space-y-4 pt-3 border-t border-garis-panel">
+            {/* Header Langkah Terpilih */}
             <div className="p-3 bg-latar-subtil border border-garis-panel rounded-lg space-y-1">
-              <div className="font-bold text-sm text-teks-utama">
-                {t(operasiAktif.kunciNama)}
+              <div className="font-bold text-xs text-teks-utama flex items-center justify-between">
+                <span>{t(operasiTerpilih.kunciNama)}</span>
+                <span className="text-[10px] font-normal text-teks-redup">
+                  {operasiTerpilih.namaTeknis || t('pipeline.langkahTerpilih')}
+                </span>
               </div>
-              <div className="text-xs text-teks-redup leading-relaxed">
-                {t(operasiAktif.kunciDeskripsi)}
-              </div>
-              <div className="pt-1.5 flex items-center gap-1 text-[11px] text-teks-primer font-mono">
-                <span className="font-semibold">{operasiAktif.namaTeknis}</span>
+              <div className="text-[11px] text-teks-sekunder leading-relaxed">
+                {t(operasiTerpilih.kunciDeskripsi)}
               </div>
             </div>
 
-            {/* Banner Penjelasan Satu Operasi Aktif */}
-            <div className="p-2.5 bg-latar-peringatan border border-garis-peringatan rounded-lg text-teks-peringatan text-[11px] flex items-start gap-1.5 leading-snug">
-              <Info size={14} className="shrink-0 mt-0.5" />
-              <span>{t('panel.infoSatuOperasi')}</span>
-            </div>
-
-            {/* Banner Peringatan Batas Dimensi (P6: Penjepitan Terlihat) */}
+            {/* Banner Peringatan Batas Dimensi (P6) */}
             {melebihiBatasDimensi && (
               <div
                 role="alert"
                 data-testid="peringatan-batas-dimensi"
-                className="p-2.5 bg-latar-bahaya border border-garis-bahaya rounded-lg text-teks-bahaya text-xs space-y-1"
+                className="p-3 rounded-lg bg-peringatan/10 border border-peringatan/30 text-peringatan text-xs space-y-1.5"
               >
-                <div className="flex items-center gap-1.5 font-bold text-teks-bahaya">
-                  <AlertTriangle
-                    size={15}
-                    className="shrink-0 text-status-bahaya"
-                  />
+                <div className="flex items-center gap-1.5 font-bold">
+                  <AlertTriangle size={15} className="shrink-0" />
                   <span>{t('panel.peringatanBatasDimensiJudul')}</span>
                 </div>
-                <p className="text-[11px] leading-relaxed text-teks-bahaya-terang">
+                <p className="text-[11px] leading-relaxed opacity-90">
                   {t('panel.peringatanBatasDimensiDeskripsi', {
                     maksSisi: BATASAN_BERKAS.DIMENSI_SISI_MAKS_PIKSEL,
                     maksTotal: '16 MP',
@@ -140,161 +184,200 @@ export default function PanelParameter({
             )}
 
             {/* Kontrol Parameter Dinamis */}
-            {operasiAktif.skemaParameter?.length > 0 ? (
-              <div className="space-y-4 pt-1">
-                {operasiAktif.skemaParameter.map((skema) => {
-                  const nilaiSaatIni =
-                    parameter[skema.id] !== undefined
-                      ? parameter[skema.id]
-                      : skema.nilaiAwal;
+            {operasiTerpilih.skemaParameter &&
+            operasiTerpilih.skemaParameter.length > 0 ? (
+              <div className="space-y-4">
+                {operasiTerpilih.skemaParameter.map((skema) => {
+                  const nilai =
+                    langkahTerpilih.parameter?.[skema.id] ?? skema.nilaiAwal;
 
-                  // 1. Tipe Slider + Input Angka Sinkron
-                  if (skema.tipe === 'slider') {
-                    return (
-                      <div key={skema.id} className="space-y-1.5">
-                        <div className="flex items-center justify-between text-xs">
-                          <label
-                            htmlFor={`param-${skema.id}`}
-                            className="font-medium text-teks-sekunder"
-                          >
-                            {t(skema.kunciLabel)}
-                          </label>
+                  return (
+                    <div key={skema.id} className="space-y-1.5">
+                      <div className="flex justify-between items-center text-xs">
+                        <label
+                          htmlFor={`param-${skema.id}`}
+                          className="font-semibold text-teks-utama cursor-pointer"
+                        >
+                          {t(skema.kunciLabel)}
+                        </label>
+                        {skema.tipe === 'slider' && (
                           <div className="flex items-center gap-1">
                             <input
                               type="number"
                               min={skema.min}
                               max={skema.max}
                               step={skema.step || 1}
-                              value={nilaiSaatIni}
+                              value={nilai}
                               onChange={(e) =>
                                 saatUbahParameter(
-                                  skema.id,
-                                  Number(e.target.value)
+                                  langkahTerpilih.id,
+                                  {
+                                    ...langkahTerpilih.parameter,
+                                    [skema.id]: Number(e.target.value),
+                                  },
+                                  true // Coalescing saat pengetikan angka
                                 )
                               }
-                              className="w-16 px-1.5 py-0.5 text-right text-xs font-mono font-bold bg-latar-subtil border border-garis-panel rounded focus:ring-1 focus:ring-primer focus:outline-none"
+                              onBlur={() =>
+                                saatKomitParameter(langkahTerpilih.id)
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  saatKomitParameter(langkahTerpilih.id);
+                                }
+                              }}
+                              className="w-16 px-1.5 py-0.5 text-right bg-latar-subtil border border-garis-panel rounded text-[11px] font-mono text-teks-utama focus:outline-none focus:ring-1 focus:ring-primer"
                             />
-                            {skema.satuan && (
-                              <span className="text-teks-redup text-[11px]">
-                                {skema.satuan}
-                              </span>
-                            )}
+                            <span className="text-teks-redup font-mono text-[10px] w-4">
+                              {skema.satuan || ''}
+                            </span>
                           </div>
-                        </div>
-
-                        <input
-                          id={`param-${skema.id}`}
-                          type="range"
-                          min={skema.min}
-                          max={skema.max}
-                          step={skema.step || 1}
-                          value={nilaiSaatIni}
-                          onChange={(e) =>
-                            saatUbahParameter(skema.id, Number(e.target.value))
-                          }
-                          aria-label={t(skema.kunciLabel)}
-                          aria-valuenow={nilaiSaatIni}
-                          className="w-full accent-primer cursor-pointer"
-                        />
+                        )}
+                        {skema.tipe === 'angka' && (
+                          <span className="text-teks-redup font-mono text-[11px]">
+                            {nilai} {skema.satuan || ''}
+                          </span>
+                        )}
                       </div>
-                    );
-                  }
 
-                  // 2. Tipe Input Angka Saja
-                  if (skema.tipe === 'angka') {
-                    return (
-                      <div
-                        key={skema.id}
-                        className="flex items-center justify-between text-xs"
-                      >
-                        <label
-                          htmlFor={`param-${skema.id}`}
-                          className="font-medium text-teks-sekunder"
-                        >
-                          {t(skema.kunciLabel)}
-                        </label>
-                        <div className="flex items-center gap-1">
+                      {/* Kontrol Slider */}
+                      {skema.tipe === 'slider' && (
+                        <div className="space-y-1">
                           <input
                             id={`param-${skema.id}`}
-                            type="number"
+                            type="range"
                             min={skema.min}
                             max={skema.max}
                             step={skema.step || 1}
-                            value={nilaiSaatIni}
-                            onChange={(e) =>
+                            value={nilai}
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
                               saatUbahParameter(
-                                skema.id,
-                                Number(e.target.value)
-                              )
-                            }
-                            className="w-20 px-2 py-1 text-right text-xs font-mono font-bold bg-latar-subtil border border-garis-panel rounded focus:ring-1 focus:ring-primer focus:outline-none"
-                          />
-                          {skema.satuan && (
-                            <span className="text-teks-redup text-[11px]">
-                              {skema.satuan}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  }
+                                langkahTerpilih.id,
+                                {
+                                  ...langkahTerpilih.parameter,
+                                  [skema.id]: val,
+                                },
+                                true // Mode coalescing selama interaksi slider berlangsung
+                              );
 
-                  // 3. Tipe Pilihan (Dropdown / Select)
-                  if (skema.tipe === 'pilihan') {
-                    return (
-                      <div key={skema.id} className="space-y-1.5 text-xs">
-                        <label
-                          htmlFor={`param-${skema.id}`}
-                          className="font-medium text-teks-sekunder block"
-                        >
-                          {t(skema.kunciLabel)}
-                        </label>
+                              // Debounce komit untuk rangkaian penekanan tombol panah keyboard
+                              if (timerDebounceKeyboardRef.current) {
+                                clearTimeout(timerDebounceKeyboardRef.current);
+                              }
+                              timerDebounceKeyboardRef.current = setTimeout(
+                                () => {
+                                  saatKomitParameter(langkahTerpilih.id);
+                                  timerDebounceKeyboardRef.current = null;
+                                },
+                                KONFIGURASI_PIPELINE.JEDA_COALESCING_MS
+                              );
+                            }}
+                            onPointerUp={() => {
+                              if (timerDebounceKeyboardRef.current) {
+                                clearTimeout(timerDebounceKeyboardRef.current);
+                                timerDebounceKeyboardRef.current = null;
+                              }
+                              saatKomitParameter(langkahTerpilih.id);
+                            }}
+                            onBlur={() => {
+                              if (timerDebounceKeyboardRef.current) {
+                                clearTimeout(timerDebounceKeyboardRef.current);
+                                timerDebounceKeyboardRef.current = null;
+                                saatKomitParameter(langkahTerpilih.id);
+                              }
+                            }}
+                            className="w-full h-1.5 bg-garis-panel rounded-lg appearance-none cursor-pointer accent-primer focus:outline-none focus:ring-2 focus:ring-primer/30"
+                          />
+                          <div className="flex justify-between text-[10px] text-teks-redup font-mono">
+                            <span>{skema.min}</span>
+                            <span>{skema.max}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Kontrol Angka (Number Input) */}
+                      {skema.tipe === 'angka' && (
+                        <input
+                          id={`param-${skema.id}`}
+                          type="number"
+                          min={skema.min}
+                          max={skema.max}
+                          step={skema.step || 1}
+                          value={nilai}
+                          onChange={(e) =>
+                            saatUbahParameter(
+                              langkahTerpilih.id,
+                              {
+                                ...langkahTerpilih.parameter,
+                                [skema.id]: Number(e.target.value),
+                              },
+                              true // Coalescing saat pengetikan angka
+                            )
+                          }
+                          onBlur={() => saatKomitParameter(langkahTerpilih.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              saatKomitParameter(langkahTerpilih.id);
+                            }
+                          }}
+                          className="w-full px-3 py-1.5 bg-latar-subtil border border-garis-panel rounded-md text-xs text-teks-utama focus:outline-none focus:ring-2 focus:ring-primer focus:bg-white font-mono"
+                        />
+                      )}
+
+                      {/* Kontrol Pilihan (Select) */}
+                      {skema.tipe === 'pilihan' && (
                         <select
                           id={`param-${skema.id}`}
-                          value={nilaiSaatIni}
+                          value={nilai}
                           onChange={(e) =>
-                            saatUbahParameter(skema.id, e.target.value)
+                            saatUbahParameter(
+                              langkahTerpilih.id,
+                              {
+                                ...langkahTerpilih.parameter,
+                                [skema.id]: e.target.value,
+                              },
+                              false
+                            )
                           }
-                          className="w-full px-2.5 py-1.5 bg-latar-subtil border border-garis-panel rounded-md text-xs font-medium text-teks-utama focus:ring-2 focus:ring-primer focus:outline-none cursor-pointer"
+                          className="w-full px-3 py-1.5 bg-latar-subtil border border-garis-panel rounded-md text-xs text-teks-utama focus:outline-none focus:ring-2 focus:ring-primer focus:bg-white cursor-pointer font-medium"
                         >
-                          {skema.pilihan?.map((pil) => (
-                            <option key={pil.nilai} value={pil.nilai}>
-                              {t(pil.kunciLabel)}
+                          {(skema.pilihan || []).map((opsi) => (
+                            <option key={opsi.nilai} value={opsi.nilai}>
+                              {t(opsi.kunciLabel)}
                             </option>
                           ))}
                         </select>
-                      </div>
-                    );
-                  }
-
-                  return null;
+                      )}
+                    </div>
+                  );
                 })}
               </div>
             ) : (
-              <div className="py-2 text-xs text-teks-redup text-center">
-                <p>Operasi ini bekerja langsung tanpa parameter tambahan.</p>
+              <div className="flex items-center gap-2 p-3 bg-latar-subtil border border-garis-panel rounded-lg text-xs text-teks-redup">
+                <Info size={14} className="shrink-0" />
+                <span>{t('panel.tanpaParameter')}</span>
               </div>
             )}
-
-            {/* Bagian Histogram Citra */}
-            <div className="pt-2">
-              <HistogramCitra
-                citraSebelum={citraSebelum}
-                citraSesudah={citraSesudah}
-              />
-            </div>
-          </>
-        ) : (
-          /* Keadaan Belum Ada Operasi Terpilih */
-          <div className="flex flex-col items-center justify-center text-center text-teks-redup py-12">
-            <div className="w-12 h-12 rounded-full bg-latar-sorot flex items-center justify-center text-teks-redup mb-3">
-              <Sliders size={24} className="stroke-[1.75]" />
-            </div>
-            <p className="text-xs leading-relaxed max-w-[200px]">
-              {t('panel.kosongParameter')}
-            </p>
           </div>
         )}
+
+        {/* 3. Visualisasi Histogram Citra Terpisah */}
+        <div className="pt-3 border-t border-garis-panel">
+          <HistogramCitra
+            citraSebelum={citraSebelum}
+            citraSesudah={citraSesudah}
+          />
+        </div>
+
+        {/* 4. Daftar Riwayat Perubahan (Collapsible Undo/Redo Stack) */}
+        <div className="pt-3 border-t border-garis-panel">
+          <DaftarRiwayatPerubahan
+            riwayat={riwayat}
+            indeksRiwayat={indeksRiwayat}
+            saatLompatRiwayat={saatLompatRiwayat}
+          />
+        </div>
       </div>
     </aside>
   );

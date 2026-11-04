@@ -1,16 +1,23 @@
-import { Search, Sparkles } from 'lucide-react';
+import { Plus, Search, Sparkles, Wand2 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   dapatkanSemuaOperasi,
   KATEGORI_OPERASI,
 } from '../mesin/katalogOperasi';
+import { DAFTAR_PRESET } from '../mesin/preset';
+import { KONFIGURASI_PIPELINE } from '../utilitas/konfigurasiPipeline';
 
 /**
- * Panel Kiri Editor: Katalog Operasi Citra Berdasarkan Kategori.
- * Dilengkapi fitur pencarian nama operasi ramah awam.
+ * Panel Kiri Editor: Katalog Operasi Citra Berdasarkan Kategori & Preset Awal.
+ * Dilengkapi fitur penambahan ke pipeline dan preset komposisi non-destruktif.
  */
-export default function PanelOperasi({ operasiAktif, saatPilihOperasi }) {
+export default function PanelOperasi({
+  langkahTerpilihOperasiId = null,
+  saatTambahOperasi,
+  saatMuatPreset,
+  jumlahLangkah = 0,
+}) {
   const { t } = useTranslation();
   const [kataKunci, setKataKunci] = useState('');
   const semuaOperasi = useMemo(() => dapatkanSemuaOperasi(), []);
@@ -26,6 +33,9 @@ export default function PanelOperasi({ operasiAktif, saatPilihOperasi }) {
       return nama.includes(q) || deskripsi.includes(q) || teknis.includes(q);
     });
   }, [semuaOperasi, kataKunci, t]);
+
+  const batasMaksimumTercapai =
+    jumlahLangkah >= KONFIGURASI_PIPELINE.BATAS_LANGKAH;
 
   return (
     <aside
@@ -59,60 +69,97 @@ export default function PanelOperasi({ operasiAktif, saatPilihOperasi }) {
         </div>
       </div>
 
-      {/* Daftar Operasi Berkelompok */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-4">
-        {KATEGORI_OPERASI.map((kat) => {
-          const opsDalamKategori = operasiTersaring.filter(
-            (op) => op.kategori === kat.id
-          );
-          if (opsDalamKategori.length === 0) return null;
-
-          return (
-            <div key={kat.id} className="space-y-1">
-              <h3 className="text-[11px] font-bold uppercase tracking-wider text-teks-redup px-2 py-1">
-                {t(kat.kunciLabel)}
-              </h3>
-              <div className="space-y-1">
-                {opsDalamKategori.map((op) => {
-                  const apakahAktif = operasiAktif?.id === op.id;
-                  return (
-                    <button
-                      key={op.id}
-                      type="button"
-                      onClick={() => saatPilihOperasi(op)}
-                      className={`w-full text-left px-2.5 py-2 rounded-lg text-xs transition-all cursor-pointer flex items-center justify-between border ${
-                        apakahAktif
-                          ? 'bg-primer-lembut border-primer text-primer font-bold shadow-xs'
-                          : 'bg-transparent border-transparent hover:bg-latar-sorot text-teks-utama'
-                      }`}
-                    >
-                      <div className="truncate">
-                        <div className="font-semibold truncate">
-                          {t(op.kunciNama)}
-                        </div>
-                        <div className="text-[10px] text-teks-redup truncate mt-0.5">
-                          {t(op.kunciDeskripsi)}
-                        </div>
-                      </div>
-                      {apakahAktif && (
-                        <Sparkles
-                          size={14}
-                          className="shrink-0 text-primer ml-1 stroke-[2]"
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+      <div className="flex-1 overflow-y-auto p-3 space-y-5">
+        {/* Bagian Preset Awal (Tahap 3) */}
+        {!kataKunci.trim() && (
+          <div className="space-y-2 pb-2 border-b border-garis-panel">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-teks-sekunder px-1">
+              <Sparkles size={13} className="text-primer" />
+              <span>{t('preset.judul')}</span>
             </div>
-          );
-        })}
-
-        {operasiTersaring.length === 0 && (
-          <div className="py-8 text-center text-teks-redup text-xs">
-            <p>Tidak ada operasi yang cocok dengan kata kunci.</p>
+            <div className="grid grid-cols-1 gap-1.5">
+              {DAFTAR_PRESET.map((pr) => (
+                <button
+                  key={pr.id}
+                  type="button"
+                  data-testid={`tombol-preset-${pr.id}`}
+                  onClick={() => saatMuatPreset(pr)}
+                  className="w-full text-left px-2.5 py-2 rounded-lg border border-garis-panel bg-latar-subtil hover:border-primer hover:bg-latar-sorot transition-all cursor-pointer group flex items-center justify-between"
+                  title={t(pr.kunciDeskripsi)}
+                >
+                  <div className="truncate pr-2">
+                    <div className="text-xs font-bold text-teks-utama group-hover:text-primer transition-colors truncate">
+                      {t(pr.kunciNama)}
+                    </div>
+                    <div className="text-[10px] text-teks-redup truncate mt-0.5">
+                      {t(pr.kunciDeskripsi)}
+                    </div>
+                  </div>
+                  <Wand2
+                    size={13}
+                    className="shrink-0 text-teks-redup group-hover:text-primer transition-colors"
+                  />
+                </button>
+              ))}
+            </div>
           </div>
         )}
+
+        {/* Katalog Operasi Citra */}
+        <div className="space-y-4">
+          {KATEGORI_OPERASI.map((kat) => {
+            const opsDalamKategori = operasiTersaring.filter(
+              (op) => op.kategori === kat.id
+            );
+            if (opsDalamKategori.length === 0) return null;
+
+            return (
+              <div key={kat.id} className="space-y-1">
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-teks-redup px-2 py-1">
+                  {t(kat.kunciLabel)}
+                </h3>
+                <div className="space-y-1">
+                  {opsDalamKategori.map((op) => {
+                    const apakahDipilih = langkahTerpilihOperasiId === op.id;
+
+                    return (
+                      <button
+                        key={op.id}
+                        type="button"
+                        data-testid={`tombol-tambah-operasi-${op.id}`}
+                        disabled={batasMaksimumTercapai}
+                        onClick={() => saatTambahOperasi(op.id)}
+                        className={`w-full text-left px-2.5 py-2 rounded-lg text-xs transition-all cursor-pointer flex items-center justify-between border disabled:opacity-50 disabled:cursor-not-allowed ${
+                          apakahDipilih
+                            ? 'bg-primer-lembut border-primer text-primer font-bold shadow-xs'
+                            : 'bg-transparent border-transparent hover:bg-latar-sorot text-teks-utama'
+                        }`}
+                        title={
+                          batasMaksimumTercapai
+                            ? t('pipeline.batasTercapai')
+                            : t('pipeline.tambah')
+                        }
+                      >
+                        <div className="truncate pr-2">
+                          <div className="font-semibold truncate">
+                            {t(op.kunciNama)}
+                          </div>
+                          <div className="text-[10px] text-teks-redup truncate mt-0.5">
+                            {t(op.kunciDeskripsi)}
+                          </div>
+                        </div>
+                        <Plus
+                          size={14}
+                          className="shrink-0 text-teks-redup group-hover:text-primer ml-1 stroke-[2]"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </aside>
   );

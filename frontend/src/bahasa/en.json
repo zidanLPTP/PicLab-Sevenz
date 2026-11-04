@@ -41,7 +41,10 @@
     "tombolGanti": "Replace Image",
     "tombolUnduh": "Download Result",
     "formatUnduh": "Format:",
-    "unduhBerhasil": "Image successfully downloaded!"
+    "unduhBerhasil": "Image successfully downloaded!",
+    "undo": "Undo",
+    "redo": "Redo",
+    "petunjukPintasan": "Ctrl+Z to undo, Ctrl+Shift+Z / Ctrl+Y to redo"
   },
   "kategori": {
     "dasar": "Basic Operations",
@@ -194,5 +197,56 @@
     "GALAT_BERKAS_RUSAK": "The image file is corrupted or cannot be decoded by the browser. Please try another image file.",
     "GALAT_SVG_DITOLAK": "Vector SVG format is not permitted for security reasons. Please upload a raster image (JPG, PNG, WebP, BMP).",
     "tombolCobaLagi": "Try Another File"
+  },
+  "preset": {
+    "judul": "Quick Presets",
+    "hitamPutih": {
+      "nama": "Black & White",
+      "deskripsi": "Rec.601 grayscale with contrast boost"
+    },
+    "kontrasTinggi": {
+      "nama": "High Contrast",
+      "deskripsi": "Boost contrast and saturation for a vivid punch"
+    },
+    "hangatKlasik": {
+      "nama": "Classic Warmth",
+      "deskripsi": "Soft sepia tone with enhanced warm tones"
+    },
+    "perbaikiOtomatis": {
+      "nama": "Auto Enhance",
+      "deskripsi": "Adaptive contrast stretching and subtle saturation"
+    },
+    "negatif": {
+      "nama": "Negative Invert",
+      "deskripsi": "Photographic negative color inversion"
+    }
+  },
+  "pipeline": {
+    "judul": "Operation Pipeline",
+    "tambah": "Add to Pipeline",
+    "kosong": "No effects applied yet. Select an operation from the left panel to begin.",
+    "hapus": "Delete step",
+    "aktif": "Enabled",
+    "nonaktif": "Disabled",
+    "naik": "Move step up",
+    "turun": "Move step down",
+    "resetSemua": "Clear Pipeline",
+    "konfirmasiReset": "Are you sure you want to clear all pipeline steps?",
+    "langkahTerpilih": "Selected Step Parameters",
+    "pemberitahuanPindah": "Step {{nama}} moved from position {{dari}} to {{ke}}",
+    "batasTercapai": "Maximum limit of 30 steps reached"
+  },
+  "riwayat": {
+    "judul": "Change History",
+    "kondisiAwal": "Initial Image State",
+    "tambahLangkah": "Add Step",
+    "hapusLangkah": "Delete Step",
+    "ubahParameter": "Adjust Parameter",
+    "aktifkanLangkah": "Enable Step",
+    "nonaktifkanLangkah": "Disable Step",
+    "pindahUrutan": "Reorder Step",
+    "kosongkanPipeline": "Clear Pipeline",
+    "muatPreset": "Load Preset",
+    "entriAktif": "(Current Position)"
   }
 }
