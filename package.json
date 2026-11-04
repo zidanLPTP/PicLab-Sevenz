@@ -2,6 +2,7 @@
   "name": "piclab-sevenz",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Aplikasi Pengolahan Citra Digital PicLab Sevenz",
   "scripts": {
     "dev:frontend": "npm --prefix frontend run dev",

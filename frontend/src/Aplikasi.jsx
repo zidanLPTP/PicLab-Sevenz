@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import AreaKanvas from './komponen/AreaKanvas';
 import AreaUnggah from './komponen/AreaUnggah';
@@ -6,73 +12,43 @@ import BilahAksiKanvas from './komponen/BilahAksiKanvas';
 import BilahAtas from './komponen/BilahAtas';
 import PanelOperasi from './komponen/PanelOperasi';
 import PanelParameter from './komponen/PanelParameter';
-import { ekstrakNilaiAwalParameter } from './mesin/katalogOperasi';
 import {
+  bersihkanParameter,
+  dapatkanOperasiBerdasarkanId,
+  ekstrakNilaiAwalParameter,
+} from './mesin/katalogOperasi';
+import {
+  buatIdLangkah,
+  buatKeadaanAwalPipeline,
+  reducerPipeline,
+} from './mesin/pipeline';
+import {
+  bersihkanCacheWorker,
   citraKeBlob,
   ekstrakDataCitra,
-  jalankanOperasi,
+  jalankanPipeline,
 } from './pekerja/pengelolaPekerja';
 import { validasiBerkasCitra } from './utilitas/validasiBerkas';
 
 /**
- * Menghitung estimasi dimensi akhir citra pada resolusi penuh berdasarkan operasi aktif.
- */
-function hitungDimensiSesudah(metadata, operasiAktif, parameter) {
-  if (!operasiAktif || !metadata) return null;
-  if (operasiAktif.id === 'dasar_rotasi') {
-    const sudut = Number(parameter?.sudut) || 90;
-    if (sudut === 90 || sudut === 270) {
-      return { width: metadata.tinggi, height: metadata.lebar };
-    }
-    return { width: metadata.lebar, height: metadata.tinggi };
-  }
-  if (operasiAktif.id === 'dasar_ubah_ukuran') {
-    return {
-      width: Math.round(parameter?.lebarTarget || metadata.lebar),
-      height: Math.round(parameter?.tinggiTarget || metadata.tinggi),
-    };
-  }
-  if (operasiAktif.id === 'dasar_crop') {
-    const startX = Math.max(
-      0,
-      Math.min(metadata.lebar - 1, Math.round(parameter?.x ?? 0))
-    );
-    const startY = Math.max(
-      0,
-      Math.min(metadata.tinggi - 1, Math.round(parameter?.y ?? 0))
-    );
-    const maxW = metadata.lebar - startX;
-    const maxH = metadata.tinggi - startY;
-    const cropW = Math.max(
-      1,
-      Math.min(maxW, Math.round(parameter?.lebar ?? maxW))
-    );
-    const cropH = Math.max(
-      1,
-      Math.min(maxH, Math.round(parameter?.tinggi ?? maxH))
-    );
-    return { width: cropW, height: cropH };
-  }
-  return null;
-}
-
-/**
- * Komponen utama antarmuka PicLab Sevenz (Tahap 2 — Mesin Operasi Klien).
+ * Komponen utama antarmuka PicLab Sevenz (Tahap 3 — Pipeline & Riwayat).
  */
 export default function Aplikasi() {
   const { t } = useTranslation();
 
+  // Reducer Pipeline & Riwayat Perubahan (Tahap 3)
+  const [statePipeline, dispatchPipeline] = useReducer(
+    reducerPipeline,
+    undefined,
+    buatKeadaanAwalPipeline
+  );
+
   // Status Citra & Metadata
   const [gambarSrc, setGambarSrc] = useState(null);
-  const [gambarHasilSrc, setGambarHasilSrc] = useState(null);
   const [metadata, setMetadata] = useState(null);
   const [citraAsli, setCitraAsli] = useState(null);
   const [citraPreview, setCitraPreview] = useState(null);
   const [citraHasilPreview, setCitraHasilPreview] = useState(null);
-
-  // Status Operasi Aktif & Parameter
-  const [operasiAktif, setOperasiAktif] = useState(null);
-  const [parameter, setParameter] = useState({});
 
   // Status Loading & Galat
   const [sedangMemuat, setSedangMemuat] = useState(false);
@@ -85,89 +61,238 @@ export default function Aplikasi() {
       if (gambarSrc && gambarSrc.startsWith('blob:')) {
         URL.revokeObjectURL(gambarSrc);
       }
-      if (gambarHasilSrc && gambarHasilSrc.startsWith('blob:')) {
-        URL.revokeObjectURL(gambarHasilSrc);
+    };
+  }, [gambarSrc]);
+
+  // Menjalankan eksekusi pipeline preview di Web Worker dengan Prefix Caching
+  const terapkanPreviewPipeline = useCallback(
+    async (daftarLangkah, tInput = performance.now()) => {
+      if (!citraPreview) return;
+
+      if (!daftarLangkah || daftarLangkah.length === 0) {
+        setCitraHasilPreview(citraPreview);
+        return;
+      }
+
+      try {
+        const rasio =
+          citraAsli && citraAsli.width > 0
+            ? citraPreview.width / citraAsli.width
+            : 1.0;
+
+        const tMulaiJalankan = performance.now();
+        const respons = await jalankanPipeline(
+          daftarLangkah,
+          citraPreview,
+          { rasio },
+          true // Aktifkan prefix caching untuk preview interaktif
+        );
+
+        const { hasil, waktuRinci, indeksMulaiKomputasi, langkahDieksekusi } =
+          respons;
+
+        const tMulaiRenderReact = performance.now();
+        setCitraHasilPreview(hasil);
+
+        if (typeof window !== 'undefined' && window.__catatanProfil) {
+          window.__catatanProfil.push({
+            tipe: 'PIPELINE',
+            idOperasi:
+              daftarLangkah[daftarLangkah.length - 1]?.idOperasi || 'pipeline',
+            tInput,
+            faseInputKeKirim: Math.max(0, tMulaiJalankan - tInput),
+            faseKirimKeWorker: waktuRinci?.durasiKirimKeWorker || 0,
+            faseKomputasiWorker: waktuRinci?.durasiKomputasiWorker || 0,
+            faseTransferBalik: waktuRinci?.durasiKembaliKeMain || 0,
+            faseRenderReact: Math.max(0, performance.now() - tMulaiRenderReact),
+            indeksMulaiKomputasi: indeksMulaiKomputasi || 0,
+            langkahDieksekusi: langkahDieksekusi || 0,
+          });
+        }
+      } catch (err) {
+        if (import.meta.env.DEV) {
+          console.error('Galat eksekusi pipeline preview:', err);
+        }
+      }
+    },
+    [citraPreview, citraAsli]
+  );
+
+  // Sinkronkan eksekusi preview setiap kali langkah pipeline diperbarui
+  useEffect(() => {
+    if (citraPreview) {
+      terapkanPreviewPipeline(statePipeline.langkah);
+    }
+  }, [statePipeline.langkah, citraPreview, terapkanPreviewPipeline]);
+
+  // Pintasan Keyboard Global (Undo/Redo)
+  useEffect(() => {
+    const tanganiKeyDown = (e) => {
+      // Nonaktifkan pintasan hanya saat fokus berada pada elemen masukan teks
+      const tag = e.target.tagName;
+      const isInputTeks =
+        (tag === 'INPUT' &&
+          ['text', 'number', 'search', 'password', 'email'].includes(
+            e.target.type
+          )) ||
+        tag === 'TEXTAREA' ||
+        e.target.isContentEditable;
+
+      if (isInputTeks) {
+        return;
+      }
+
+      const ctrlOrCmd = e.ctrlKey || e.metaKey;
+
+      if (ctrlOrCmd && e.key.toLowerCase() === 'z') {
+        if (e.shiftKey) {
+          // Ctrl+Shift+Z / Cmd+Shift+Z -> Redo
+          e.preventDefault();
+          dispatchPipeline({ type: 'REDO' });
+        } else {
+          // Ctrl+Z / Cmd+Z -> Undo
+          e.preventDefault();
+          dispatchPipeline({ type: 'UNDO' });
+        }
+      } else if (ctrlOrCmd && e.key.toLowerCase() === 'y') {
+        // Ctrl+Y -> Redo
+        e.preventDefault();
+        dispatchPipeline({ type: 'REDO' });
       }
     };
-  }, [gambarSrc, gambarHasilSrc]);
 
-  // Menjalankan operasi preview di Web Worker (P2: Jalur Render Bebas Encoding PNG)
-  const terapkanPreview = async (op, param, tInput = performance.now()) => {
-    if (!citraPreview || !op) return;
-    try {
-      const tMulaiJalankan = performance.now();
-      const respons = await jalankanOperasi(op.id, citraPreview, param);
-      const { hasil, waktuRinci } = respons;
+    window.addEventListener('keydown', tanganiKeyDown);
+    return () => window.removeEventListener('keydown', tanganiKeyDown);
+  }, []);
 
-      const tMulaiRenderReact = performance.now();
-      // Langsung perbarui objek citra hasil preview untuk kanvas langsung
-      setCitraHasilPreview(hasil);
-
-      if (typeof window !== 'undefined' && window.__catatanProfil) {
-        window.__catatanProfil.push({
-          idOperasi: op.id,
-          tInput,
-          faseInputKeKirim: Math.max(0, tMulaiJalankan - tInput),
-          faseKirimKeWorker: waktuRinci?.durasiKirimKeWorker || 0,
-          faseKomputasiWorker: waktuRinci?.durasiKomputasiWorker || 0,
-          faseTransferBalik: waktuRinci?.durasiTransferBalik || 0,
-          fasePembuatanTampil: 0, // Nol encoding PNG (digantikan direct canvas putImageData)
-          faseRenderReact: Math.max(0, performance.now() - tMulaiRenderReact),
-          durasiHistogram:
-            window.__terakhirDurasiHistogram !== undefined
-              ? window.__terakhirDurasiHistogram
-              : 0,
-        });
-      }
-    } catch (err) {
-      // Galat operasi ditangkap tanpa menghentikan thread UI
-      if (import.meta.env.DEV) {
-        console.error('Galat eksekusi worker:', err);
-      }
-    }
+  // Penanganan Aksi Pipeline (Deterministik: ID dan waktu dibangkitkan pada batas interaksi)
+  const saatTambahOperasi = (idOperasi) => {
+    dispatchPipeline({
+      type: 'TAMBAH_LANGKAH',
+      payload: {
+        idOperasi,
+        idLangkah: buatIdLangkah(),
+        waktu: Date.now(),
+      },
+    });
   };
 
-  // Menangani pemilihan operasi dari panel kiri
-  const saatPilihOperasi = (op) => {
-    setOperasiAktif(op);
+  const saatHapusLangkah = (idLangkah) => {
+    dispatchPipeline({
+      type: 'HAPUS_LANGKAH',
+      payload: { idLangkah, waktu: Date.now() },
+    });
+  };
+
+  const saatToggleAktif = (idLangkah) => {
+    dispatchPipeline({
+      type: 'TOGGLE_AKTIF',
+      payload: { idLangkah, waktu: Date.now() },
+    });
+  };
+
+  const saatPindahLangkah = (dariIndeks, keIndeks) => {
+    dispatchPipeline({
+      type: 'PINDAH_LANGKAH',
+      payload: { dariIndeks, keIndeks, waktu: Date.now() },
+    });
+  };
+
+  const saatKosongkanPipeline = () => {
+    dispatchPipeline({
+      type: 'KOSONGKAN_PIPELINE',
+      payload: { waktu: Date.now() },
+    });
+  };
+
+  const saatMuatPreset = (preset) => {
+    const langkahDenganId = preset.langkah.map((l) => {
+      const op = dapatkanOperasiBerdasarkanId(l.idOperasi);
+      const paramDef = op ? ekstrakNilaiAwalParameter(op) : {};
+      const paramBersih = op
+        ? bersihkanParameter(op, { ...paramDef, ...(l.parameter || {}) })
+        : { ...(l.parameter || {}) };
+
+      return {
+        id: buatIdLangkah(),
+        idOperasi: l.idOperasi,
+        parameter: paramBersih,
+        aktif: l.aktif !== undefined ? Boolean(l.aktif) : true,
+      };
+    });
+
+    dispatchPipeline({
+      type: 'MUAT_PRESET',
+      payload: {
+        preset,
+        langkah: langkahDenganId,
+        waktu: Date.now(),
+      },
+    });
+  };
+
+  const saatPilihLangkah = (idLangkah) => {
+    dispatchPipeline({
+      type: 'PILIH_LANGKAH',
+      payload: { idLangkah },
+    });
+  };
+
+  const saatUbahParameter = (idLangkah, parameterBaru, coalescing = false) => {
+    dispatchPipeline({
+      type: 'UBAH_PARAMETER',
+      payload: {
+        idLangkah,
+        parameter: parameterBaru,
+        coalescing,
+        waktu: Date.now(),
+      },
+    });
+  };
+
+  const saatKomitParameter = (idLangkah) => {
+    dispatchPipeline({
+      type: 'KOMIT_COALESCING',
+      payload: { idLangkah, waktu: Date.now() },
+    });
+  };
+
+  const saatSetelUlangParameter = (idLangkah) => {
+    const langkahItem = statePipeline.langkah.find((l) => l.id === idLangkah);
+    if (!langkahItem) return;
+    const op = dapatkanOperasiBerdasarkanId(langkahItem.idOperasi);
+    if (!op) return;
     const paramAwal = ekstrakNilaiAwalParameter(op);
-
-    // Inisialisasi parameter khusus seperti ukuran awal crop/ubah ukuran berdasarkan metadata
-    if (op.id === 'dasar_crop' && metadata) {
-      paramAwal.lebar = metadata.lebar;
-      paramAwal.tinggi = metadata.tinggi;
-    } else if (op.id === 'dasar_ubah_ukuran' && metadata) {
-      paramAwal.lebarTarget = metadata.lebar;
-      paramAwal.tinggiTarget = metadata.tinggi;
-    }
-
-    setParameter(paramAwal);
-    terapkanPreview(op, paramAwal, performance.now());
+    const waktu = Date.now();
+    dispatchPipeline({
+      type: 'UBAH_PARAMETER',
+      payload: {
+        idLangkah,
+        parameter: paramAwal,
+        coalescing: false,
+        waktu,
+      },
+      meta: {
+        kunciLabel: 'panel.setelUlang',
+        label: `Setel Ulang ${op.namaTeknis}`,
+        waktu,
+      },
+    });
   };
 
-  // Menangani perubahan parameter dari panel kanan
-  const saatUbahParameter = (idParam, nilaiBaru) => {
-    const tInput = performance.now();
-    const paramBaru = { ...parameter, [idParam]: nilaiBaru };
-    setParameter(paramBaru);
-    if (operasiAktif) {
-      terapkanPreview(operasiAktif, paramBaru, tInput);
-    }
+  const saatUndo = () => {
+    dispatchPipeline({ type: 'UNDO' });
   };
 
-  // Mereset parameter operasi aktif ke nilai awal
-  const saatSetelUlangParameter = () => {
-    if (!operasiAktif) return;
-    const paramAwal = ekstrakNilaiAwalParameter(operasiAktif);
-    if (operasiAktif.id === 'dasar_crop' && metadata) {
-      paramAwal.lebar = metadata.lebar;
-      paramAwal.tinggi = metadata.tinggi;
-    } else if (operasiAktif.id === 'dasar_ubah_ukuran' && metadata) {
-      paramAwal.lebarTarget = metadata.lebar;
-      paramAwal.tinggiTarget = metadata.tinggi;
-    }
-    setParameter(paramAwal);
-    terapkanPreview(operasiAktif, paramAwal);
+  const saatRedo = () => {
+    dispatchPipeline({ type: 'REDO' });
+  };
+
+  const saatLompatRiwayat = (indeks) => {
+    dispatchPipeline({
+      type: 'LOMPAT_RIWAYAT',
+      payload: { indeks },
+    });
   };
 
   // Menangani pengunggahan berkas baru
@@ -179,30 +304,28 @@ export default function Aplikasi() {
 
     if (!hasilValidasi.valid) {
       setSedangMemuat(false);
-      setKodeGalat(hasilValidasi.kodeGalat);
+      setKodeGalat(hasilValidasi.kodeGalat || hasilValidasi.alasanGalat);
       return;
     }
 
-    // Bersihkan URL blob lama
+    const { elemenCitra } = hasilValidasi;
+    const murniAsli = ekstrakDataCitra(elemenCitra, false);
+    const murniPreview = ekstrakDataCitra(elemenCitra, true);
+
     if (gambarSrc && gambarSrc.startsWith('blob:')) {
       URL.revokeObjectURL(gambarSrc);
     }
-    if (gambarHasilSrc && gambarHasilSrc.startsWith('blob:')) {
-      URL.revokeObjectURL(gambarHasilSrc);
-    }
+    const urlCitra = URL.createObjectURL(berkas);
 
-    const urlBaru = URL.createObjectURL(berkas);
-    const murniAsli = ekstrakDataCitra(hasilValidasi.elemenCitra, false);
-    const murniPreview = ekstrakDataCitra(hasilValidasi.elemenCitra, true);
+    // Bersihkan cache Web Worker dan reset total pipeline saat citra baru diunggah
+    bersihkanCacheWorker();
+    dispatchPipeline({ type: 'RESET_TOTAL' });
 
-    setGambarSrc(urlBaru);
-    setGambarHasilSrc(null);
+    setGambarSrc(urlCitra);
     setMetadata(hasilValidasi.metadata);
     setCitraAsli(murniAsli);
     setCitraPreview(murniPreview);
     setCitraHasilPreview(murniPreview);
-    setOperasiAktif(null);
-    setParameter({});
     setSedangMemuat(false);
   };
 
@@ -228,17 +351,14 @@ export default function Aplikasi() {
     if (gambarSrc && gambarSrc.startsWith('blob:')) {
       URL.revokeObjectURL(gambarSrc);
     }
-    if (gambarHasilSrc && gambarHasilSrc.startsWith('blob:')) {
-      URL.revokeObjectURL(gambarHasilSrc);
-    }
+    bersihkanCacheWorker();
+    dispatchPipeline({ type: 'RESET_TOTAL' });
+
     setGambarSrc(null);
-    setGambarHasilSrc(null);
     setMetadata(null);
     setCitraAsli(null);
     setCitraPreview(null);
     setCitraHasilPreview(null);
-    setOperasiAktif(null);
-    setParameter({});
     setKodeGalat(null);
   };
 
@@ -249,11 +369,14 @@ export default function Aplikasi() {
 
     try {
       let citraSiapUnduh = citraAsli;
-      if (operasiAktif) {
-        const { hasil } = await jalankanOperasi(
-          operasiAktif.id,
+
+      // Eksekusi seluruh langkah pipeline pada resolusi penuh (zero caching untuk hemat memori)
+      if (statePipeline.langkah.length > 0) {
+        const { hasil } = await jalankanPipeline(
+          statePipeline.langkah,
           citraAsli,
-          parameter
+          { rasio: 1.0 },
+          false // Zero cache intermediate untuk resolusi penuh
         );
         citraSiapUnduh = hasil;
       }
@@ -264,7 +387,12 @@ export default function Aplikasi() {
       const namaDasar = metadata?.nama
         ? metadata.nama.replace(/\.[^/.]+$/, '')
         : 'citra';
-      const suffix = operasiAktif ? `-${operasiAktif.id}` : '';
+      let suffix = '';
+      if (statePipeline.langkah.length === 1) {
+        suffix = `-${statePipeline.langkah[0].idOperasi}`;
+      } else if (statePipeline.langkah.length > 1) {
+        suffix = `-pipeline-${statePipeline.langkah.length}langkah`;
+      }
       const namaBerkas = `${namaDasar}-piclab${suffix}.${format}`;
 
       const tautan = document.createElement('a');
@@ -284,11 +412,28 @@ export default function Aplikasi() {
     }
   };
 
-  // Dimensi sesudah bila operasi aktif mengubah geometri
-  const dimensiSesudah = useMemo(
-    () => hitungDimensiSesudah(metadata, operasiAktif, parameter),
-    [metadata, operasiAktif, parameter]
-  );
+  // Evaluasi dimensi citra hasil sesudah seluruh langkah pipeline
+  const dimensiSesudah = useMemo(() => {
+    if (!citraHasilPreview || !metadata) return null;
+    // Hitung dimensi aktual resolusi penuh bila ada perubahan rasio aspek / pemotongan
+    const rasioPreviewKeAsli =
+      citraPreview && citraPreview.width > 0
+        ? citraAsli.width / citraPreview.width
+        : 1.0;
+
+    return {
+      width: Math.round(citraHasilPreview.width * rasioPreviewKeAsli),
+      height: Math.round(citraHasilPreview.height * rasioPreviewKeAsli),
+    };
+  }, [citraHasilPreview, citraPreview, citraAsli, metadata]);
+
+  // Evaluasi langkah terpilih saat ini untuk panel operasi kiri
+  const langkahTerpilihOperasiId = useMemo(() => {
+    const l = statePipeline.langkah.find(
+      (item) => item.id === statePipeline.langkahTerpilihId
+    );
+    return l ? l.idOperasi : null;
+  }, [statePipeline.langkah, statePipeline.langkahTerpilihId]);
 
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-latar-aplikasi text-teks-utama">
@@ -297,10 +442,12 @@ export default function Aplikasi() {
 
       {/* 2. Layout Editor Tiga Area (Kiri, Tengah, Kanan) */}
       <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* Area Kiri: Katalog Operasi & Preset */}
+        {/* Area Kiri: Katalog Operasi & Preset Awal */}
         <PanelOperasi
-          operasiAktif={operasiAktif}
-          saatPilihOperasi={saatPilihOperasi}
+          langkahTerpilihOperasiId={langkahTerpilihOperasiId}
+          saatTambahOperasi={saatTambahOperasi}
+          saatMuatPreset={saatMuatPreset}
+          jumlahLangkah={statePipeline.langkah.length}
         />
 
         {/* Area Tengah: Kanvas / Keadaan Kosong Unggah */}
@@ -309,7 +456,6 @@ export default function Aplikasi() {
             <>
               <AreaKanvas
                 gambarSrc={gambarSrc}
-                gambarSesudahSrc={gambarHasilSrc || gambarSrc}
                 citraSebelum={citraPreview}
                 citraSesudah={citraHasilPreview}
                 metadata={metadata}
@@ -320,6 +466,12 @@ export default function Aplikasi() {
                 saatUnduh={saatUnduh}
                 saatGantiGambar={gantiGambar}
                 sedangMemprosesPenuh={sedangMemprosesPenuh}
+                bisaUndo={statePipeline.indeksRiwayat > 0}
+                bisaRedo={
+                  statePipeline.indeksRiwayat < statePipeline.riwayat.length - 1
+                }
+                saatUndo={saatUndo}
+                saatRedo={saatRedo}
               />
             </>
           ) : (
@@ -333,12 +485,21 @@ export default function Aplikasi() {
           )}
         </div>
 
-        {/* Area Kanan: Parameter & Visualisasi Histogram */}
+        {/* Area Kanan: Rangkaian Pipeline, Parameter, Histogram, & Riwayat */}
         <PanelParameter
-          operasiAktif={operasiAktif}
-          parameter={parameter}
+          langkah={statePipeline.langkah}
+          langkahTerpilihId={statePipeline.langkahTerpilihId}
+          saatPilihLangkah={saatPilihLangkah}
+          saatHapusLangkah={saatHapusLangkah}
+          saatToggleAktif={saatToggleAktif}
+          saatPindahLangkah={saatPindahLangkah}
+          saatKosongkanPipeline={saatKosongkanPipeline}
           saatUbahParameter={saatUbahParameter}
+          saatKomitParameter={saatKomitParameter}
           saatSetelUlangParameter={saatSetelUlangParameter}
+          riwayat={statePipeline.riwayat}
+          indeksRiwayat={statePipeline.indeksRiwayat}
+          saatLompatRiwayat={saatLompatRiwayat}
           citraSebelum={citraPreview}
           citraSesudah={citraHasilPreview}
         />

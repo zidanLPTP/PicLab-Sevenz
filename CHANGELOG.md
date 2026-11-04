@@ -4,6 +4,28 @@ Semua perubahan penting pada proyek **PicLab Sevenz** akan didokumentasikan dala
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/) dan mengikuti prinsip [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.4.0] - 2026-11-04
+
+### Ditambahkan
+- **Model Pipeline Non-Destruktif Murni & Manajemen Riwayat Undo/Redo (Tahap 3)**:
+  - Arsitektur tumpukan operasi berantai murni (`pipeline.js`) yang mengelola langkah pemrosesan non-destruktif dengan batas maksimum 30 langkah dan 100 tumpukan riwayat.
+  - Reducer berkarakter murni (*pure function*) deterministik tanpa pembangkitan ID non-deterministik maupun `Date.now()` di dalam tubuh reducer.
+  - Snapshot riwayat murni hanya menyimpan konfigurasi parameter dan urutan langkah tanpa menduplikasi data bitmap piksel di RAM (terukur empiris 56.291 byte / ~55 KB untuk 100 snapshot).
+  - Mekanisme coalescing slider: penggeseran pointer slider dikomit saat pointer dilepas (`pointerup`), panah keyboard didebounce (`JEDA_COALESCING_MS: 200`), masukan angka dikomit pada blur/Enter, serta dropdown dan sakelar aktif instan 1 entri.
+- **Eksekutor Pipeline Sekuensial Berkinerja Tinggi & Prefix Caching**:
+  - `eksekusiPipelineSekuensial` di Web Worker mendukung propagasi dimensi citra dinamis (crop, resize, rotasi) secara berurutan.
+  - Prefix caching cerdas untuk preview interaktif: perubahan pada langkah $k$ hanya menghitung ulang langkah $k$ hingga akhir dengan menggunakan kembali hasil antara langkah $0..k-1$ dari memori worker (median komputasi worker cache hit ~9.0 ms vs worst-case ~38.8 ms).
+  - Pembuktian identitas byte-for-byte antara jalur ber-cache dan non-cache pada pengujian 15 mutasi acak ber-seed.
+  - Eksekusi unduhan resolusi penuh 12 MP tanpa cache intermediate untuk menjaga efisiensi RAM browser.
+- **Antarmuka Pengguna, Aksesibilitas, & Integritas Token Desain**:
+  - Panel Kiri: 5 Preset awal siap pakai ("Hitam Putih", "Kontras Tinggi", "Hangat Klasik", "Perbaiki Otomatis", "Negatif") dengan komposisi operasi resmi tervalidasi terhadap skema katalog.
+  - Panel Kanan: `DaftarLangkahPipeline.jsx` mendukung seret-lepas (drag-and-drop HTML5), penataan ulang langkah keyboard dengan pengumuman ARIA live (`aria-live="polite"`), sakelar aktif/nonaktif per langkah, dan tombol hapus.
+  - `DaftarRiwayatPerubahan.jsx`: Akordion kolapsibel yang menampilkan snapshot perubahan dengan cap waktu dan kemampuan melompat ke snapshot mana pun di masa lalu/depan.
+  - Bilah Aksi Kanvas: Tombol Undo dan Redo dengan status nonaktif adaptif serta dukungan pintasan keyboard global `Ctrl+Z`, `Ctrl+Shift+Z`, dan `Ctrl+Y`.
+  - Penegakan integritas token desain: eliminasi seluruh kelas warna/garis yang tidak terdaftar di `TOKEN_TEMA` (`hover:bg-primer-gelap`, `text-bahaya`, `hover:bg-bahaya/10`, `bg-peringatan/10`, dll) dan penambahan uji otomatis pemindai kelas token di `tokenDesain.test.js`.
+- **Utilitas Pengujian Mandiri**:
+  - Generator citra uji biner deterministik berbasis Node.js murni (`e2e/utilitas/bangkitkanCitraUji.js`) tanpa ketergantungan runtime Python.
+
 ## [0.3.2] - 2026-11-04
 
 ### Diperbaiki

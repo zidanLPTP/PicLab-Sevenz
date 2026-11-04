@@ -17,7 +17,10 @@ test.describe('Verifikasi Ekstensibilitas Registri Statis & Web Worker (Tanpa Ev
     await expect(page.getByRole('slider')).toBeVisible();
 
     // 2. Verifikasi jumlah operasi adalah 18 (17 bawaan + 1 fixture uji statis)
-    const badgeJumlahOperasi = page.locator('aside span.rounded-full');
+    const badgeJumlahOperasi = page
+      .locator('aside')
+      .first()
+      .locator('span.rounded-full');
     await expect(badgeJumlahOperasi).toHaveText('18');
 
     // 3. Verifikasi tombol operasi fixture muncul di panel operasi tanpa eval
@@ -41,7 +44,7 @@ test.describe('Verifikasi Ekstensibilitas Registri Statis & Web Worker (Tanpa Ev
     });
 
     // 6. Geser slider parameter intensitas
-    const inputAngka = page.locator('input[type="number"]');
+    const inputAngka = page.locator('input[type="number"]').first();
     await expect(inputAngka).toBeVisible();
     await inputAngka.fill('50');
 

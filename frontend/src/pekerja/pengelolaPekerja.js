@@ -3,8 +3,10 @@
  * Mengimplementasikan pola "permintaan terbaru menang" (latest request wins)
  * dan fallback otomatis ke eksekusi thread utama saat berada di lingkungan uji/tanpa Worker.
  * Kepatuhan OWASP & Agent.md: Registri statis murni tanpa eval atau serialisasi fungsi.
+ * Mendukung eksekusi sekuensial pipeline dan prefix caching (Tahap 3).
  */
 
+import { eksekusiPipelineSekuensial } from '../mesin/eksekutorPipeline';
 import {
   bersihkanParameter,
   dapatkanOperasiBerdasarkanId,
@@ -40,6 +42,8 @@ function dapatkanPekerja() {
           hasil,
           pesanGalat,
           durasi,
+          indeksMulaiKomputasi,
+          langkahDieksekusi,
           waktuRinci,
         } = e.data;
         const penangan = penanganTertunda.get(idPermintaan);
@@ -79,6 +83,8 @@ function dapatkanPekerja() {
               height: hasil.height,
             },
             durasi,
+            indeksMulaiKomputasi,
+            langkahDieksekusi,
             waktuRinci: detailWaktu,
             detailWaktu,
           });
@@ -107,7 +113,81 @@ function dapatkanPekerja() {
 }
 
 /**
- * Menjalankan operasi citra via Web Worker (atau fallback lokal jika tanpa worker).
+ * Membersihkan prefix cache di Web Worker saat gambar diganti.
+ */
+export function bersihkanCacheWorker() {
+  const pekerja = dapatkanPekerja();
+  if (pekerja) {
+    pekerja.postMessage({ tipe: 'BERSIHKAN_CACHE' });
+  }
+}
+
+/**
+ * Menjalankan rangkaian pipeline non-destruktif via Web Worker (atau fallback lokal jika tanpa worker).
+ *
+ * @param {Array<object>} daftarLangkah - Tumpukan langkah pipeline
+ * @param {{ data: Uint8ClampedArray, width: number, height: number }} citra - Citra masukan
+ * @param {{ rasio: number }} [konteksSkala={ rasio: 1.0 }] - Konteks skala geometris
+ * @param {boolean} [gunakanPrefixCache=true] - Aktifkan prefix caching untuk preview responsif
+ * @returns {Promise<{ hasil: { data: Uint8ClampedArray, width: number, height: number }, durasi: number, indeksMulaiKomputasi?: number, langkahDieksekusi?: number, waktuRinci?: object }>}
+ */
+export async function jalankanPipeline(
+  daftarLangkah,
+  citra,
+  konteksSkala = { rasio: 1.0 },
+  gunakanPrefixCache = true
+) {
+  const pekerja = dapatkanPekerja();
+  idPermintaanBerjalan++;
+  const idSaatIni = idPermintaanBerjalan;
+
+  penanganTertunda.clear();
+
+  if (pekerja) {
+    return new Promise((resolve, reject) => {
+      const tKirim = performance.now();
+      penanganTertunda.set(idSaatIni, { resolve, reject, tKirim });
+
+      const salinanBuffer = citra.data.slice().buffer;
+      pekerja.postMessage(
+        {
+          tipe: 'EKSEKUSI_PIPELINE',
+          idPermintaan: idSaatIni,
+          daftarLangkah,
+          citra: {
+            data: salinanBuffer,
+            width: citra.width,
+            height: citra.height,
+          },
+          konteksSkala,
+          gunakanPrefixCache,
+          tKirim,
+        },
+        [salinanBuffer]
+      );
+    });
+  }
+
+  // Fallback sinkron untuk lingkungan Vitest / Node / peramban tanpa worker
+  const waktuMulai = performance.now();
+  const hasilEksekusi = eksekusiPipelineSekuensial(
+    daftarLangkah,
+    citra,
+    konteksSkala,
+    gunakanPrefixCache ? null : false
+  );
+  const durasi = performance.now() - waktuMulai;
+
+  return {
+    hasil: hasilEksekusi.hasil,
+    durasi,
+    indeksMulaiKomputasi: hasilEksekusi.indeksMulaiKomputasi,
+    langkahDieksekusi: hasilEksekusi.langkahDieksekusi,
+  };
+}
+
+/**
+ * Menjalankan operasi citra tunggal via Web Worker (kompatibilitas Tahap 2).
  *
  * @param {string} idOperasi - ID unik operasi dari katalog
  * @param {{ data: Uint8ClampedArray, width: number, height: number }} citra - Citra masukan
