@@ -1,5 +1,5 @@
 /**
- * Definisi Preset Awal PicLab Sevenz (spec.md Tahap 3).
+ * Definisi Preset Awal PicLab Sevenz (spec.md bagian 4 & Tahap 4).
  * Dibangun murni dari komposisi operasi citra yang telah teruji dan terdaftar.
  */
 
@@ -53,6 +53,43 @@ export const DAFTAR_PRESET = [
     kunciNama: 'preset.negatif.nama',
     kunciDeskripsi: 'preset.negatif.deskripsi',
     langkah: [{ idOperasi: 'dasar_negatif', parameter: {}, aktif: true }],
+  },
+  // Tahap 4: Preset Konvolusi & Spasial Baru
+  {
+    id: 'pertajam',
+    kunciNama: 'preset.pertajam.nama',
+    kunciDeskripsi: 'preset.pertajam.deskripsi',
+    langkah: [
+      {
+        idOperasi: 'tajam_unsharp',
+        parameter: { sigma: 1.5, jumlah: 1.5, ambang: 2 },
+        aktif: true,
+      },
+    ],
+  },
+  {
+    id: 'siluet_tepi',
+    kunciNama: 'preset.siluetTepi.nama',
+    kunciDeskripsi: 'preset.siluetTepi.deskripsi',
+    langkah: [
+      {
+        idOperasi: 'tepi_sobel',
+        parameter: { arah: 'gabungan', penguatan: 1.5, inversi: true },
+        aktif: true,
+      },
+    ],
+  },
+  {
+    id: 'hapus_noise',
+    kunciNama: 'preset.hapusNoise.nama',
+    kunciDeskripsi: 'preset.hapusNoise.deskripsi',
+    langkah: [
+      {
+        idOperasi: 'halus_median',
+        parameter: { ukuran: 3 },
+        aktif: true,
+      },
+    ],
   },
 ];
 
@@ -138,6 +175,18 @@ export function validasiStrukturPreset(preset, cariOperasiFn) {
           if (!opsiValid.includes(val)) {
             galat.push(
               `Nilai pilihan '${val}' untuk '${kunci}' tidak ada dalam daftar opsi valid`
+            );
+          }
+        } else if (skema.tipe === 'sakelar') {
+          if (typeof val !== 'boolean') {
+            galat.push(
+              `Parameter sakelar '${kunci}' pada '${langkah.idOperasi}' harus berupa boolean, diterima: ${val}`
+            );
+          }
+        } else if (skema.tipe === 'matriks') {
+          if (!Array.isArray(val)) {
+            galat.push(
+              `Parameter matriks '${kunci}' pada '${langkah.idOperasi}' harus berupa array`
             );
           }
         }

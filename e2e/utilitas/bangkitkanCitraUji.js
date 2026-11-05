@@ -44,7 +44,9 @@ function buatChunk(tipe, data) {
  * @returns {Buffer}
  */
 export function encodePng(width, height, rgbaBuffer) {
-  const header = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const header = Buffer.from([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+  ]);
 
   // Chunk IHDR
   const ihdrData = Buffer.alloc(13);
@@ -64,10 +66,11 @@ export function encodePng(width, height, rgbaBuffer) {
     rawData[y * (barisByte + 1)] = 0; // Filter: None
     const offsetSrc = y * barisByte;
     const offsetDst = y * (barisByte + 1) + 1;
-    Buffer.from(rgbaBuffer.buffer, rgbaBuffer.byteOffset + offsetSrc, barisByte).copy(
-      rawData,
-      offsetDst
-    );
+    Buffer.from(
+      rgbaBuffer.buffer,
+      rgbaBuffer.byteOffset + offsetSrc,
+      barisByte
+    ).copy(rawData, offsetDst);
   }
 
   const idatCompressed = zlib.deflateSync(rawData);
@@ -109,6 +112,26 @@ export function bangkitkanCitraSintetis(width, height) {
 }
 
 /**
+ * Menghasilkan citra tangga kontras vertikal hitam-putih untuk pengujian Otsu dan Sobel
+ */
+export function bangkitkanCitraTangga(width, height) {
+  const total = width * height * 4;
+  const buffer = Buffer.alloc(total);
+  const tengahX = Math.floor(width / 2);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      const v = x < tengahX ? 40 : 220;
+      buffer[idx] = v;
+      buffer[idx + 1] = v;
+      buffer[idx + 2] = v;
+      buffer[idx + 3] = 255;
+    }
+  }
+  return buffer;
+}
+
+/**
  * Menghasilkan citra acak warna penuh deterministik
  */
 export function bangkitkanCitraAcak(width, height, seed = 42) {
@@ -125,6 +148,24 @@ export function bangkitkanCitraAcak(width, height, seed = 42) {
 }
 
 /**
+ * Menghasilkan citra impuls non-datar dengan satu titik 100 di tengah (50, 50)
+ */
+export function bangkitkanCitraImpuls(width, height) {
+  const total = width * height * 4;
+  const buffer = Buffer.alloc(total);
+  for (let i = 0; i < total; i += 4) {
+    buffer[i + 3] = 255;
+  }
+  const cx = Math.floor(width / 2);
+  const cy = Math.floor(height / 2);
+  const idx = (cy * width + cx) * 4;
+  buffer[idx] = 100;
+  buffer[idx + 1] = 100;
+  buffer[idx + 2] = 100;
+  return buffer;
+}
+
+/**
  * Membangkitkan seluruh aset uji ke folder test-assets jika dipanggil langsung
  */
 export function bangkitkanSemuaAsetUji(targetDir = 'test-assets') {
@@ -137,17 +178,29 @@ export function bangkitkanSemuaAsetUji(targetDir = 'test-assets') {
   const png40x30 = encodePng(40, 30, buffer40x30);
   fs.writeFileSync(path.join(targetDir, 'uji-40x30.png'), png40x30);
 
-  // 2. Citra sintetis 12 MP (4000x3000)
+  // 2. Citra tangga kontras 100x100 (Tahap 4)
+  const bufferTangga = bangkitkanCitraTangga(100, 100);
+  const pngTangga = encodePng(100, 100, bufferTangga);
+  fs.writeFileSync(path.join(targetDir, 'tangga-100x100.png'), pngTangga);
+
+  // 3. Citra sintetis 12 MP (4000x3000)
   const buffer4000x3000 = bangkitkanCitraSintetis(4000, 3000);
   const png4000x3000 = encodePng(4000, 3000, buffer4000x3000);
   fs.writeFileSync(path.join(targetDir, 'sintetis-4000x3000.png'), png4000x3000);
 
-  // 3. Citra acak 12 MP (4000x3000)
+  // 4. Citra acak 12 MP (4000x3000)
   const bufferAcak = bangkitkanCitraAcak(4000, 3000, 42);
   const pngAcak = encodePng(4000, 3000, bufferAcak);
   fs.writeFileSync(path.join(targetDir, 'acak-4000x3000.png'), pngAcak);
 
-  console.log('Seluruh aset uji citra deterministik berhasil dibangkitkan via Node.js!');
+  // 5. Citra impuls non-datar 100x100 (titik 100 di tengah 50, 50)
+  const bufferImpuls = bangkitkanCitraImpuls(100, 100);
+  const pngImpuls = encodePng(100, 100, bufferImpuls);
+  fs.writeFileSync(path.join(targetDir, 'impuls-100x100.png'), pngImpuls);
+
+  console.log(
+    'Seluruh aset uji citra deterministik berhasil dibangkitkan via Node.js!'
+  );
 }
 
 // Jalankan jika dieksekusi langsung

@@ -1,7 +1,7 @@
 /**
  * Pengelola Web Worker Pemrosesan Citra PicLab Sevenz.
- * Mengimplementasikan pola "permintaan terbaru menang" (latest request wins)
- * dan fallback otomatis ke eksekusi thread utama saat berada di lingkungan uji/tanpa Worker.
+ * Mengimplementasikan satu slot tertunda (latest-wins gating) untuk mencegah
+ * antrean komputasi menumpuk di Web Worker selama interaksi slider cepat.
  * Kepatuhan OWASP & Agent.md: Registri statis murni tanpa eval atau serialisasi fungsi.
  * Mendukung eksekusi sekuensial pipeline dan prefix caching (Tahap 3).
  */
@@ -15,7 +15,94 @@ import { BATASAN_BERKAS } from '../utilitas/konfigurasiBerkas';
 
 let instansPekerja = null;
 let idPermintaanBerjalan = 0;
-const penanganTertunda = new Map();
+let sedangMemproses = false;
+let penanganAktif = null;
+let slotTertunda = null;
+
+/**
+ * Statistik antrean worker untuk verifikasi dan audit latensi interaktif (J1 a & J1 d).
+ */
+export const statistikPekerja = {
+  totalPermintaanMasuk: 0,
+  totalPermintaanDilewati: 0,
+  totalKomputasiWorkerMulai: 0,
+  totalKomputasiWorkerSelesai: 0,
+  totalHasilUsangDibuang: 0,
+};
+
+/**
+ * Mengembalikan true jika worker sedang tidak memproses dan tidak ada antrean di slot tertunda.
+ */
+export function apakahPekerjaIdle() {
+  return !sedangMemproses && slotTertunda === null;
+}
+
+if (typeof window !== 'undefined') {
+  window.__statistikPekerja = statistikPekerja;
+  window.__apakahPekerjaIdle = apakahPekerjaIdle;
+}
+
+/**
+ * Mereset counter statistik antrean worker untuk keperluan benchmark dan pengujian.
+ */
+export function resetStatistikPekerja() {
+  statistikPekerja.totalPermintaanMasuk = 0;
+  statistikPekerja.totalPermintaanDilewati = 0;
+  statistikPekerja.totalKomputasiWorkerMulai = 0;
+  statistikPekerja.totalKomputasiWorkerSelesai = 0;
+  statistikPekerja.totalHasilUsangDibuang = 0;
+}
+
+function kirimTugasKeWorker(tugas) {
+  sedangMemproses = true;
+  penanganAktif = tugas;
+  statistikPekerja.totalKomputasiWorkerMulai++;
+  const pekerja = dapatkanPekerja();
+  pekerja.postMessage(tugas.pesan, tugas.transferList);
+}
+
+function jadwalkanTugasWorker(
+  pesan,
+  transferList,
+  idPermintaan,
+  tKirim,
+  tipe,
+  tInput = performance.now()
+) {
+  statistikPekerja.totalPermintaanMasuk++;
+
+  return new Promise((resolve, reject) => {
+    const tugasBaru = {
+      idPermintaan,
+      pesan,
+      transferList,
+      tKirim,
+      tipe,
+      tInput,
+      resolve,
+      reject,
+    };
+
+    if (!sedangMemproses) {
+      kirimTugasKeWorker(tugasBaru);
+    } else {
+      // Worker sedang menghitung: simpan HANYA permintaan terbaru di slot tertunda (latest-wins).
+      // Bila sudah ada permintaan di slot tertunda yang belum dikirim, buang permintaan lama tersebut.
+      if (slotTertunda) {
+        statistikPekerja.totalPermintaanDilewati++;
+        const tugasUsang = slotTertunda;
+        slotTertunda = null;
+        tugasUsang.resolve({
+          usang: true,
+          dibatalkan: true,
+          durasi: 0,
+          hasil: null,
+        });
+      }
+      slotTertunda = tugasBaru;
+    }
+  });
+}
 
 /**
  * Menginisialisasi Web Worker jika didukung peramban.
@@ -46,59 +133,89 @@ function dapatkanPekerja() {
           langkahDieksekusi,
           waktuRinci,
         } = e.data;
-        const penangan = penanganTertunda.get(idPermintaan);
 
-        if (!penangan) return; // Permintaan basi yang sudah dibuang
-        penanganTertunda.delete(idPermintaan);
+        statistikPekerja.totalKomputasiWorkerSelesai++;
+        sedangMemproses = false;
+        const tugasSelesai = penanganAktif;
+        penanganAktif = null;
 
-        // Abaikan respons jika ada permintaan yang lebih baru ("permintaan terbaru menang")
-        if (idPermintaan < idPermintaanBerjalan) {
-          return;
+        const adaPermintaanTertunda = slotTertunda !== null;
+
+        if (tugasSelesai && tugasSelesai.idPermintaan === idPermintaan) {
+          if (adaPermintaanTertunda) {
+            // Hasil komputasi ini sudah usang karena ada permintaan lebih baru yang menunggu.
+            // Buang hasil dan jangan dirender ke UI.
+            statistikPekerja.totalHasilUsangDibuang++;
+            tugasSelesai.resolve({
+              usang: true,
+              dibatalkan: true,
+              durasi,
+              hasil: null,
+            });
+          } else {
+            // Hasil terkini (tidak ada permintaan lebih baru yang menunggu). Nilai final wajib tampil!
+            if (berhasil) {
+              const detailWaktu = {
+                tKirim: waktuRinci?.tKirim || tugasSelesai.tKirim || 0,
+                tWorkerMasuk: waktuRinci?.tWorkerMasuk || 0,
+                tWorkerSelesai: waktuRinci?.tWorkerSelesai || 0,
+                tWorkerKirim: waktuRinci?.tWorkerKirim || 0,
+                tWorkerKembali,
+                durasiKirimKeWorker:
+                  (waktuRinci?.tWorkerMasuk || 0) -
+                  (waktuRinci?.tKirim || tugasSelesai.tKirim || 0),
+                durasiKomputasiWorker:
+                  waktuRinci?.durasiWorker ||
+                  (waktuRinci?.tWorkerSelesai || 0) -
+                    (waktuRinci?.tWorkerMasuk || 0),
+                durasiKembaliKeMain:
+                  tWorkerKembali - (waktuRinci?.tWorkerKirim || 0),
+                durasiTotalSiklus:
+                  tWorkerKembali -
+                  (waktuRinci?.tKirim || tugasSelesai.tKirim || 0),
+              };
+
+              tugasSelesai.resolve({
+                usang: false,
+                hasil: {
+                  data: new Uint8ClampedArray(hasil.data),
+                  width: hasil.width,
+                  height: hasil.height,
+                  __tInput: tugasSelesai.tInput || 0,
+                },
+                durasi,
+                indeksMulaiKomputasi,
+                langkahDieksekusi,
+                waktuRinci: detailWaktu,
+                detailWaktu,
+              });
+            } else {
+              tugasSelesai.reject(
+                new Error(pesanGalat || 'Komputasi worker gagal')
+              );
+            }
+          }
         }
 
-        if (berhasil) {
-          const detailWaktu = {
-            tKirim: waktuRinci?.tKirim || penangan.tKirim || 0,
-            tWorkerMasuk: waktuRinci?.tWorkerMasuk || 0,
-            tWorkerSelesai: waktuRinci?.tWorkerSelesai || 0,
-            tWorkerKirim: waktuRinci?.tWorkerKirim || 0,
-            tWorkerKembali,
-            durasiKirimKeWorker:
-              (waktuRinci?.tWorkerMasuk || 0) -
-              (waktuRinci?.tKirim || penangan.tKirim || 0),
-            durasiKomputasiWorker:
-              waktuRinci?.durasiWorker ||
-              (waktuRinci?.tWorkerSelesai || 0) -
-                (waktuRinci?.tWorkerMasuk || 0),
-            durasiKembaliKeMain:
-              tWorkerKembali - (waktuRinci?.tWorkerKirim || 0),
-            durasiTotalSiklus:
-              tWorkerKembali - (waktuRinci?.tKirim || penangan.tKirim || 0),
-          };
-
-          penangan.resolve({
-            hasil: {
-              data: new Uint8ClampedArray(hasil.data),
-              width: hasil.width,
-              height: hasil.height,
-            },
-            durasi,
-            indeksMulaiKomputasi,
-            langkahDieksekusi,
-            waktuRinci: detailWaktu,
-            detailWaktu,
-          });
-        } else {
-          penangan.reject(new Error(pesanGalat || 'Komputasi worker gagal'));
+        // Jika ada permintaan tertunda di slot, segera kirim ke worker!
+        if (slotTertunda) {
+          const tugasBerikutnya = slotTertunda;
+          slotTertunda = null;
+          kirimTugasKeWorker(tugasBerikutnya);
         }
       };
 
       instansPekerja.onerror = function (err) {
         console.error('Galat fatal Web Worker:', err);
-        for (const [, p] of penanganTertunda) {
-          p.reject(err);
+        sedangMemproses = false;
+        if (penanganAktif) {
+          penanganAktif.reject(err);
+          penanganAktif = null;
         }
-        penanganTertunda.clear();
+        if (slotTertunda) {
+          slotTertunda.reject(err);
+          slotTertunda = null;
+        }
       };
     } catch (e) {
       console.warn(
@@ -117,6 +234,15 @@ function dapatkanPekerja() {
  */
 export function bersihkanCacheWorker() {
   const pekerja = dapatkanPekerja();
+  if (slotTertunda) {
+    slotTertunda.resolve({
+      usang: true,
+      dibatalkan: true,
+      durasi: 0,
+      hasil: null,
+    });
+    slotTertunda = null;
+  }
   if (pekerja) {
     pekerja.postMessage({ tipe: 'BERSIHKAN_CACHE' });
   }
@@ -129,43 +255,42 @@ export function bersihkanCacheWorker() {
  * @param {{ data: Uint8ClampedArray, width: number, height: number }} citra - Citra masukan
  * @param {{ rasio: number }} [konteksSkala={ rasio: 1.0 }] - Konteks skala geometris
  * @param {boolean} [gunakanPrefixCache=true] - Aktifkan prefix caching untuk preview responsif
- * @returns {Promise<{ hasil: { data: Uint8ClampedArray, width: number, height: number }, durasi: number, indeksMulaiKomputasi?: number, langkahDieksekusi?: number, waktuRinci?: object }>}
+ * @returns {Promise<{ hasil: { data: Uint8ClampedArray, width: number, height: number }, durasi: number, usang?: boolean, dibatalkan?: boolean, indeksMulaiKomputasi?: number, langkahDieksekusi?: number, waktuRinci?: object }>}
  */
 export async function jalankanPipeline(
   daftarLangkah,
   citra,
   konteksSkala = { rasio: 1.0 },
-  gunakanPrefixCache = true
+  gunakanPrefixCache = true,
+  tInput = performance.now()
 ) {
   const pekerja = dapatkanPekerja();
   idPermintaanBerjalan++;
   const idSaatIni = idPermintaanBerjalan;
 
-  penanganTertunda.clear();
-
   if (pekerja) {
-    return new Promise((resolve, reject) => {
-      const tKirim = performance.now();
-      penanganTertunda.set(idSaatIni, { resolve, reject, tKirim });
-
-      const salinanBuffer = citra.data.slice().buffer;
-      pekerja.postMessage(
-        {
-          tipe: 'EKSEKUSI_PIPELINE',
-          idPermintaan: idSaatIni,
-          daftarLangkah,
-          citra: {
-            data: salinanBuffer,
-            width: citra.width,
-            height: citra.height,
-          },
-          konteksSkala,
-          gunakanPrefixCache,
-          tKirim,
+    const tKirim = performance.now();
+    const salinanBuffer = citra.data.slice().buffer;
+    return jadwalkanTugasWorker(
+      {
+        tipe: 'EKSEKUSI_PIPELINE',
+        idPermintaan: idSaatIni,
+        daftarLangkah,
+        citra: {
+          data: salinanBuffer,
+          width: citra.width,
+          height: citra.height,
         },
-        [salinanBuffer]
-      );
-    });
+        konteksSkala,
+        gunakanPrefixCache,
+        tKirim,
+      },
+      [salinanBuffer],
+      idSaatIni,
+      tKirim,
+      'PIPELINE',
+      tInput
+    );
   }
 
   // Fallback sinkron untuk lingkungan Vitest / Node / peramban tanpa worker
@@ -179,6 +304,7 @@ export async function jalankanPipeline(
   const durasi = performance.now() - waktuMulai;
 
   return {
+    usang: false,
     hasil: hasilEksekusi.hasil,
     durasi,
     indeksMulaiKomputasi: hasilEksekusi.indeksMulaiKomputasi,
@@ -193,46 +319,42 @@ export async function jalankanPipeline(
  * @param {{ data: Uint8ClampedArray, width: number, height: number }} citra - Citra masukan
  * @param {Record<string, any>} parameter - Parameter operasi
  * @param {{ rasio: number }} [konteksSkala] - Rasio skala untuk operasi geometris
- * @returns {Promise<{ hasil: { data: Uint8ClampedArray, width: number, height: number }, durasi: number }>}
+ * @returns {Promise<{ hasil: { data: Uint8ClampedArray, width: number, height: number }, durasi: number, usang?: boolean, dibatalkan?: boolean }>}
  */
 export async function jalankanOperasi(
   idOperasi,
   citra,
   parameter = {},
-  konteksSkala = { rasio: 1.0 }
+  konteksSkala = { rasio: 1.0 },
+  tInput = performance.now()
 ) {
   const pekerja = dapatkanPekerja();
   idPermintaanBerjalan++;
   const idSaatIni = idPermintaanBerjalan;
 
-  // Bersihkan penangan lama yang sudah kadaluarsa
-  penanganTertunda.clear();
-
-  // Jika Web Worker tersedia, serahkan komputasi ke worker
+  // Jika Web Worker tersedia, serahkan komputasi ke worker melalui mekanisme gating
   if (pekerja) {
-    return new Promise((resolve, reject) => {
-      const tKirim = performance.now();
-      penanganTertunda.set(idSaatIni, { resolve, reject, tKirim });
-
-      // Salin data buffer agar tidak merusak data citra asli di thread utama
-      const salinanBuffer = citra.data.slice().buffer;
-
-      pekerja.postMessage(
-        {
-          idPermintaan: idSaatIni,
-          idOperasi,
-          citra: {
-            data: salinanBuffer,
-            width: citra.width,
-            height: citra.height,
-          },
-          parameter,
-          konteksSkala,
-          tKirim,
+    const tKirim = performance.now();
+    const salinanBuffer = citra.data.slice().buffer;
+    return jadwalkanTugasWorker(
+      {
+        idPermintaan: idSaatIni,
+        idOperasi,
+        citra: {
+          data: salinanBuffer,
+          width: citra.width,
+          height: citra.height,
         },
-        [salinanBuffer]
-      );
-    });
+        parameter,
+        konteksSkala,
+        tKirim,
+      },
+      [salinanBuffer],
+      idSaatIni,
+      tKirim,
+      'OPERASI',
+      tInput
+    );
   }
 
   // Fallback sinkron untuk lingkungan Vitest / Node / peramban tanpa worker
@@ -246,7 +368,7 @@ export async function jalankanOperasi(
   const hasil = operasi.terapkan(citra, paramBersih, konteksSkala);
   const durasi = performance.now() - waktuMulai;
 
-  return { hasil, durasi };
+  return { usang: false, hasil, durasi };
 }
 
 /**

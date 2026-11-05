@@ -1046,7 +1046,7 @@ describe('Model Pipeline, Reducer Murni, & Eksekusi Berantai (Tahap 3)', () => {
         citra.data[i + 3] = 255;
       }
 
-      expect(DAFTAR_PRESET).toHaveLength(5);
+      expect(DAFTAR_PRESET).toHaveLength(8);
 
       for (const pr of DAFTAR_PRESET) {
         expect(pr.id).toBeDefined();
@@ -1069,7 +1069,7 @@ describe('Model Pipeline, Reducer Murni, & Eksekusi Berantai (Tahap 3)', () => {
     });
 
     it('G1 d: validasi struktur ketat seluruh preset (katalog, skema, tanpa kunci asing, rentang)', () => {
-      expect(DAFTAR_PRESET).toHaveLength(5);
+      expect(DAFTAR_PRESET).toHaveLength(8);
 
       for (const pr of DAFTAR_PRESET) {
         const hasilValidasi = validasiStrukturPreset(

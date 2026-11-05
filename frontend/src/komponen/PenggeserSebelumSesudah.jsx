@@ -51,7 +51,19 @@ export default function PenggeserSebelumSesudah({
     if (typeof window !== 'undefined') {
       window.__terakhirWaktuPutImageData = performance.now();
       requestAnimationFrame(() => {
-        window.__terakhirRenderKanvas = performance.now();
+        const tRender = performance.now();
+        window.__terakhirRenderKanvas = tRender;
+        if (citraSesudah && typeof citraSesudah.__tInput === 'number') {
+          const latensiMs = tRender - citraSesudah.__tInput;
+          if (!window.__riwayatFrameTampil) {
+            window.__riwayatFrameTampil = [];
+          }
+          window.__riwayatFrameTampil.push({
+            tInput: citraSesudah.__tInput,
+            tRender,
+            latensiMs,
+          });
+        }
         if (typeof window.__saatKanvasTerbarui === 'function') {
           window.__saatKanvasTerbarui();
         }

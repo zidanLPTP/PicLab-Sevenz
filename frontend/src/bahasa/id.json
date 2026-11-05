@@ -49,7 +49,12 @@
   "kategori": {
     "dasar": "Operasi Dasar",
     "warna": "Operasi Warna",
-    "enhancement": "Enhancement Citra"
+    "enhancement": "Enhancement Citra",
+    "biner": "Citra Biner",
+    "smoothing": "Smoothing (Penghalusan)",
+    "sharpening": "Sharpening (Penajaman)",
+    "konvolusi": "Konvolusi Kernel",
+    "tepi": "Deteksi Tepi"
   },
   "panel": {
     "judulOperasi": "Katalog Operasi Citra",
@@ -58,6 +63,7 @@
     "judulParameter": "Parameter Operasi",
     "kosongParameter": "Pilih operasi di panel kiri untuk mulai mengatur parameter pengolahan citra.",
     "setelUlang": "Setel Ulang Parameter",
+    "tanpaParameter": "Operasi ini tidak memerlukan parameter konfigurasi tambahan.",
     "judulHistogram": "Histogram Citra",
     "infoSatuOperasi": "Satu operasi aktif pada satu waktu (beroperasi pada citra asli).",
     "peringatanBatasDimensiJudul": "Peringatan Batas Dimensi Aman",
@@ -141,6 +147,68 @@
         "nama": "Koreksi Gamma",
         "deskripsi": "Menyesuaikan kurva non-linear respon daya kecerahan citra"
       }
+    },
+    "biner": {
+      "manual": {
+        "nama": "Ambang Manual",
+        "deskripsi": "Segmentasi biner memisahkan piksel menjadi hitam dan putih berdasarkan ambang tetap"
+      },
+      "otsu": {
+        "nama": "Ambang Otsu",
+        "deskripsi": "Pengambangan biner global optimal otomatis berdasarkan pemisahan variansi kelas"
+      },
+      "adaptif": {
+        "nama": "Ambang Adaptif",
+        "deskripsi": "Pengambangan biner lokal dinamis berbasis rata-rata jendela spasial (Mean-C)"
+      }
+    },
+    "smoothing": {
+      "mean": {
+        "nama": "Penapis Rata-rata (Mean)",
+        "deskripsi": "Meratakan intensitas piksel tetangga dengan penapis kotak berkinerja O(1)"
+      },
+      "gaussian": {
+        "nama": "Gaussian Blur",
+        "deskripsi": "Pengaburan spasial berbobot distribusi normal Gaussian 1D separabel"
+      },
+      "median": {
+        "nama": "Penapis Median",
+        "deskripsi": "Menghilangkan derau bintik impuls (salt-and-pepper) tanpa mengaburkan tepi"
+      }
+    },
+    "sharpening": {
+      "unsharp": {
+        "nama": "Unsharp Masking",
+        "deskripsi": "Mempertajam detail tepi dan mikrokontras berdasarkan masker selisih kabur"
+      },
+      "kernel": {
+        "nama": "Penajaman Laplacian",
+        "deskripsi": "Mempertegas diskontinuitas spasial menggunakan kernel Laplacian turunan kedua"
+      }
+    },
+    "konvolusi": {
+      "kernel": {
+        "nama": "Konvolusi Kernel Kustom",
+        "deskripsi": "Menerapkan matriks penapis spasial 3×3 atau 5×5 bebas dengan rotasi 180° sejati"
+      }
+    },
+    "tepi": {
+      "sobel": {
+        "nama": "Operator Sobel",
+        "deskripsi": "Deteksi tepi berbasis gradien diferensial terbobot pada sumbu horizontal dan vertikal"
+      },
+      "prewitt": {
+        "nama": "Operator Prewitt",
+        "deskripsi": "Deteksi tepi gradien tanpa pembobotan tambahan pada elemen pusat"
+      },
+      "roberts": {
+        "nama": "Operator Roberts Cross",
+        "deskripsi": "Deteksi diskontinuitas tepi cepat menggunakan gradien diagonal 2×2"
+      },
+      "laplacian": {
+        "nama": "Operator Laplacian",
+        "deskripsi": "Deteksi tepi turunan kedua isotropik untuk menemukan persilangan nol (zero-crossing)"
+      }
     }
   },
   "parameter": {
@@ -186,7 +254,52 @@
     "ekualisasiPerKanal": "Per Kanal RGB Independen",
     "persentilPangkas": "Persentil Pemangkasan Ekstrem",
     "nilaiGamma": "Nilai Eksponen Gamma",
-    "intensitas": "Intensitas Efek"
+    "intensitas": "Intensitas Efek",
+    "ambang": "Nilai Ambang (Threshold)",
+    "inversi": "Balik Warna (Inversi)",
+    "ukuranJendela": "Ukuran Jendela Lokal",
+    "konstantaC": "Konstanta Pengurang C",
+    "radiusPenapis": "Radius Penapis Kotak",
+    "sigmaGaussian": "Standar Deviasi (σ)",
+    "ukuranMedian": "Ukuran Jendela Median",
+    "jumlahPertajam": "Kekuatan Penguatan (k)",
+    "ambangTonal": "Ambang Batas Tonal",
+    "modelKernelLaplacian": "Model Tetangga Laplacian",
+    "model4Tetangga": "4-Tetangga (Ortogonal)",
+    "model8Tetangga": "8-Tetangga (Penuh)",
+    "ukuranKernel": "Ukuran Kernel Konvolusi",
+    "ukuran3x3": "Matriks 3 × 3",
+    "ukuran5x5": "Matriks 5 × 5",
+    "matriksKernel": "Matriks Elemen Kernel",
+    "pembagiKernel": "Pembagi Bobot (Divisor)",
+    "pembagi": "Pembagi",
+    "offsetBias": "Offset Bias Kecerahan",
+    "arahGradien": "Arah Analisis Gradien",
+    "arahGabungan": "Gabungan (Magnitude √(Gx²+Gy²))",
+    "arahHorizontal": "Horizontal (|Gx|)",
+    "arahVertikal": "Vertikal (|Gy|)",
+    "arahDiagonal1": "Diagonal 1 (|Gx|)",
+    "arahDiagonal2": "Diagonal 2 (|Gy|)",
+    "penguatanGradien": "Faktor Penguatan Tepi",
+    "pilihPresetKernel": "Pilih Preset Kernel",
+    "presetKernelPlaceholder": "Pilih Preset Kernel...",
+    "setelUlangKernel": "Kembalikan ke Kernel Identitas",
+    "labelMatriks": "Kisi Matriks Kernel {{ukuran}} kali {{ukuran}}",
+    "selMatriks": "Baris {{baris}}, Kolom {{kolom}}",
+    "galatRentangMatriks": "Nilai sel harus berupa angka antara {{min}} dan {{max}}",
+    "hitungJumlahBobot": "Hitung jumlah seluruh bobot (Σ = {{jumlah}})",
+    "catatanKernelTetap": "Pratinjau dapat berbeda dari hasil resolusi penuh karena ukuran jendela/kernel konstan pada citra yang diperkecil."
+  },
+  "presetKernel": {
+    "identitas": "Identitas (Tanpa Efek)",
+    "blurKotak": "Blur Kotak (Box Blur)",
+    "gaussian3x3": "Gaussian Blur 3×3",
+    "gaussian5x5": "Gaussian Blur 5×5",
+    "pertajam": "Pertajam (Sharpen)",
+    "emboss": "Emboss (Timbul)",
+    "sobelHorizontal": "Sobel Horizontal",
+    "sobelVertikal": "Sobel Vertikal",
+    "laplacian": "Laplacian"
   },
   "galat": {
     "judul": "Gagal Memuat Berkas",
@@ -219,6 +332,18 @@
     "negatif": {
       "nama": "Negatif",
       "deskripsi": "Pembalikan nilai fotometrik klise citra"
+    },
+    "pertajam": {
+      "nama": "Pertajam Detail",
+      "deskripsi": "Tingkatkan ketajaman tepi dan mikrokontras (Unsharp Mask)"
+    },
+    "siluetTepi": {
+      "nama": "Siluet Tepi",
+      "deskripsi": "Ekstrak garis tepi dan kontur visual dengan operator Sobel"
+    },
+    "hapusNoise": {
+      "nama": "Hapus Noise",
+      "deskripsi": "Reduksi bintik derau impuls dengan penapis median"
     }
   },
   "pipeline": {
@@ -248,5 +373,134 @@
     "kosongkanPipeline": "Kosongkan Pipeline",
     "muatPreset": "Muat Preset",
     "entriAktif": "(Posisi Saat Ini)"
+  },
+  "belajar": {
+    "judulKartu": "Mode Belajar Konsep",
+    "buka": "Buka Materi",
+    "tutup": "Tutup Materi",
+    "labelNamaTeknis": "Nama Teknis Akademis",
+    "labelTujuan": "Fungsi & Kapan Digunakan",
+    "labelRumus": "Rumus Matematika Inti",
+    "labelParameter": "Penjelasan Parameter",
+    "biner_manual": {
+      "tujuan": "Memisahkan objek (foreground) dari latar belakang (background) ketika intensitas pemisah diketahui secara pasti.",
+      "rumus": "g(x,y) = 255 jika Y(x,y) > T, selain itu 0",
+      "penjelasanRumus": "Y(x,y) adalah luminans piksel berdasarkan standar ITU-R BT.601, dan T adalah nilai ambang batas.",
+      "parameter": {
+        "ambang": "Nilai pemisah luminans (0..255). Piksel di atas nilai ini menjadi putih.",
+        "inversi": "Jika aktif, membalikkan logika hasil (piksel di bawah ambang menjadi putih)."
+      }
+    },
+    "biner_otsu": {
+      "tujuan": "Binarisasi otomatis tanpa perlu menebak ambang, sangat efektif pada citra dengan histogram bimodal (dua bukit intensitas jelas).",
+      "rumus": "T* = argmax [ ω₀(T) · ω₁(T) · (μ₀(T) - μ₁(T))² ]",
+      "penjelasanRumus": "Mencari ambang T* yang memaksimalkan variansi antar-kelas σ_B²(T) pada rentang intensitas [0..255].",
+      "parameter": {
+        "inversi": "Membalikkan citra hasil biner (objek gelap menjadi putih)."
+      }
+    },
+    "biner_adaptif": {
+      "tujuan": "Segmentasi biner pada citra dengan pencahayaan tidak merata (misalnya dokumen foto dengan bayangan lampu).",
+      "rumus": "T(x,y) = Mean_Jendela(x,y) - C\ng(x,y) = 255 jika Y(x,y) > T(x,y), selain itu 0",
+      "penjelasanRumus": "Rata-rata dihitung efisien dalam waktu O(1) menggunakan Citra Integral (Summed-Area Table).",
+      "parameter": {
+        "jendela": "Ukuran sisi jendela persegi lokal (harus ganjil, misal 15 piksel).",
+        "konstanta": "Nilai pengurang konstanta C untuk menyaring derau latar.",
+        "inversi": "Membalikkan polaritas biner hasil segmentasi."
+      }
+    },
+    "halus_mean": {
+      "tujuan": "Menghaluskan citra dan mengurangi derau acak dengan meratakan intensitas pada jendela kotak lokal.",
+      "rumus": "g(x,y) = (1 / (2R+1)²) · Σ Σ f(x+i, y+j)",
+      "penjelasanRumus": "Dihitung secara konstan O(1) independen dari ukuran radius menggunakan Citra Integral.",
+      "parameter": {
+        "radius": "Jarak radius perluasan jendela kotak dari piksel pusat."
+      }
+    },
+    "halus_gaussian": {
+      "tujuan": "Menghaluskan citra secara alami dengan bobot distribusi normal, menjaga kontinuitas visual lebih baik daripada mean blur.",
+      "rumus": "G(x,y) = (1 / (2πσ²)) · exp(-(x² + y²) / (2σ²))",
+      "penjelasanRumus": "Diterapkan secara separabel 1D horizontal lalu vertikal O(2K) untuk efisiensi komputasi tinggi.",
+      "parameter": {
+        "sigma": "Standar deviasi kurva Gaussian. Nilai lebih besar menghasilkan efek buram lebih luas."
+      }
+    },
+    "halus_median": {
+      "tujuan": "Menghilangkan derau bintik hitam-putih (salt-and-pepper noise) secara sempurna tanpa mengaburkan ketajaman tepi kontur objek.",
+      "rumus": "g(x,y) = median{ f(x+i, y+j) | (i,j) ∈ Jendela }",
+      "penjelasanRumus": "Mengurutkan seluruh piksel dalam jendela dan mengambil elemen tengah persis (rank filter).",
+      "parameter": {
+        "ukuran": "Dimensi jendela median (3x3 dengan sorting network atau 5x5 dengan insertion sort)."
+      }
+    },
+    "tajam_unsharp": {
+      "tujuan": "Meningkatkan ketajaman persepsi manusia dengan menambah kontras pada batas-batas transisi (tepi).",
+      "rumus": "Masker(x,y) = f(x,y) - Gaussian(x,y)\ng(x,y) = f(x,y) + k · Masker(x,y)",
+      "penjelasanRumus": "Komponen frekuensi tinggi (masker) dikalikan dengan faktor penguatan k dan ditambahkan kembali ke citra asli.",
+      "parameter": {
+        "sigma": "Radius pengaburan untuk pembentukan masker frekuensi rendah.",
+        "jumlah": "Faktor pengali penguatan tepi (k).",
+        "ambang": "Batas perbedaan minimum agar penajaman tidak memperkuat derau latar."
+      }
+    },
+    "tajam_kernel": {
+      "tujuan": "Penajaman spasial instan menggunakan kernel diskrit turunan kedua berbasis operator Laplacian.",
+      "rumus": "g(x,y) = f(x,y) - c · ∇²f(x,y)",
+      "penjelasanRumus": "Kernel 4-tetangga menggunakan matriks [0,-1,0; -1,5,-1; 0,-1,0], kernel 8-tetangga menggunakan [-1,-1,-1; -1,9,-1; -1,-1,-1].",
+      "parameter": {
+        "model": "Pilihan matriks ketetanggaan (4-tetangga ortogonal atau 8-tetangga penuh)."
+      }
+    },
+    "konvolusi_kernel": {
+      "tujuan": "Menerapkan penapis spasial linier bebas untuk eksperimen efek konvolusi, deteksi fitur, emboss, maupun blur kustom.",
+      "rumus": "g(x,y) = clamp( round( (Σ Σ w(s,t) · f(x-s, y-t)) / Div + Bias ) )",
+      "penjelasanRumus": "Konvolusi sejati memutar kernel 180° (f(x-s, y-t)), berbeda dengan korelasi silang f(x+s, y+t).",
+      "parameter": {
+        "ukuran": "Ukuran matriks kernel (3×3 atau 5×5).",
+        "matriks": "Daftar koefisien bobot pembobotan piksel spasial.",
+        "pembagi": "Faktor normalisasi total bobot kernel untuk menjaga kecerahan rata-rata.",
+        "offset": "Nilai penambah bias kecerahan (misal +128 untuk efek emboss)."
+      }
+    },
+    "tepi_sobel": {
+      "tujuan": "Mendeteksi tepi kontur objek dengan memperhitungkan aproksimasi gradien dan efek penghalusan ringan simultan.",
+      "rumus": "Gx = [-1,0,1; -2,0,2; -1,0,1] * f\nGy = [-1,-2,-1; 0,0,0; 1,2,1] * f\n|G| = √(Gx² + Gy²)",
+      "penjelasanRumus": "Pembobotan 2 pada elemen pusat memberikan ketahanan terhadap derau frekuensi tinggi.",
+      "parameter": {
+        "arah": "Pilihan arah gradien (horizontal Gx, vertikal Gy, atau magnitudo gabungan).",
+        "penguatan": "Faktor pengali penguatan intensitas kontur garis tepi.",
+        "inversi": "Menghasilkan garis tepi hitam dengan latar putih untuk tampilan sketsa."
+      }
+    },
+    "tepi_prewitt": {
+      "tujuan": "Deteksi tepi berbasis gradien ortogonal dengan bobot seragam tanpa penekanan piksel tengah.",
+      "rumus": "Gx = [-1,0,1; -1,0,1; -1,0,1] * f\nGy = [-1,-1,-1; 0,0,0; 1,1,1] * f\n|G| = √(Gx² + Gy²)",
+      "penjelasanRumus": "Mendeteksi transisi tepi teratur dengan respons linier terhadap selisih intensitas.",
+      "parameter": {
+        "arah": "Pilihan sumbu diferensiasi gradien.",
+        "penguatan": "Pengali respon kontur tepi.",
+        "inversi": "Membalikkan polaritas intensitas citra hasil."
+      }
+    },
+    "tepi_roberts": {
+      "tujuan": "Deteksi tepi berkecepatan sangat tinggi menggunakan pasangan perbedaan diagonal 2×2 piksel.",
+      "rumus": "Gx = f(x,y) - f(x+1, y+1)\nGy = f(x+1, y) - f(x, y+1)\n|G| = √(Gx² + Gy²)",
+      "penjelasanRumus": "Sangat sensitif terhadap diskontinuitas lokal halus karena menggunakan jendela 2×2 minimalis.",
+      "parameter": {
+        "arah": "Pilihan arah diferensiasi diagonal.",
+        "penguatan": "Penguat visibilitas garis kontur.",
+        "inversi": "Membalikkan hasil ke sketsa garis gelap."
+      }
+    },
+    "tepi_laplacian": {
+      "tujuan": "Deteksi tepi isotropik (tidak bergantung arah) berdasarkan turunan kedua spasial ∇²f.",
+      "rumus": "∇²f = ∂²f/∂x² + ∂²f/∂y²\nKernel = [0,1,0; 1,-4,1; 0,1,0] atau [1,1,1; 1,-8,1; 1,1,1]",
+      "penjelasanRumus": "Menghasilkan nilai nol pada daerah rata, respons positif/negatif pada batas tepi (zero-crossing).",
+      "parameter": {
+        "model": "Pilihan model diskritisasi turunan (4-tetangga atau 8-tetangga).",
+        "penguatan": "Faktor pengali respon turunan kedua.",
+        "inversi": "Pembalikan warna garis kontur hasil deteksi."
+      }
+    }
   }
 }
