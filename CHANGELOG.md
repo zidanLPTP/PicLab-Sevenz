@@ -4,6 +4,39 @@ Semua perubahan penting pada proyek **PicLab Sevenz** akan didokumentasikan dala
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/) dan mengikuti prinsip [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.6.0] - 2026-11-05
+
+### Ditambahkan
+- **Fondasi Backend FastAPI & Validasi Berlapis (Tahap 5)**:
+  - Arsitektur modular di `backend/app/` (`inti/`, `rute/`, `layanan/`, `skema/`, `konfigurasi.py`, `utama.py`).
+  - Validasi bertingkat murah ke mahal:
+    - Batas ukuran aliran masuk 10 MB dibaca per-chunk 64 KB (penolakan HTTP 413 `BERKAS_TERLALU_BESAR` seketika saat melebihi batas tanpa membaca seluruh isi).
+    - Verifikasi magic bytes biner untuk format JPEG, PNG, WebP, dan BMP (HTTP 415 `FORMAT_TIDAK_DIDUKUNG`).
+    - Verifikasi dimensi header `citra.size` via Pillow tanpa full decode untuk mencegah *decompression bomb* (HTTP 400 `DIMENSI_TERLALU_BESAR` > 4096 px dan `PIKSEL_TERLALU_BANYAK` > 16 MP).
+    - Sanitasi parameter dengan batas rentang eksplisit (HTTP 422 `PARAMETER_TIDAK_VALID`).
+  - Pemrosesan murni di memori (RAM) via `io.BytesIO` dan array NumPy dengan bukti 0 penulisan ke disk (`test_tanpa_disk.py`).
+  - Format respon galat standar seragam `{ "kode": "...", "pesan": "..." }` untuk seluruh penangan eksepsi.
+- **Keamanan OWASP & Pertahanan Server**:
+  - Pembatas laju (*Rate Limiter*) IP bawaan menggunakan SlowAPI (60 req/menit dengan header HTTP 429 `TERLALU_BANYAK_PERMINTAAN` dan `Retry-After`).
+  - Semafor pembatas konkurensi serentak (`BATAS_PERMINTAAN_SERENTAK = 2`) yang mengembalikan HTTP 503 `SERVER_SIBUK` saat kapasitas maksimal tercapai.
+  - Batas waktu per-permintaan (*request timeout*) 15 detik dengan `asyncio.wait_for`.
+  - CORS ketat hanya untuk origin terdaftar, metode `GET, POST, OPTIONS`, dan header terdaftar.
+  - Header keamanan OWASP: `X-Content-Type-Options: nosniff`, `Cache-Control: no-store`, `Content-Security-Policy: frame-ancestors 'none'`, penghapusan header bocoran `server`.
+  - Audit dependensi otomatis: `pip-audit` menghasilkan 0 vulnerabilitas pada requirements backend produksi.
+  - Privasi log server: format log kustom terbukti murni mencatat metode, rute, status HTTP, durasi, dan kode galat tanpa pernah mencatat nama berkas asli pengguna (`test_log_privasi.py`).
+- **Penghubung Klien API & Graceful Degradation**:
+  - Modul layanan `frontend/src/layanan/api.js` dengan mekanisme pembatalan otomatis permintaan usang (*latest-wins AbortController*) per rute, validasi ukuran <10 MB di klien, dan nama berkas generik `citra.png`.
+  - Kustom hook `useStatusServer.js`: pemeriksaan awal, polling berkala 30s, penghentian polling saat tab disembunyikan (`visibilitychange`), backoff eksponensial saat server offline, dan pemicu periksa manual.
+  - Indikator status server di `BilahAtas.jsx` dengan token sistem desain resmi, animasi status reaktif (hijau/merah/abu), tooltip dwibahasa, dan tombol periksa ulang manual.
+  - Graceful degradation: aplikasi klien tetap 100% berfungsi mandiri saat backend mati/offline; operasi dengan metadata `lokasi: 'server'` dinonaktifkan secara aman dengan keterangan ramah pengguna di `PanelOperasi.jsx`.
+  - Pembaruan Dialog Privasi dwibahasa (poin 4) yang menjelaskan transparansi pencatatan log server tanpa nama berkas asli.
+- **Kit Mandiri Uji Kelayakan Hosting Bersama (F')**:
+  - Paket berdiri sendiri di `backend/kelayakan/` dengan dependensi terpisah (`requirements-uji.txt`). OpenCV dan SciPy HANYA ada di sini dan tidak masuk requirements backend produksi.
+  - Skrip diagnostik: `aplikasi_minimal.py` (FastAPI minimal di RAM), `periksa_lingkungan.py` (deteksi cgroup/LVE), `ukur_beban.py` (beban sintetis deterministik 1, 4, 8, 16 MP dengan waktu median dan puncak memori), `uji_konkurensi.py` (uji beban stdlib), dan `passenger_wsgi.py` (jembatan ASGI->WSGI via `a2wsgi`).
+  - Garis Dasar Laptop terukur empiris pada Python 3.13.5 (1 MP = 47,2 ms / 7,63 MB; 4 MP = 174,9 ms / 30,52 MB; 8 MP = 929,3 ms / 60,97 MB; 16 MP = 1916,4 ms / 122,08 MB) disertai dokumentasi keterbatasan memori `tracemalloc`.
+  - Dokumen panduan `SYARAT_HOSTING_SEBELUM_MEMBELI.md` memuat batas minimal RAM 1–2 GB, dukungan wheel biner, versi Python minimum 3.10, dan 5 pertanyaan sebelum sewa hosting.
+  - Pencatatan keputusan Fathin (2026-11-05): hosting bersama belum dibeli dan pengujian di hosting nyata ditunda hingga Tahap 11 sebelum deployment.
+
 ## [0.5.0] - 2026-11-04
 
 ### Ditambahkan

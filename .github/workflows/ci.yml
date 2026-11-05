@@ -41,8 +41,11 @@ jobs:
         run: npm run build
 
   backend:
-    name: Backend (Lint, Uji)
+    name: Backend Python ${{ matrix.python-version }} (Lint, Uji, Audit)
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.13']
     defaults:
       run:
         working-directory: backend
@@ -50,10 +53,10 @@ jobs:
       - name: Periksa kode sumber
         uses: actions/checkout@v4
 
-      - name: Siapkan Python
+      - name: Siapkan Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: ${{ matrix.python-version }}
           cache: 'pip'
           cache-dependency-path: backend/requirements.txt
 
@@ -68,10 +71,13 @@ jobs:
       - name: Jalankan pytest
         run: pytest -v
 
+      - name: Jalankan audit keamanan dependensi (pip-audit)
+        run: pip-audit
+
   e2e:
     name: Pengujian E2E (Playwright)
     runs-on: ubuntu-latest
-    needs: frontend
+    needs: [frontend, backend]
     steps:
       - name: Periksa kode sumber
         uses: actions/checkout@v4
