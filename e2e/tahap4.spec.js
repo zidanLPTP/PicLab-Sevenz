@@ -1,18 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import { expect, test } from '@playwright/test';
-import { bangkitkanSemuaAsetUji } from './utilitas/bangkitkanCitraUji.js';
 
 test.describe('PicLab Sevenz — Pengujian E2E Tahap 4: Biner, Spasial, Konvolusi, & Deteksi Tepi', () => {
   const fileTangga = path.resolve('test-assets', 'tangga-100x100.png');
   const fileSintetis = path.resolve('test-assets', 'uji-40x30.png');
-
-  test.beforeAll(() => {
-    // Pastikan berkas aset uji tersedia, bangkitkan otomatis jika belum ada di lingkungan CI
-    if (!fs.existsSync(fileTangga) || !fs.existsSync(fileSintetis)) {
-      bangkitkanSemuaAsetUji();
-    }
-  });
 
   // ==========================================================================
   // 1. UJI ALUR OTSU: CITRA TANGGA -> OTSU -> UNDUH -> SEMUA PIKSEL 0 / 255

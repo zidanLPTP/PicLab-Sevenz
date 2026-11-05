@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
+  globalSetup: './e2e/globalSetup.js',
   testDir: './e2e',
   testIgnore: process.env.RUN_BENCHMARK
     ? []
