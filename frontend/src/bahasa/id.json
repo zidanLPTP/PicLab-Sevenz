@@ -10,9 +10,10 @@
   "privasi": {
     "judul": "Privasi & Keamanan Data Pengguna",
     "poin1": "Operasi pengolahan citra klien berjalan sepenuhnya di memori peramban Anda. Gambar Anda tidak pernah meninggalkan perangkat.",
-    "poin2": "Saat operasi server diaktifkan, gambar hanya dikirim sementara untuk diproses di memori dan langsung dihapus seketika setelah respons selesai. Kami tidak pernah menyimpan gambar Anda di disk atau database.",
-    "poin3": "Tidak ada pelacakan pribadi, akun pengguna, atau analitik pihak ketiga.",
-    "tombolTutup": "Mengerti dan Tutup"
+    "poin2": "Saat operasi server digunakan, citra dikirim sementara untuk diproses murni di memori (RAM) dan langsung dihapus seketika setelah respons selesai tanpa penulisan ke disk.",
+    "poin3": "Tidak ada penyimpanan permanen, akun pengguna, basis data gambar, atau analitik pelacakan pihak ketiga.",
+    "tombolTutup": "Mengerti dan Tutup",
+    "poin4": "Log server hanya mencatat metode, rute, status HTTP, durasi, dan kode galat tanpa pernah mencatat nama berkas asli atau isi citra pengguna."
   },
   "unggah": {
     "ajakan": "Unggah Gambar untuk Mulai Mengolah",
@@ -502,5 +503,33 @@
         "inversi": "Pembalikan warna garis kontur hasil deteksi."
       }
     }
+  },
+  "statusServer": {
+    "judul": "Status Server",
+    "tersedia": "Server Aktif",
+    "tidakTersedia": "Server Mati",
+    "memeriksa": "Memeriksa...",
+    "keteranganTersedia": "Backend FastAPI terhubung dan siap memproses komputasi citra di memori.",
+    "keteranganTidakTersedia": "Backend tidak terjangkau. Seluruh operasi klien tetap berfungsi 100%.",
+    "keteranganMemeriksa": "Sedang memeriksa koneksi ke backend...",
+    "tombolPeriksa": "Periksa Ulang",
+    "operasiServerNonaktif": "Operasi server nonaktif karena backend sedang tidak tersedia."
+  },
+  "galatServer": {
+    "BERKAS_TERLALU_BESAR": "Ukuran berkas melebihi batas maksimum 10 MB.",
+    "FORMAT_TIDAK_DIDUKUNG": "Format berkas tidak didukung. Harap gunakan JPEG, PNG, WebP, atau BMP.",
+    "BERKAS_RUSAK": "Berkas citra rusak atau tidak dapat diuraikan.",
+    "DIMENSI_TERLALU_BESAR": "Dimensi sisi citra melebihi batas maksimum 4096 piksel.",
+    "PIKSEL_TERLALU_BANYAK": "Total piksel citra melebihi batas aman pemrosesan (16 juta piksel).",
+    "TERLALU_BANYAK_PERMINTAAN": "Terlalu banyak permintaan dalam waktu singkat. Silakan coba sesaat lagi.",
+    "PARAMETER_TIDAK_VALID": "Parameter yang diberikan tidak valid atau di luar rentang yang diizinkan.",
+    "SERVER_SIBUK": "Server sedang memproses beban maksimal permintaan. Silakan coba sesaat lagi.",
+    "BATAS_WAKTU_HABIS": "Batas waktu pemrosesan permintaan di server telah terlampaui.",
+    "RUTE_TIDAK_DITEMUKAN": "Endpoint server tidak ditemukan.",
+    "METODE_TIDAK_DIIZINKAN": "Metode HTTP tidak diizinkan pada endpoint ini.",
+    "JARINGAN_GAGAL": "Gagal terhubung ke jaringan server backend.",
+    "SERVER_TIDAK_TERSEDIA": "Server backend sedang tidak tersedia atau dalam keadaan mati.",
+    "DIBATALKAN": "Permintaan dibatalkan karena ada aksi pengguna yang lebih baru.",
+    "GALAT_INTERNAL": "Terjadi kesalahan internal pada server. Silakan coba lagi."
   }
 }

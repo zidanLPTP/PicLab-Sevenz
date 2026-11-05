@@ -9,10 +9,11 @@
   },
   "privasi": {
     "judul": "User Data Privacy & Security",
-    "poin1": "Client-side image processing runs entirely inside your browser's memory. Your images never leave your local device.",
-    "poin2": "When server operations are enabled, images are only sent temporarily for in-memory computation and immediately discarded after the response finishes. We never store your images on disk or database.",
-    "poin3": "Zero personal tracking, user accounts, or third-party analytics.",
-    "tombolTutup": "Understood and Close"
+    "poin1": "Client-side image processing operations run entirely within your browser memory. Your images never leave your local device.",
+    "poin2": "When server operations are used, images are transmitted temporarily for pure in-memory (RAM) processing and immediately deleted upon response completion without disk storage.",
+    "poin3": "No permanent file storage, user accounts, image databases, or third-party tracking analytics exist.",
+    "tombolTutup": "Understood and Close",
+    "poin4": "Server access logs record only HTTP method, route, status code, duration, and error codes without ever logging original filenames or image content."
   },
   "unggah": {
     "ajakan": "Upload an Image to Start Processing",
@@ -502,5 +503,33 @@
         "inversi": "Inverts output contour colors."
       }
     }
+  },
+  "statusServer": {
+    "judul": "Server Status",
+    "tersedia": "Server Online",
+    "tidakTersedia": "Server Offline",
+    "memeriksa": "Checking...",
+    "keteranganTersedia": "FastAPI backend is connected and ready for in-memory image processing.",
+    "keteranganTidakTersedia": "Backend unreachable. All client-side operations remain 100% functional.",
+    "keteranganMemeriksa": "Checking connection to backend...",
+    "tombolPeriksa": "Recheck Connection",
+    "operasiServerNonaktif": "Server operation disabled because backend is currently unreachable."
+  },
+  "galatServer": {
+    "BERKAS_TERLALU_BESAR": "File size exceeds the 10 MB maximum limit.",
+    "FORMAT_TIDAK_DIDUKUNG": "File format not supported. Please use JPEG, PNG, WebP, or BMP.",
+    "BERKAS_RUSAK": "Image file is corrupted or unreadable.",
+    "DIMENSI_TERLALU_BESAR": "Image side dimension exceeds the 4096 px limit.",
+    "PIKSEL_TERLALU_BANYAK": "Total image pixels exceed the safe processing limit (16 million pixels).",
+    "TERLALU_BANYAK_PERMINTAAN": "Too many requests. Please wait a moment.",
+    "PARAMETER_TIDAK_VALID": "Provided parameters are invalid or out of allowed range.",
+    "SERVER_SIBUK": "Server is busy with maximum concurrent load. Please try again in a moment.",
+    "BATAS_WAKTU_HABIS": "Request processing timed out on the server.",
+    "RUTE_TIDAK_DITEMUKAN": "Requested server route was not found.",
+    "METODE_TIDAK_DIIZINKAN": "HTTP method not allowed on this endpoint.",
+    "JARINGAN_GAGAL": "Failed to connect to the backend server network.",
+    "SERVER_TIDAK_TERSEDIA": "Backend server is currently unavailable or offline.",
+    "DIBATALKAN": "Request canceled due to newer user action.",
+    "GALAT_INTERNAL": "An internal server error occurred. Please try again."
   }
 }

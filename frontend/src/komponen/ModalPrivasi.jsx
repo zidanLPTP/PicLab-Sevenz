@@ -116,6 +116,7 @@ export default function ModalPrivasi({ terbuka, saatTutup, elemenPemicuRef }) {
           </div>
           <p>{t('privasi.poin2')}</p>
           <p>{t('privasi.poin3')}</p>
+          <p>{t('privasi.poin4')}</p>
         </div>
 
         <div className="flex justify-end pt-2">
