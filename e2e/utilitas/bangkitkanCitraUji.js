@@ -148,6 +148,24 @@ export function bangkitkanCitraAcak(width, height, seed = 42) {
 }
 
 /**
+ * Menghasilkan citra impuls non-datar dengan satu titik 100 di tengah (50, 50)
+ */
+export function bangkitkanCitraImpuls(width, height) {
+  const total = width * height * 4;
+  const buffer = Buffer.alloc(total);
+  for (let i = 0; i < total; i += 4) {
+    buffer[i + 3] = 255;
+  }
+  const cx = Math.floor(width / 2);
+  const cy = Math.floor(height / 2);
+  const idx = (cy * width + cx) * 4;
+  buffer[idx] = 100;
+  buffer[idx + 1] = 100;
+  buffer[idx + 2] = 100;
+  return buffer;
+}
+
+/**
  * Membangkitkan seluruh aset uji ke folder test-assets jika dipanggil langsung
  */
 export function bangkitkanSemuaAsetUji(targetDir = 'test-assets') {
@@ -174,6 +192,11 @@ export function bangkitkanSemuaAsetUji(targetDir = 'test-assets') {
   const bufferAcak = bangkitkanCitraAcak(4000, 3000, 42);
   const pngAcak = encodePng(4000, 3000, bufferAcak);
   fs.writeFileSync(path.join(targetDir, 'acak-4000x3000.png'), pngAcak);
+
+  // 5. Citra impuls non-datar 100x100 (titik 100 di tengah 50, 50)
+  const bufferImpuls = bangkitkanCitraImpuls(100, 100);
+  const pngImpuls = encodePng(100, 100, bufferImpuls);
+  fs.writeFileSync(path.join(targetDir, 'impuls-100x100.png'), pngImpuls);
 
   console.log(
     'Seluruh aset uji citra deterministik berhasil dibangkitkan via Node.js!'

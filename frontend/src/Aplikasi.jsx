@@ -88,6 +88,8 @@ export default function Aplikasi() {
           true // Aktifkan prefix caching untuk preview interaktif
         );
 
+        if (!respons || respons.usang || !respons.hasil) return;
+
         const { hasil, waktuRinci, indeksMulaiKomputasi, langkahDieksekusi } =
           respons;
 

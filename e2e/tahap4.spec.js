@@ -5,6 +5,7 @@ import { expect, test } from '@playwright/test';
 test.describe('PicLab Sevenz — Pengujian E2E Tahap 4: Biner, Spasial, Konvolusi, & Deteksi Tepi', () => {
   const fileTangga = path.resolve('test-assets', 'tangga-100x100.png');
   const fileSintetis = path.resolve('test-assets', 'uji-40x30.png');
+  const fileImpuls = path.resolve('test-assets', 'impuls-100x100.png');
 
   // ==========================================================================
   // 1. UJI ALUR OTSU: CITRA TANGGA -> OTSU -> UNDUH -> SEMUA PIKSEL 0 / 255
@@ -148,7 +149,7 @@ test.describe('PicLab Sevenz — Pengujian E2E Tahap 4: Biner, Spasial, Konvolus
     await page.goto('/');
 
     const inputUnggah = page.locator('input[type="file"]');
-    await inputUnggah.setInputFiles(fileTangga);
+    await inputUnggah.setInputFiles(fileImpuls);
     await expect(page.getByRole('slider', { name: /penggeser/i })).toBeVisible();
 
     // Tambah operasi Konvolusi Kernel
@@ -164,29 +165,41 @@ test.describe('PicLab Sevenz — Pengujian E2E Tahap 4: Biner, Spasial, Konvolus
     // Matriks 5x5 memiliki tepat 25 sel grid
     await expect(selMatriks).toHaveCount(25);
 
-    // Uji validasi input tak valid: masukkan huruf dan angka di luar batas (H6 iv)
+    // Ambil cuplikan kanvas sebelum pengetikan tak valid
+    const dataKanvasSebelum = await page.evaluate(() => {
+      const c = document.querySelector('canvas[aria-label="Citra Sesudah"]');
+      return c ? c.toDataURL() : '';
+    });
+
+    // Uji validasi input tak valid: masukkan huruf (H6 iv, J4 b)
     const selPusat = selMatriks.nth(12); // Indeks 12 adalah baris 3 kolom 3 (pusat 5x5)
     await selPusat.fill('abc'); // Huruf tidak valid
     await expect(page.getByRole('alert')).toBeVisible();
     await expect(selPusat).toHaveAttribute('aria-invalid', 'true');
 
+    // Asersi bahwa pengetikan huruf ('abc') diabaikan oleh pipeline dan tidak mengubah kanvas preview (J4 b)
+    const dataKanvasSetelahHuruf = await page.evaluate(() => {
+      const c = document.querySelector('canvas[aria-label="Citra Sesudah"]');
+      return c ? c.toDataURL() : '';
+    });
+    expect(dataKanvasSetelahHuruf).toBe(dataKanvasSebelum);
+
     await selPusat.fill('9999'); // Melampaui batas maksimum 100
     await expect(page.getByRole('alert')).toBeVisible();
     await expect(selPusat).toHaveAttribute('aria-invalid', 'true');
 
-    // Beralih kembali ke 3x3 untuk menerapkan kernel asimetris kustom (H6 iii)
+    // Beralih kembali ke 3x3 untuk menerapkan kernel asimetris kustom (H6 iii, J4 a)
     await editorMatriks.getByRole('button', { name: '3×3' }).click();
     const selMatriks3 = editorMatriks.locator('div[role="gridcell"] input');
 
-    // Masukkan kernel asimetris: baris 1 kolom 1 bernilai 1, baris 1 kolom 2 bernilai 2, lainnya 0
-    // [ 1, 2, 0 ]
-    // [ 0, 0, 0 ]
-    // [ 0, 0, 0 ]
+    // Masukkan kernel asimetris 1..9:
+    // [ 1, 2, 3 ]
+    // [ 4, 5, 6 ]
+    // [ 7, 8, 9 ]
     // Pembagi = 1, Offset = 0
-    await selMatriks3.nth(0).fill('1');
-    await selMatriks3.nth(1).fill('2');
-    for (let s = 2; s < 9; s++) {
-      await selMatriks3.nth(s).fill('0');
+    const nilaiKernel = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    for (let s = 0; s < 9; s++) {
+      await selMatriks3.nth(s).fill(String(nilaiKernel[s]));
     }
     const inputPembagi = page.locator('input[id$="-pembagi"]');
     await inputPembagi.fill('1');
@@ -194,16 +207,22 @@ test.describe('PicLab Sevenz — Pengujian E2E Tahap 4: Biner, Spasial, Konvolus
     await inputOffset.fill('0');
     await inputOffset.dispatchEvent('blur');
 
-    // Unduh hasil dan periksa kecocokan titik tertentu terhadap hitungan tangan (H6 iii)
+    // Unduh hasil dan periksa kecocokan titik tertentu terhadap hitungan tangan (H6 iii, J4 a)
     const unduhPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Unduh Hasil' }).click();
     const unduhan = await unduhPromise;
     const pathUnduh = await unduhan.path();
     const bufferUnduh = await fs.promises.readFile(pathUnduh);
 
-    // Hitungan tangan:
-    // Pada citra tangga, area kiri (x=20, y=20) semua piksel bernilai 40
-    // Respons konvolusi = 40 * 1 + 40 * 2 = 120!
+    // Hitungan tangan konvolusi sejati (rotasi 180°):
+    // Citra 100x100 memiliki satu titik impuls bernilai 100 di (50, 50).
+    // Kernel 3x3:
+    // K = [ 1, 2, 3 ; 4, 5, 6 ; 7, 8, 9 ]
+    // - Di (50, 50): Bobot tengah K(1,1)=5 -> 100 * 5 = 500 -> clamp 255.
+    // - Di (49, 49) [kiri-atas impuls]: Tetangga (+1, +1) berpasangan dengan K(0,0)=1 -> 100 * 1 = 100!
+    //   (Membuktikan konvolusi 180°; jika korelasi tanpa 180°, K(2,2)=9 -> 900 -> 255).
+    // - Di (51, 51) [kanan-bawah impuls]: Tetangga (-1, -1) berpasangan dengan K(2,2)=9 -> 100 * 9 = 900 -> clamp 255.
+    // - Di (5, 5) [jauh]: 0.
     const hasilHitung = await page.evaluate(async (base64) => {
       const blob = await fetch(`data:image/png;base64,${base64}`).then((r) =>
         r.blob()
@@ -214,12 +233,25 @@ test.describe('PicLab Sevenz — Pengujian E2E Tahap 4: Biner, Spasial, Konvolus
       canvas.height = bmp.height;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(bmp, 0, 0);
-      const p = ctx.getImageData(20, 20, 1, 1).data;
-      return { r: p[0], a: p[3] };
+
+      const pTengah = ctx.getImageData(50, 50, 1, 1).data;
+      const pKiriAtas = ctx.getImageData(49, 49, 1, 1).data;
+      const pKananBawah = ctx.getImageData(51, 51, 1, 1).data;
+      const pJauh = ctx.getImageData(5, 5, 1, 1).data;
+
+      return {
+        tengah: { r: pTengah[0], a: pTengah[3] },
+        kiriAtas: { r: pKiriAtas[0], a: pKiriAtas[3] },
+        kananBawah: { r: pKananBawah[0], a: pKananBawah[3] },
+        jauh: { r: pJauh[0], a: pJauh[3] },
+      };
     }, bufferUnduh.toString('base64'));
 
-    expect(hasilHitung.r).toBe(120);
-    expect(hasilHitung.a).toBe(255);
+    expect(hasilHitung.tengah.r).toBe(255);
+    expect(hasilHitung.kiriAtas.r).toBe(100);
+    expect(hasilHitung.kananBawah.r).toBe(255);
+    expect(hasilHitung.jauh.r).toBe(0);
+    expect(hasilHitung.tengah.a).toBe(255);
   });
 
   // ==========================================================================

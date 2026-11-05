@@ -56,6 +56,16 @@ export function konvolusi2DSejati(
   const invDiv = 1 / div;
   const bias = Number.isFinite(offset) ? offset : 0;
 
+  // Jika dimensi citra lebih kecil dari atau sama dengan 2 * radius, tidak ada interior; seluruh piksel adalah border
+  if (width <= radius * 2 || height <= radius * 2) {
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        prosesSatuPikselBorder(x, y);
+      }
+    }
+    return dst;
+  }
+
   // Siapkan tap bukan-nol untuk area interior (pembalikan 180° konvolusi sejati)
   const nonZeroWeights = [];
   const nonZeroOffsets = [];

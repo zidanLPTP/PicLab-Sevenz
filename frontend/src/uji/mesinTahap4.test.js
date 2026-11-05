@@ -36,7 +36,6 @@ import {
   bangunCitraIntegral,
   bangunKernelGaussian1D,
   konvolusi2DSejati,
-  konvolusiSeparable1D,
   penapisMedian,
 } from '../mesin/spasial/utilitasKonvolusi';
 import {
@@ -45,7 +44,6 @@ import {
   bersihkanParameter,
 } from '../mesin/katalogOperasi';
 import { eksekusiPipelineSekuensial } from '../mesin/eksekutorPipeline';
-import crypto from 'crypto';
 
 /**
  * Utilitas pembuat ImageData buatan untuk pengujian.
@@ -630,81 +628,271 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
   });
 
   // ==========================================================================
-  // 9. UJI KESETARAAN REGRESI ALGORITMA TEROPTIMASI (H1 c)
+  // 9. UJI REGRESI & KESETARAAN DENGAN IMPLEMENTASI REFERENSI NAIF MURNI (J3)
   // ==========================================================================
-  describe('9. Uji Kesetaraan Regresi Algoritma Teroptimasi (H1 c)', () => {
-    // Bangkitkan citra acak ber-seed tetap
-    const w = 40;
-    const h = 30;
-    const dataAcak = new Uint8ClampedArray(w * h * 4);
-    let seed = 987654321;
-    function rand() {
-      seed = (seed * 1664525 + 1013904223) % 4294967296;
-      return seed / 4294967296;
+  describe('9. Uji Regresi & Kesetaraan dengan Implementasi Referensi Terpisah Naif Murni (J3)', () => {
+    // Implementasi Referensi Terpisah yang Naif, Murni, dan Independen
+    function refKonvolusi2DNaif(
+      citra,
+      kernel,
+      ukuranKernel,
+      pembagi = 1,
+      offset = 0
+    ) {
+      const { width, height, data } = citra;
+      const radius = Math.floor(ukuranKernel / 2);
+      const hasil = new Uint8ClampedArray(width * height * 4);
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const idxTujuan = (y * width + x) * 4;
+          for (let c = 0; c < 3; c++) {
+            let sum = 0;
+            for (let ky = 0; ky < ukuranKernel; ky++) {
+              for (let kx = 0; kx < ukuranKernel; kx++) {
+                // Konvolusi sejati membalik kernel 180 derajat:
+                // Elemen kernel kx, ky berpasangan dengan piksel pada -(kx - radius), -(ky - radius)
+                const bobot = kernel[ky * ukuranKernel + kx];
+                const px = Math.min(Math.max(x - (kx - radius), 0), width - 1);
+                const py = Math.min(Math.max(y - (ky - radius), 0), height - 1);
+                const srcIdx = (py * width + px) * 4 + c;
+                sum += data[srcIdx] * bobot;
+              }
+            }
+            const v = Math.round(sum / pembagi) + offset;
+            hasil[idxTujuan + c] = Math.max(0, Math.min(255, v));
+          }
+          hasil[idxTujuan + 3] = data[idxTujuan + 3];
+        }
+      }
+      return hasil;
     }
-    for (let i = 0; i < dataAcak.length; i += 4) {
-      dataAcak[i] = Math.floor(rand() * 256);
-      dataAcak[i + 1] = Math.floor(rand() * 256);
-      dataAcak[i + 2] = Math.floor(rand() * 256);
-      dataAcak[i + 3] = 255;
+
+    function refMedianNaif(citra, ukuran) {
+      const { width, height, data } = citra;
+      const radius = Math.floor(ukuran / 2);
+      const N = ukuran * ukuran;
+      const medianIdx = Math.floor(N / 2);
+      const hasil = new Uint8ClampedArray(width * height * 4);
+      const buffer = new Float64Array(N);
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const idxTujuan = (y * width + x) * 4;
+          for (let c = 0; c < 3; c++) {
+            let count = 0;
+            for (let dy = -radius; dy <= radius; dy++) {
+              for (let dx = -radius; dx <= radius; dx++) {
+                const px = Math.min(Math.max(x + dx, 0), width - 1);
+                const py = Math.min(Math.max(y + dy, 0), height - 1);
+                buffer[count++] = data[(py * width + px) * 4 + c];
+              }
+            }
+            // Pengurutan naif murni
+            const sorted = Array.from(buffer).sort((a, b) => a - b);
+            hasil[idxTujuan + c] = sorted[medianIdx];
+          }
+          hasil[idxTujuan + 3] = data[idxTujuan + 3];
+        }
+      }
+      return hasil;
     }
-    const citraAcak = { width: w, height: h, data: dataAcak };
 
-    const hitungHash = (buf) =>
-      crypto.createHash('sha256').update(buf).digest('hex');
+    function refSobelNaif(citra, penguatan = 1.0) {
+      const { width, height, data } = citra;
+      const hasil = new Uint8ClampedArray(width * height * 4);
+      const lum = new Uint8Array(width * height);
+      for (let i = 0; i < width * height; i++) {
+        const s = i * 4;
+        lum[i] = Math.max(
+          0,
+          Math.min(
+            255,
+            Math.round(
+              0.299 * data[s] + 0.587 * data[s + 1] + 0.114 * data[s + 2]
+            )
+          )
+        );
+      }
 
-    it('(a) Konvolusi 3x3 dan 5x5 integer 100% identik byte-per-byte dengan baseline pra-optimasi', () => {
-      const k3 = [1, 2, 1, 0, 0, 0, -1, -2, -1];
-      const baru3 = konvolusi2DSejati(citraAcak, k3, 3, 1, 128);
-      expect(hitungHash(baru3)).toBe(
-        'a30649fdf3e20cdd9e6f46a8166a216cd04916792594b8726952ba8066b2bd7c'
-      );
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const idxTujuan = (y * width + x) * 4;
+          const getLum = (px, py) => {
+            const cx = Math.min(Math.max(px, 0), width - 1);
+            const cy = Math.min(Math.max(py, 0), height - 1);
+            return lum[cy * width + cx];
+          };
 
-      const k5 = [
+          const p00 = getLum(x - 1, y - 1);
+          const p01 = getLum(x, y - 1);
+          const p02 = getLum(x + 1, y - 1);
+          const p10 = getLum(x - 1, y);
+          const p12 = getLum(x + 1, y);
+          const p20 = getLum(x - 1, y + 1);
+          const p21 = getLum(x, y + 1);
+          const p22 = getLum(x + 1, y + 1);
+
+          const gx = p02 + 2 * p12 + p22 - (p00 + 2 * p10 + p20);
+          const gy = p20 + 2 * p21 + p22 - (p00 + 2 * p01 + p02);
+          const besaran = Math.sqrt(gx * gx + gy * gy);
+          const nilai = Math.max(
+            0,
+            Math.min(255, Math.round(besaran * penguatan))
+          );
+
+          hasil[idxTujuan] = nilai;
+          hasil[idxTujuan + 1] = nilai;
+          hasil[idxTujuan + 2] = nilai;
+          hasil[idxTujuan + 3] = data[idxTujuan + 3];
+        }
+      }
+      return hasil;
+    }
+
+    function refGaussianSeparableNaif(citra, sigma) {
+      const radius = Math.max(1, Math.ceil(sigma * 3));
+      const size = radius * 2 + 1;
+      const k1d = new Float64Array(size);
+      let sum = 0;
+      for (let i = -radius; i <= radius; i++) {
+        const v = Math.exp(-(i * i) / (2 * sigma * sigma));
+        k1d[i + radius] = v;
+        sum += v;
+      }
+      for (let i = 0; i < size; i++) k1d[i] /= sum;
+
+      const { width, height, data } = citra;
+      // Pass 1 Horizontal
+      const temp = new Float64Array(width * height * 4);
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const idx = (y * width + x) * 4;
+          for (let c = 0; c < 3; c++) {
+            let acc = 0;
+            for (let i = -radius; i <= radius; i++) {
+              const px = Math.min(Math.max(x + i, 0), width - 1);
+              acc += data[(y * width + px) * 4 + c] * k1d[i + radius];
+            }
+            temp[idx + c] = acc;
+          }
+          temp[idx + 3] = data[idx + 3];
+        }
+      }
+
+      // Pass 2 Vertikal
+      const hasil = new Uint8ClampedArray(width * height * 4);
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const idx = (y * width + x) * 4;
+          for (let c = 0; c < 3; c++) {
+            let acc = 0;
+            for (let i = -radius; i <= radius; i++) {
+              const py = Math.min(Math.max(y + i, 0), height - 1);
+              acc += temp[(py * width + x) * 4 + c] * k1d[i + radius];
+            }
+            hasil[idx + c] = Math.max(0, Math.min(255, Math.round(acc)));
+          }
+          hasil[idx + 3] = Math.round(temp[idx + 3]);
+        }
+      }
+      return hasil;
+    }
+
+    // Generator citra pseudo-random dengan seed tetap (LCRNG deterministik)
+    function bangunCitraUjiDeterministik(w, h, seed = 42) {
+      let state = seed;
+      const data = new Uint8ClampedArray(w * h * 4);
+      for (let i = 0; i < w * h * 4; i += 4) {
+        state = (state * 1664525 + 1013904223) >>> 0;
+        data[i] = state & 0xff;
+        state = (state * 1664525 + 1013904223) >>> 0;
+        data[i + 1] = state & 0xff;
+        state = (state * 1664525 + 1013904223) >>> 0;
+        data[i + 2] = state & 0xff;
+        data[i + 3] = 255;
+      }
+      return { width: w, height: h, data };
+    }
+
+    // Kasus dimensi citra yang diuji sesuai J3:
+    // 1x1, 1xN (10x1), Nx1 (1x10), lebih kecil dari kernel (2x2), non-bujursangkar lebar (25x13)
+    const daftarDimensiUji = [
+      { w: 1, h: 1, label: '1x1' },
+      { w: 10, h: 1, label: '1xN (10x1)' },
+      { w: 1, h: 10, label: 'Nx1 (1x10)' },
+      { w: 2, h: 2, label: '2x2 (lebih kecil dari kernel 3x3)' },
+      { w: 25, h: 13, label: '25x13 (non-bujursangkar lebar)' },
+    ];
+
+    it('Konvolusi 2D: byte-per-byte 100% identik (MAE = 0) dengan referensi naif pada seluruh kasus sudut', () => {
+      const kernel3x3 = [1, 2, 1, 0, 0, 0, -1, -2, -1];
+      const kernel5x5 = [
         1, 2, 3, 2, 1, 2, 4, 6, 4, 2, 3, 6, 9, 6, 3, 2, 4, 6, 4, 2, 1, 2, 3, 2,
         1,
       ];
-      const baru5 = konvolusi2DSejati(citraAcak, k5, 5, 81, 0);
-      expect(hitungHash(baru5)).toBe(
-        'fbcedfb95886891868c2998ec97f9f6fc9c827319f0fc9a262ce3386265ab53f'
-      );
+
+      for (const d of daftarDimensiUji) {
+        const citra = bangunCitraUjiDeterministik(d.w, d.h, 101);
+
+        // 3x3
+        const hasilCepat3 = konvolusi2DSejati(citra, kernel3x3, 3, 1, 128);
+        const hasilNaif3 = refKonvolusi2DNaif(citra, kernel3x3, 3, 1, 128);
+        expect(hasilCepat3).toEqual(hasilNaif3);
+
+        // 5x5
+        const hasilCepat5 = konvolusi2DSejati(citra, kernel5x5, 5, 81, 0);
+        const hasilNaif5 = refKonvolusi2DNaif(citra, kernel5x5, 5, 81, 0);
+        expect(hasilCepat5).toEqual(hasilNaif5);
+      }
     });
 
-    it('(b) Median 3x3 (jaringan seleksi) dan 5x5 (Huang sliding) 100% identik byte-per-byte dengan baseline', () => {
-      const baruMed3 = penapisMedian(citraAcak, 3);
-      expect(hitungHash(baruMed3)).toBe(
-        '9397d9d68b96e360e8674c7e911b631d28d99bfe2d77f4c36053a046cfb0dcce'
-      );
+    it('Median 3x3 & 5x5: byte-per-byte 100% identik (MAE = 0) dengan pengurutan naif pada seluruh kasus sudut', () => {
+      for (const d of daftarDimensiUji) {
+        const citra = bangunCitraUjiDeterministik(d.w, d.h, 202);
 
-      const baruMed5 = penapisMedian(citraAcak, 5);
-      expect(hitungHash(baruMed5)).toBe(
-        '366f0c2ade8b9209106b7831a46c2b155bd4ad51b1cb7f562f18aa183e752c8e'
-      );
+        // Median 3x3 (jaringan seleksi vs naive sort)
+        const med3Cepat = penapisMedian(citra, 3);
+        const med3Naif = refMedianNaif(citra, 3);
+        expect(med3Cepat).toEqual(med3Naif);
+
+        // Median 5x5 (Huang sliding / counting vs naive sort)
+        const med5Cepat = penapisMedian(citra, 5);
+        const med5Naif = refMedianNaif(citra, 5);
+        expect(med5Cepat).toEqual(med5Naif);
+      }
     });
 
-    it('(c) Deteksi tepi Sobel teroptimasi 100% identik byte-per-byte dengan baseline', () => {
-      const baruSobel = operasiTepiSobel.terapkan(citraAcak, {
-        arah: 'gabungan',
-        penguatan: 1.5,
-      });
-      expect(hitungHash(baruSobel.data)).toBe(
-        '43c7d4db6b0a040e204c3e92056fdb0b59ffd29c3b97d8845ee9ef7e8935cade'
-      );
+    it('Sobel: byte-per-byte 100% identik (MAE = 0) dengan turunan spasial naif pada seluruh kasus sudut', () => {
+      for (const d of daftarDimensiUji) {
+        const citra = bangunCitraUjiDeterministik(d.w, d.h, 303);
+        const sobelCepat = operasiTepiSobel.terapkan(citra, {
+          arah: 'gabungan',
+          penguatan: 1.0,
+        });
+        const sobelNaifRes = refSobelNaif(citra, 1.0);
+        expect(sobelCepat.data).toEqual(sobelNaifRes);
+      }
     });
 
-    it('(d) Konvolusi Gaussian float perbedaan maksimal <= 1 tingkat per kanal', () => {
-      const { kernel, radius } = bangunKernelGaussian1D(2.5);
-      const baruG = konvolusiSeparable1D(citraAcak, kernel, radius);
-      // Nilai hash terverifikasi toleransi <= 1 level
-      expect(baruG.length).toBe(w * h * 4);
-      expect(baruG[0]).toBeGreaterThan(0);
+    it('Gaussian: selisih float dengan referensi naif <= 1 tingkat per piksel pada seluruh kasus sudut', () => {
+      for (const d of daftarDimensiUji) {
+        const citra = bangunCitraUjiDeterministik(d.w, d.h, 404);
+        const gCepat = operasiHalusGaussian.terapkan(citra, { sigma: 1.5 });
+        const gNaif = refGaussianSeparableNaif(citra, 1.5);
+
+        for (let i = 0; i < citra.data.length; i++) {
+          const diff = Math.abs(gCepat.data[i] - gNaif[i]);
+          expect(diff).toBeLessThanOrEqual(1);
+        }
+      }
     });
   });
 
   // ==========================================================================
-  // 10. UJI PERHITUNGAN TANGAN PEMBAGI OTOMATIS & KASUS IMPULS (H4 a)
+  // 10. UJI PERHITUNGAN TANGAN PEMBAGI OTOMATIS & KASUS IMPULS (J4 a)
   // ==========================================================================
-  describe('10. Uji Perhitungan Tangan Pembagi Otomatis & Kasus Impuls (H4 a)', () => {
+  describe('10. Uji Perhitungan Tangan Pembagi Otomatis & Kasus Impuls (J4 a)', () => {
     it('(a) Aturan pembagi otomatis: sum > 0 -> sum; sum <= 0 -> 1', () => {
       const hitungPembagiOtomatis = (kernel) => {
         const sum = kernel.reduce((acc, v) => acc + (Number(v) || 0), 0);
@@ -754,6 +942,34 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
         offset: 0,
       });
       expect(hasilOtomatis.data[idxTengah]).toBe(2);
+    });
+
+    it('(c) Kernel 1..9 dengan impuls di tengah (1, 1): bobot tengah K(1,1)=5', () => {
+      // Citra 3x3: hanya piksel tengah (1, 1) bernilai 100, lainnya 0
+      const citraTengah = buatCitraUji(3, 3, [0, 0, 0, 0, 100, 0, 0, 0, 0]);
+      const kernel1ke9 = [1, 2, 3, 4, 5, 6, 7, 8, 9]; // sum = 45
+
+      // Pada konvolusi di tengah (1, 1), bobot elemen pusat adalah kernel[4] = 5
+      // Kontribusi piksel (1, 1) adalah 100 * 5 = 500
+
+      // Kasus 1: Pembagi eksplisit 1 -> 500 diklem ke 255
+      const hasilEksplisit = operasiKonvolusiKernel.terapkan(citraTengah, {
+        ukuran: 3,
+        matriks: kernel1ke9,
+        pembagi: 1,
+        offset: 0,
+      });
+      const idxTengah = (1 * 3 + 1) * 4;
+      expect(hasilEksplisit.data[idxTengah]).toBe(255);
+
+      // Kasus 2: Pembagi otomatis (sum = 45) -> round(500 / 45) = round(11.111) = 11
+      const hasilOtomatis = operasiKonvolusiKernel.terapkan(citraTengah, {
+        ukuran: 3,
+        matriks: kernel1ke9,
+        pembagi: 0,
+        offset: 0,
+      });
+      expect(hasilOtomatis.data[idxTengah]).toBe(11);
     });
   });
 
@@ -904,6 +1120,56 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
       }
       const maeM = totalDiffM / ((wPrev - 4) * (hPrev - 4));
       expect(maeM).toBeLessThanOrEqual(3.0);
+
+      // 3. Uji Biner Adaptif (J5): penuh jendela=15, preview jendela=15 dengan rasio=0.5 (jendela efektif=7)
+      const bFull = operasiBinerAdaptif.terapkan(
+        citraPenuh,
+        { jendela: 15, c: 5, inversi: false },
+        { rasio: 1.0 }
+      );
+      const bPrev = operasiBinerAdaptif.terapkan(
+        citraPrev,
+        { jendela: 15, c: 5, inversi: false },
+        { rasio: 0.5 }
+      );
+      let ketidakcocokanBiner = 0;
+      let totalPikselBiner = 0;
+      for (let y = 4; y < hPrev - 4; y++) {
+        for (let x = 4; x < wPrev - 4; x++) {
+          const pIdx = (y * wPrev + x) * 4;
+          const fIdx = (y * 2 * wPenuh + x * 2) * 4;
+          if (bPrev.data[pIdx] !== bFull.data[fIdx]) {
+            ketidakcocokanBiner++;
+          }
+          totalPikselBiner++;
+        }
+      }
+      const rasioBedaBiner = ketidakcocokanBiner / totalPikselBiner;
+      // Perbedaan biner karena diskritisasi jendela lokal diperbolehkan <= 5% (0.05)
+      expect(rasioBedaBiner).toBeLessThanOrEqual(0.05);
+
+      // 4. Uji Unsharp Masking (J5): penuh sigma=3.0, preview sigma=3.0 dengan rasio=0.5 (sigma efektif=1.5)
+      const uFull = operasiTajamUnsharp.terapkan(
+        citraPenuh,
+        { sigma: 3.0, jumlah: 1.5, ambang: 0 },
+        { rasio: 1.0 }
+      );
+      const uPrev = operasiTajamUnsharp.terapkan(
+        citraPrev,
+        { sigma: 3.0, jumlah: 1.5, ambang: 0 },
+        { rasio: 0.5 }
+      );
+      let totalDiffU = 0;
+      for (let y = 2; y < hPrev - 2; y++) {
+        for (let x = 2; x < wPrev - 2; x++) {
+          const pIdx = (y * wPrev + x) * 4;
+          const fIdx = (y * 2 * wPenuh + x * 2) * 4;
+          totalDiffU += Math.abs(uPrev.data[pIdx] - uFull.data[fIdx]);
+        }
+      }
+      const maeU = totalDiffU / ((wPrev - 4) * (hPrev - 4));
+      // Toleransi penajaman unsharp pada citra halus adalah MAE <= 4.0 tingkat
+      expect(maeU).toBeLessThanOrEqual(4.0);
     });
   });
 });

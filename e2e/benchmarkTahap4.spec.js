@@ -61,6 +61,7 @@ test.describe('PicLab Sevenz — Benchmark Tahap 4: 13 Operasi Baru, Longtasks, 
         { id: 'halus_mean', label: 'halus_mean (radius 5)', param: { radius: 5 } },
         { id: 'halus_gaussian', label: 'halus_gaussian (σ=3)', param: { sigma: 3.0 } },
         { id: 'halus_gaussian', label: 'halus_gaussian (σ=5)', param: { sigma: 5.0 } },
+        { id: 'halus_gaussian', label: 'halus_gaussian (σ=10)', param: { sigma: 10.0 } },
         { id: 'halus_median', label: 'halus_median (ukuran 3)', param: { ukuran: 3 } },
         { id: 'halus_median', label: 'halus_median (ukuran 5)', param: { ukuran: 5 } },
         { id: 'tajam_unsharp', label: 'tajam_unsharp (σ=3, jumlah 1.5)', param: { sigma: 3.0, jumlah: 1.5, ambang: 0 } },
@@ -185,10 +186,73 @@ test.describe('PicLab Sevenz — Benchmark Tahap 4: 13 Operasi Baru, Longtasks, 
     await expect(page.getByRole('slider', { name: /penggeser/i })).toBeVisible();
 
     const operasiSliderUji = [
-      { id: 'biner_manual', tombolId: 'tombol-tambah-operasi-biner_manual', sliderId: 'param-ambang', min: 60, delta: 10, isInt: true },
-      { id: 'halus_gaussian', tombolId: 'tombol-tambah-operasi-halus_gaussian', sliderId: 'param-sigma', min: 1.0, delta: 0.2, isInt: false },
-      { id: 'tajam_unsharp', tombolId: 'tombol-tambah-operasi-tajam_unsharp', sliderId: 'param-sigma', min: 1.0, delta: 0.2, isInt: false },
-      { id: 'tepi_sobel', tombolId: 'tombol-tambah-operasi-tepi_sobel', sliderId: 'param-penguatan', min: 1.0, delta: 0.1, isInt: false },
+      {
+        id: 'tajam_unsharp',
+        label: 'tajam_unsharp (jumlah kekuatan)',
+        tombolId: 'tombol-tambah-operasi-tajam_unsharp',
+        elementId: 'param-jumlah',
+        tipe: 'slider',
+        hitungVal: (i) => (0.5 + (i % 15) * 0.2).toFixed(1),
+      },
+      {
+        id: 'halus_gaussian_sigma3',
+        label: 'halus_gaussian (σ=3)',
+        tombolId: 'tombol-tambah-operasi-halus_gaussian',
+        elementId: 'param-sigma',
+        tipe: 'slider',
+        hitungVal: (i) => (1.0 + (i % 6) * 0.5).toFixed(1),
+      },
+      {
+        id: 'halus_gaussian_sigma10',
+        label: 'halus_gaussian (σ=10)',
+        tombolId: 'tombol-tambah-operasi-halus_gaussian',
+        elementId: 'param-sigma',
+        tipe: 'slider',
+        hitungVal: (i) => (8.0 + (i % 5) * 0.5).toFixed(1),
+      },
+      {
+        id: 'halus_median_5',
+        label: 'halus_median (ukuran 5)',
+        tombolId: 'tombol-tambah-operasi-halus_median',
+        elementId: 'param-ukuran',
+        tipe: 'select',
+        setup: async () => {
+          await page.locator('#param-ukuran').selectOption('5');
+          await page.waitForTimeout(200);
+        },
+        hitungVal: (i) => (i % 2 === 0 ? '5' : '3'),
+      },
+      {
+        id: 'konvolusi_kernel_5x5',
+        label: 'konvolusi_kernel (5x5 offset)',
+        tombolId: 'tombol-tambah-operasi-konvolusi_kernel',
+        elementId: 'input[id$="-offset"]',
+        tipe: 'angka',
+        setup: async () => {
+          await page
+            .getByTestId('editor-matriks-kernel')
+            .getByRole('button', { name: '5×5' })
+            .click();
+          await page.waitForTimeout(200);
+        },
+        hitungVal: (i) => String(Math.round(((i % 15) + 1) * 5)),
+      },
+      {
+        id: 'tepi_sobel',
+        label: 'tepi_sobel (penguatan)',
+        tombolId: 'tombol-tambah-operasi-tepi_sobel',
+        elementId: 'param-penguatan',
+        tipe: 'slider',
+        hitungVal: (i) => (0.5 + (i % 15) * 0.2).toFixed(1),
+      },
+      {
+        id: 'biner_manual',
+        label: 'biner_manual (ambang)',
+        tombolId: 'tombol-tambah-operasi-biner_manual',
+        elementId: 'param-ambang',
+        tipe: 'slider',
+        hitungVal: (i) => String(Math.round(60 + (i % 15) * 5)),
+      },
     ];
 
     const hasilSliderE2E = {};
@@ -201,40 +265,71 @@ test.describe('PicLab Sevenz — Benchmark Tahap 4: 13 Operasi Baru, Longtasks, 
       }
 
       await page.getByTestId(item.tombolId).click();
-      const slider = page.locator(`#${item.sliderId}`);
-      await expect(slider).toBeVisible();
+      if (item.setup) {
+        await item.setup();
+      }
+
+      const selectorEl = item.elementId.startsWith('input[')
+        ? item.elementId
+        : `#${item.elementId}`;
+      const inputEl = page.locator(selectorEl);
+      await expect(inputEl).toBeVisible();
 
       // Reset counter longtask
       await page.evaluate(() => { window.__longtasks = []; });
 
+      let hitunganTimeout = 0;
       const durasiInteraksi = [];
+
       for (let i = 0; i < 30; i++) {
-        const val = item.isInt
-          ? String(Math.round(item.min + (i % 10) * item.delta))
-          : (item.min + (i % 10) * item.delta).toFixed(1);
+        const val = item.hitungVal(i);
 
-        const latensi = await page.evaluate(async ({ idParam, nilai }) => {
-          const input = document.getElementById(idParam);
-          if (!input) throw new Error('Slider tidak ditemukan: ' + idParam);
+        const res = await page.evaluate(
+          async ({ idElemen, nilai, tipe }) => {
+            const el = idElemen.startsWith('input[')
+              ? document.querySelector(idElemen)
+              : document.getElementById(idElemen);
+            if (!el) throw new Error('Elemen tidak ditemukan: ' + idElemen);
 
-          const tAwal = performance.now();
-          const tungguKanvas = new Promise((resolve) => {
-            window.__saatKanvasTerbarui = () => resolve(performance.now() - tAwal);
-            setTimeout(() => resolve(performance.now() - tAwal), 3000);
-          });
+            const tAwal = performance.now();
+            let timer = null;
+            const hasil = await new Promise((resolve) => {
+              timer = setTimeout(() => {
+                resolve({ durasi: performance.now() - tAwal, isTimeout: true });
+              }, 3000);
 
-          const nativeSetter = Object.getOwnPropertyDescriptor(
-            window.HTMLInputElement.prototype,
-            'value'
-          ).set;
-          nativeSetter.call(input, String(nilai));
-          input.dispatchEvent(new Event('input', { bubbles: true }));
+              window.__saatKanvasTerbarui = () => {
+                clearTimeout(timer);
+                resolve({ durasi: performance.now() - tAwal, isTimeout: false });
+              };
 
-          const durasi = await tungguKanvas;
-          return durasi;
-        }, { idParam: item.sliderId, nilai: val });
+              if (tipe === 'select') {
+                const nativeSelectSetter = Object.getOwnPropertyDescriptor(
+                  window.HTMLSelectElement.prototype,
+                  'value'
+                ).set;
+                nativeSelectSetter.call(el, String(nilai));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+              } else {
+                const nativeSetter = Object.getOwnPropertyDescriptor(
+                  window.HTMLInputElement.prototype,
+                  'value'
+                ).set;
+                nativeSetter.call(el, String(nilai));
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+              }
+            });
 
-        durasiInteraksi.push(latensi);
+            return hasil;
+          },
+          { idElemen: item.elementId, nilai: val, tipe: item.tipe }
+        );
+
+        if (res.isTimeout) {
+          hitunganTimeout++;
+        } else {
+          durasiInteraksi.push(res.durasi);
+        }
       }
 
       const longtasks = await page.evaluate(() => window.__longtasks || []);
@@ -242,6 +337,7 @@ test.describe('PicLab Sevenz — Benchmark Tahap 4: 13 Operasi Baru, Longtasks, 
       const maxLongtaskMs = longtasks.reduce((m, l) => Math.max(m, l.duration), 0);
 
       const hitungStat = (arr) => {
+        if (arr.length === 0) return { median: 0, p95: 0 };
         const s = [...arr].sort((a, b) => a - b);
         return {
           median: parseFloat(s[Math.floor(s.length / 2)].toFixed(2)),
@@ -250,10 +346,14 @@ test.describe('PicLab Sevenz — Benchmark Tahap 4: 13 Operasi Baru, Longtasks, 
       };
 
       hasilSliderE2E[item.id] = {
+        label: item.label,
         ...hitungStat(durasiInteraksi),
         totalLongtask,
         maxLongtaskMs: parseFloat(maxLongtaskMs.toFixed(2)),
+        totalTimeout: hitunganTimeout,
       };
+
+      expect(hitunganTimeout).toBe(0);
     }
 
     console.log(

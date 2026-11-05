@@ -64,6 +64,55 @@ export const operasiTepiSobel = {
     const hasil = buatCitraKosong(width, height);
     const dst = hasil.data;
 
+    // Jika dimensi citra <= 2, seluruh piksel berada di border
+    if (width <= 2 || height <= 2) {
+      for (let y = 0; y < height; y++) {
+        const ym1 = y > 0 ? y - 1 : 0;
+        const yp1 = y < height - 1 ? y + 1 : height - 1;
+        const rowY = y * width;
+        const rowYm1 = ym1 * width;
+        const rowYp1 = yp1 * width;
+
+        for (let x = 0; x < width; x++) {
+          const xm1 = x > 0 ? x - 1 : 0;
+          const xp1 = x < width - 1 ? x + 1 : width - 1;
+
+          const p00 = lum[rowYm1 + xm1];
+          const p01 = lum[rowYm1 + x];
+          const p02 = lum[rowYm1 + xp1];
+
+          const p10 = lum[rowY + xm1];
+          const p12 = lum[rowY + xp1];
+
+          const p20 = lum[rowYp1 + xm1];
+          const p21 = lum[rowYp1 + x];
+          const p22 = lum[rowYp1 + xp1];
+
+          const gx = p02 + 2 * p12 + p22 - (p00 + 2 * p10 + p20);
+          const gy = p20 + 2 * p21 + p22 - (p00 + 2 * p01 + p02);
+
+          let besaran;
+          if (arah === 'horizontal') {
+            besaran = Math.abs(gx);
+          } else if (arah === 'vertikal') {
+            besaran = Math.abs(gy);
+          } else {
+            besaran = Math.sqrt(gx * gx + gy * gy);
+          }
+
+          let nilai = clamp(Math.round(besaran * g));
+          if (inversi) nilai = 255 - nilai;
+
+          const dstIdx = (rowY + x) * 4;
+          dst[dstIdx] = nilai;
+          dst[dstIdx + 1] = nilai;
+          dst[dstIdx + 2] = nilai;
+          dst[dstIdx + 3] = src[dstIdx + 3];
+        }
+      }
+      return hasil;
+    }
+
     // 1. Interior: y in [1, height - 2], x in [1, width - 2]
     for (let y = 1; y < height - 1; y++) {
       const rowYm1 = (y - 1) * width;
