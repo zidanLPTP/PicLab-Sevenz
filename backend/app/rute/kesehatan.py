@@ -1,16 +1,17 @@
-"""Rute pemeriksaan kesehatan server PicLab Sevenz."""
+"""Rute pemeriksaan kesehatan server (spec.md bagian 9 & Tahap 5)."""
+
 from fastapi import APIRouter
 
 from app.inti.konfigurasi import konfigurasi
 
-perute = APIRouter(tags=["Kesehatan"])
+router = APIRouter(tags=["Kesehatan"])
 
 
-@perute.get("/kesehatan")
+@router.get("/kesehatan", summary="Pemeriksaan status server")
 async def periksa_kesehatan():
-    """Mengembalikan status kesehatan backend API."""
+    """Mengembalikan status hidup server dan versi aplikasi tanpa rincian internal sistem."""
     return {
         "status": "sehat",
-        "pesan": "Layanan PicLab Sevenz berjalan dengan baik",
         "versi": konfigurasi.VERSI,
+        "pesan": "Server backend PicLab Sevenz beroperasi normal.",
     }

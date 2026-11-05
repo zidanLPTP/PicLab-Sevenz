@@ -1,4 +1,5 @@
 """Titik masuk utama untuk menjalankan server backend."""
+
 import uvicorn
 
 from app.inti.konfigurasi import konfigurasi
@@ -13,4 +14,3 @@ if __name__ == "__main__":
         port=konfigurasi.PORT,
         reload=True,
     )
-

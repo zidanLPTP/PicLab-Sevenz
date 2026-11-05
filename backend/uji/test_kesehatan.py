@@ -1,4 +1,5 @@
 """Pengujian untuk rute pemeriksaan kesehatan (/kesehatan)."""
+
 from fastapi.testclient import TestClient
 
 from app.utama import aplikasi
