@@ -1,0 +1,59 @@
+{
+  "kategori": "GARIS_DASAR_LAPTOP_BUKAN_HASIL_HOSTING",
+  "penjelasan_keterbatasan": "Tracemalloc hanya melacak alokasi heap Python murni. Overhead library C dan RSS riil pada OS hosting bersama diperkirakan 2x-3x dari puncak heap Python.",
+  "tanggal": "2026-11-05",
+  "lingkungan": {
+    "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+    "platform": "win32"
+  },
+  "hasil": [
+    {
+      "resolusi": "1 MP",
+      "dimensi": "1000x1000",
+      "total_piksel": 1000000,
+      "ulangan": 5,
+      "median_total_ms": 47.17,
+      "median_filter_ms": 28.91,
+      "median_encode_ms": 9.67,
+      "puncak_ram_mb": 7.63,
+      "median_ram_mb": 7.63,
+      "ukuran_png_kb": 10.5
+    },
+    {
+      "resolusi": "4 MP",
+      "dimensi": "2000x2000",
+      "total_piksel": 4000000,
+      "ulangan": 5,
+      "median_total_ms": 174.89,
+      "median_filter_ms": 111.15,
+      "median_encode_ms": 36.47,
+      "puncak_ram_mb": 30.52,
+      "median_ram_mb": 30.52,
+      "ukuran_png_kb": 28.0
+    },
+    {
+      "resolusi": "8 MP",
+      "dimensi": "3264x2448",
+      "total_piksel": 7990272,
+      "ulangan": 5,
+      "median_total_ms": 929.27,
+      "median_filter_ms": 607.3,
+      "median_encode_ms": 153.23,
+      "puncak_ram_mb": 60.97,
+      "median_ram_mb": 60.97,
+      "ukuran_png_kb": 48.5
+    },
+    {
+      "resolusi": "16 MP (Batas Maks)",
+      "dimensi": "4000x4000",
+      "total_piksel": 16000000,
+      "ulangan": 5,
+      "median_total_ms": 1916.44,
+      "median_filter_ms": 1110.82,
+      "median_encode_ms": 360.28,
+      "puncak_ram_mb": 122.08,
+      "median_ram_mb": 122.08,
+      "ukuran_png_kb": 81.6
+    }
+  ]
+}
