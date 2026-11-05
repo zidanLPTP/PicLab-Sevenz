@@ -188,7 +188,7 @@ test.describe('PicLab Sevenz — Benchmark Tahap 4: 13 Operasi Baru, Longtasks, 
     const operasiSliderUji = [
       {
         id: 'tajam_unsharp',
-        label: 'tajam_unsharp (jumlah kekuatan)',
+        label: 'tajam_unsharp (jumlah)',
         tombolId: 'tombol-tambah-operasi-tajam_unsharp',
         elementId: 'param-jumlah',
         tipe: 'slider',
@@ -275,69 +275,100 @@ test.describe('PicLab Sevenz — Benchmark Tahap 4: 13 Operasi Baru, Longtasks, 
       const inputEl = page.locator(selectorEl);
       await expect(inputEl).toBeVisible();
 
-      // Reset counter longtask
-      await page.evaluate(() => { window.__longtasks = []; });
+      // Reset array pelacakan interaksi & longtasks di peramban
+      await page.evaluate(() => {
+        window.__longtasks = [];
+        window.__riwayatFrameTampil = [];
+      });
 
-      let hitunganTimeout = 0;
-      const durasiInteraksi = [];
-
+      // Lakukan simulasi scrubbing interaktif cepat 30 kali input (0.1)
+      const daftarNilai = [];
       for (let i = 0; i < 30; i++) {
-        const val = item.hitungVal(i);
-
-        const res = await page.evaluate(
-          async ({ idElemen, nilai, tipe }) => {
-            const el = idElemen.startsWith('input[')
-              ? document.querySelector(idElemen)
-              : document.getElementById(idElemen);
-            if (!el) throw new Error('Elemen tidak ditemukan: ' + idElemen);
-
-            const tAwal = performance.now();
-            let timer = null;
-            const hasil = await new Promise((resolve) => {
-              timer = setTimeout(() => {
-                resolve({ durasi: performance.now() - tAwal, isTimeout: true });
-              }, 3000);
-
-              window.__saatKanvasTerbarui = () => {
-                clearTimeout(timer);
-                resolve({ durasi: performance.now() - tAwal, isTimeout: false });
-              };
-
-              if (tipe === 'select') {
-                const nativeSelectSetter = Object.getOwnPropertyDescriptor(
-                  window.HTMLSelectElement.prototype,
-                  'value'
-                ).set;
-                nativeSelectSetter.call(el, String(nilai));
-                el.dispatchEvent(new Event('change', { bubbles: true }));
-              } else {
-                const nativeSetter = Object.getOwnPropertyDescriptor(
-                  window.HTMLInputElement.prototype,
-                  'value'
-                ).set;
-                nativeSetter.call(el, String(nilai));
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-              }
-            });
-
-            return hasil;
-          },
-          { idElemen: item.elementId, nilai: val, tipe: item.tipe }
-        );
-
-        if (res.isTimeout) {
-          hitunganTimeout++;
-        } else {
-          durasiInteraksi.push(res.durasi);
-        }
+        daftarNilai.push(item.hitungVal(i));
       }
+
+      const hasilScrub = await page.evaluate(
+        async ({ idElemen, nilaiArray, tipe }) => {
+          const el = idElemen.startsWith('input[')
+            ? document.querySelector(idElemen)
+            : document.getElementById(idElemen);
+          if (!el) throw new Error('Elemen tidak ditemukan: ' + idElemen);
+
+          window.__riwayatFrameTampil = [];
+          const tAwalScrub = performance.now();
+          let tInputTerakhir = tAwalScrub;
+
+          // Kirim 30 kali input secara realistis dan cepat (~25ms per geser)
+          for (let i = 0; i < nilaiArray.length; i++) {
+            const val = nilaiArray[i];
+            tInputTerakhir = performance.now();
+            window.__tInputTerakhir = tInputTerakhir;
+
+            if (tipe === 'select') {
+              const nativeSelectSetter = Object.getOwnPropertyDescriptor(
+                window.HTMLSelectElement.prototype,
+                'value'
+              ).set;
+              nativeSelectSetter.call(el, String(val));
+              el.dispatchEvent(new Event('change', { bubbles: true }));
+            } else {
+              const nativeSetter = Object.getOwnPropertyDescriptor(
+                window.HTMLInputElement.prototype,
+                'value'
+              ).set;
+              nativeSetter.call(el, String(val));
+              el.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+
+            // Jeda antar pergerakan slider (25 ms)
+            await new Promise((r) => setTimeout(r, 25));
+          }
+
+          // Tunggu hingga komputasi worker selesai dan kanvas menampilkan nilai stabil akhir
+          const batasWaktuMaksimal = 8000;
+          const tMulaiTunggu = performance.now();
+          let stabil = false;
+
+          while (performance.now() - tMulaiTunggu < batasWaktuMaksimal) {
+            const idle = typeof window.__apakahPekerjaIdle === 'function'
+              ? window.__apakahPekerjaIdle()
+              : true;
+            const riwayat = window.__riwayatFrameTampil || [];
+            const frameTerakhir = riwayat[riwayat.length - 1];
+
+            if (idle && frameTerakhir && frameTerakhir.tInput >= tInputTerakhir - 2) {
+              stabil = true;
+              break;
+            }
+            await new Promise((r) => setTimeout(r, 20));
+          }
+
+          const tStabil = performance.now();
+          const riwayatFrame = window.__riwayatFrameTampil || [];
+          const waktuStabilMs = tStabil - tInputTerakhir;
+          const totalDurasiScrubDetik = (tStabil - tAwalScrub) / 1000;
+          const fps = totalDurasiScrubDetik > 0
+            ? riwayatFrame.length / totalDurasiScrubDetik
+            : 0;
+
+          return {
+            suksesStabil: stabil,
+            totalInputDikirim: nilaiArray.length,
+            jumlahFrameTampil: riwayatFrame.length,
+            waktuStabilMs: parseFloat(waktuStabilMs.toFixed(2)),
+            fps: parseFloat(fps.toFixed(2)),
+            latensiPerFrameMs: riwayatFrame.map((f) => parseFloat(f.latensiMs.toFixed(2))),
+          };
+        },
+        { idElemen: item.elementId, nilaiArray: daftarNilai, tipe: item.tipe }
+      );
 
       const longtasks = await page.evaluate(() => window.__longtasks || []);
       const totalLongtask = longtasks.length;
       const maxLongtaskMs = longtasks.reduce((m, l) => Math.max(m, l.duration), 0);
 
       const hitungStat = (arr) => {
-        if (arr.length === 0) return { median: 0, p95: 0 };
+        if (!arr || arr.length === 0) return { median: 0, p95: 0 };
         const s = [...arr].sort((a, b) => a - b);
         return {
           median: parseFloat(s[Math.floor(s.length / 2)].toFixed(2)),
@@ -345,15 +376,21 @@ test.describe('PicLab Sevenz — Benchmark Tahap 4: 13 Operasi Baru, Longtasks, 
         };
       };
 
+      const statLatensiFrame = hitungStat(hasilScrub.latensiPerFrameMs);
+
       hasilSliderE2E[item.id] = {
         label: item.label,
-        ...hitungStat(durasiInteraksi),
+        latensiFrameTampil: statLatensiFrame,
+        waktuStabilMs: hasilScrub.waktuStabilMs,
+        fpsScrub: hasilScrub.fps,
+        jumlahFrameTampil: hasilScrub.jumlahFrameTampil,
+        totalInputDikirim: hasilScrub.totalInputDikirim,
         totalLongtask,
         maxLongtaskMs: parseFloat(maxLongtaskMs.toFixed(2)),
-        totalTimeout: hitunganTimeout,
       };
 
-      expect(hitunganTimeout).toBe(0);
+      expect(hasilScrub.suksesStabil).toBe(true);
+      expect(hasilScrub.jumlahFrameTampil).toBeGreaterThan(0);
     }
 
     console.log(
@@ -373,6 +410,13 @@ test.describe('PicLab Sevenz — Benchmark Tahap 4: 13 Operasi Baru, Longtasks, 
     const tombolKosongkan = page.getByRole('button', { name: 'Kosongkan Pipeline' });
     if (await tombolKosongkan.isVisible()) await tombolKosongkan.click();
     await page.getByTestId('tombol-tambah-operasi-konvolusi_kernel').click();
+
+    // Pastikan ukuran 5x5 dipilih untuk tangkapan layar matriks 5x5
+    const tombol5x5 = page.getByTestId('editor-matriks-kernel').getByRole('button', { name: '5×5' });
+    if (await tombol5x5.isVisible()) {
+      await tombol5x5.click();
+      await page.waitForTimeout(200);
+    }
 
     // Buka Kartu Belajar Konsep
     const kartuBelajar = page.getByTestId('kartu-belajar-operasi');

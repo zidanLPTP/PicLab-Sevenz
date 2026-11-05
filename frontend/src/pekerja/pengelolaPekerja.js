@@ -30,8 +30,16 @@ export const statistikPekerja = {
   totalHasilUsangDibuang: 0,
 };
 
+/**
+ * Mengembalikan true jika worker sedang tidak memproses dan tidak ada antrean di slot tertunda.
+ */
+export function apakahPekerjaIdle() {
+  return !sedangMemproses && slotTertunda === null;
+}
+
 if (typeof window !== 'undefined') {
   window.__statistikPekerja = statistikPekerja;
+  window.__apakahPekerjaIdle = apakahPekerjaIdle;
 }
 
 /**
@@ -53,7 +61,14 @@ function kirimTugasKeWorker(tugas) {
   pekerja.postMessage(tugas.pesan, tugas.transferList);
 }
 
-function jadwalkanTugasWorker(pesan, transferList, idPermintaan, tKirim, tipe) {
+function jadwalkanTugasWorker(
+  pesan,
+  transferList,
+  idPermintaan,
+  tKirim,
+  tipe,
+  tInput = performance.now()
+) {
   statistikPekerja.totalPermintaanMasuk++;
 
   return new Promise((resolve, reject) => {
@@ -63,6 +78,7 @@ function jadwalkanTugasWorker(pesan, transferList, idPermintaan, tKirim, tipe) {
       transferList,
       tKirim,
       tipe,
+      tInput,
       resolve,
       reject,
     };
@@ -165,6 +181,7 @@ function dapatkanPekerja() {
                   data: new Uint8ClampedArray(hasil.data),
                   width: hasil.width,
                   height: hasil.height,
+                  __tInput: tugasSelesai.tInput || 0,
                 },
                 durasi,
                 indeksMulaiKomputasi,
@@ -244,7 +261,8 @@ export async function jalankanPipeline(
   daftarLangkah,
   citra,
   konteksSkala = { rasio: 1.0 },
-  gunakanPrefixCache = true
+  gunakanPrefixCache = true,
+  tInput = performance.now()
 ) {
   const pekerja = dapatkanPekerja();
   idPermintaanBerjalan++;
@@ -270,7 +288,8 @@ export async function jalankanPipeline(
       [salinanBuffer],
       idSaatIni,
       tKirim,
-      'PIPELINE'
+      'PIPELINE',
+      tInput
     );
   }
 
@@ -306,7 +325,8 @@ export async function jalankanOperasi(
   idOperasi,
   citra,
   parameter = {},
-  konteksSkala = { rasio: 1.0 }
+  konteksSkala = { rasio: 1.0 },
+  tInput = performance.now()
 ) {
   const pekerja = dapatkanPekerja();
   idPermintaanBerjalan++;
@@ -332,7 +352,8 @@ export async function jalankanOperasi(
       [salinanBuffer],
       idSaatIni,
       tKirim,
-      'OPERASI'
+      'OPERASI',
+      tInput
     );
   }
 

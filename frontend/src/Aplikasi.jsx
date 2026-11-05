@@ -3,6 +3,7 @@ import React, {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -50,6 +51,8 @@ export default function Aplikasi() {
   const [citraPreview, setCitraPreview] = useState(null);
   const [citraHasilPreview, setCitraHasilPreview] = useState(null);
 
+  const tInputTerakhirRef = useRef(performance.now());
+
   // Status Loading & Galat
   const [sedangMemuat, setSedangMemuat] = useState(false);
   const [sedangMemprosesPenuh, setSedangMemprosesPenuh] = useState(false);
@@ -85,7 +88,8 @@ export default function Aplikasi() {
           daftarLangkah,
           citraPreview,
           { rasio },
-          true // Aktifkan prefix caching untuk preview interaktif
+          true, // Aktifkan prefix caching untuk preview interaktif
+          tInput
         );
 
         if (!respons || respons.usang || !respons.hasil) return;
@@ -94,6 +98,7 @@ export default function Aplikasi() {
           respons;
 
         const tMulaiRenderReact = performance.now();
+        hasil.__tInput = tInput;
         setCitraHasilPreview(hasil);
 
         if (typeof window !== 'undefined' && window.__catatanProfil) {
@@ -123,7 +128,10 @@ export default function Aplikasi() {
   // Sinkronkan eksekusi preview setiap kali langkah pipeline diperbarui
   useEffect(() => {
     if (citraPreview) {
-      terapkanPreviewPipeline(statePipeline.langkah);
+      terapkanPreviewPipeline(
+        statePipeline.langkah,
+        tInputTerakhirRef.current || performance.now()
+      );
     }
   }, [statePipeline.langkah, citraPreview, terapkanPreviewPipeline]);
 
@@ -241,6 +249,11 @@ export default function Aplikasi() {
   };
 
   const saatUbahParameter = (idLangkah, parameterBaru, coalescing = false) => {
+    const tSekarang = performance.now();
+    tInputTerakhirRef.current = tSekarang;
+    if (typeof window !== 'undefined') {
+      window.__tInputTerakhir = tSekarang;
+    }
     dispatchPipeline({
       type: 'UBAH_PARAMETER',
       payload: {
