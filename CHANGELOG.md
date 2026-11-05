@@ -18,14 +18,14 @@ Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/
 - **Editor Matriks Kernel Interaktif & Aksesibel**:
   - Komponen `EditorMatriksKernel.jsx` mendukung matriks 3×3 dan 5×5 dengan navigasi keyboard panah 2D (`ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`), komit pada Enter/blur, tombol ganti ukuran adaptif berpusat, dropdown 9 preset kernel standar, kalkulator jumlah bobot otomatis, serta umpan balik kesalahan non-warna (ikon + teks pesan WAI-ARIA `aria-invalid`).
 - **Kartu Belajar Konsep Akademis Dwibahasa**:
-  - Komponen `KartuBelajarOperasi.jsx` berupa akordion lipat (*collapsible*, default tertutup) di bilah kanan yang menampilkan nama akademis teknis, tujuan & kapan digunakan, rumus matematika notasi Unicode murni (tanpa dependensi pustaka berat), dan rincian parameter dwibahasa (ID & EN).
+  - Komponen `KartuBelajarOperasi.jsx` berupa akordion lipat (*collapsible*, default tertutup) di bilah kanan yang menampilkan nama akademis teknis, tujuan & kapan digunakan, rumus matematika notasi Unicode murni (tanpa dependensi pustaka berat), dan rincian parameter dwibahasa (ID & EN). (Catatan: visualisasi interaktif piksel/histogram dijadwalkan pada Tahap 9).
 - **Preset Tambahan untuk Pengguna Awam**:
   - 3 preset baru: `pertajam` (Unsharp Masking), `siluet_tepi` (Sobel kontur terinversi), dan `hapus_noise` (Median filter) melengkapi total 8 preset siap pakai.
-- **Pengujian & Tolok Ukur Kinerja**:
+- **Pengujian & Tolok Ukur Kinerja Terstandarisasi**:
   - 28 pengujian unit baru di `frontend/src/uji/mesinTahap4.test.js` mencakup perhitungan manual citra sintetis kecil, pembuktian rotasi 180° konvolusi sejati vs korelasi, replikasi tepi, stabilitas Otsu pada citra datar, uji kasus batas 1×1 dan 2×2, serta verifikasi immutability dan preservasi kanal alfa pada seluruh 30 operasi.
   - 8 pengujian E2E Playwright di `e2e/tahap4.spec.js` memvalidasi alur unggah citra tangga kontras, Otsu biner, Sobel, editor matriks 5×5, undo/redo matriks, preset, alur bilingual, keyboard accessibility, dan verifikasi MVP mandiri tanpa backend (0 network requests).
-  - Seluruh pengujian E2E terverifikasi stabil tanpa *flakiness* (24 dari 24 uji lolos pada 3 pengulangan).
-  - Tangkapan layar QA visual di `tangkapan-layar/` pada resolusi 1920×1080 dan 1280×800 untuk bahasa Indonesia dan Inggris.
+  - Pengukuran benchmark terstandarisasi dengan Web Worker *latest-wins gating*: percepatan nyata terukur ~1.2-1.5x untuk Gaussian/Unsharp/Sobel dan ~5.4x untuk Median 5x5 (Huang sliding histogram vs perulangan naif). Efisiensi median 5x5 vs 3x3 pada resolusi 12 MP terbukti dipengaruhi oleh pola traversal memori lokal dan cache hierarchy (bukan percabangan / *branch misprediction*). Memori heap peramban dilaporkan tidak terukur karena `performance.memory` Chromium dikonstankan peramban demi keamanan.
+  - Tangkapan layar QA visual di `tangkapan-layar/` pada resolusi 1920×1080 dan 1280×800 untuk bahasa Indonesia dan Inggris menampilkan editor matriks 5×5 dan kartu belajar konsep.
 
 ## [0.4.0] - 2026-11-04
 

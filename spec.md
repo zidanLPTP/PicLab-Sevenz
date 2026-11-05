@@ -43,30 +43,30 @@ Prinsip pembagian:
 
 Kolom **Lokasi**: K = klien, S = server. Kolom **Fase**: MVP = tahap 0 sampai 4 (aplikasi bisa dipakai penuh tanpa server), Lanjutan = tahap berikutnya.
 
-| Kategori | Operasi | Lokasi | Fase |
-|---|---|---|---|
-| Operasi dasar | Kecerahan, kontras, negatif, grayscale, flip, rotasi, crop, ubah ukuran | K | MVP |
-| Operasi warna | Pisah kanal RGB, ruang warna (HSV, grayscale), saturasi, hue, sepia, balance warna | K | MVP |
-| Enhancement | Histogram, equalization, peregangan kontras, koreksi gamma | K | MVP |
-| Citra biner | Threshold manual, Otsu, adaptif, inversi | K | MVP |
-| Smoothing | Mean, Gaussian, median (kecil) | K | MVP |
-| Sharpening | Unsharp mask, kernel sharpen | K | MVP |
-| Konvolusi | Kernel preset dan kernel kustom ukuran 3×3 dan 5×5 | K | MVP |
-| Deteksi tepi (dasar) | Sobel, Prewitt, Roberts, Laplacian | K | MVP |
-| Pipeline dan riwayat | Susun operasi berurutan, urutkan ulang, aktif/nonaktif, undo/redo | K | MVP |
-| Pembanding | Slider sebelum/sesudah, unduh hasil | K | MVP |
-| Deteksi tepi (lanjut) | Canny | S | Lanjutan |
-| Kontur | Pencarian dan gambar kontur, jumlah kontur | S | Lanjutan |
-| Morfologi | Erosi, dilasi, opening, closing, pilihan struktur elemen | S | Lanjutan |
-| Segmentasi | Berbasis threshold, k-means warna, watershed (dasar) | S | Lanjutan |
-| Reduksi noise | Median besar, bilateral, non-local means | S | Lanjutan |
-| Tambah noise | Gaussian, garam-lada | K atau S | Lanjutan |
-| Filter frekuensi | FFT, spektrum, low-pass, high-pass | S | Lanjutan |
-| Kompresi | JPEG (kualitas), PNG/WebP lossless, perbandingan ukuran | S | Lanjutan |
-| Demo algoritma kompresi | RLE, Huffman (langkah demi langkah, rasio) | K atau S | Lanjutan |
-| Steganografi | LSB: sisipkan dan ekstrak teks atau gambar kecil | S | Lanjutan |
-| Watermark | Teks dan logo, visible dan invisible, pilihan posisi, opasitas, ukuran | K (visible), S (invisible) | Lanjutan |
-| Mode belajar | Penjelasan konsep, rumus, visual kernel, hubungan ke operasi | K | Lanjutan |
+| Kategori | Operasi | Lokasi | Fase | Bukti Terverifikasi |
+|---|---|---|---|---|
+| Operasi dasar | Kecerahan, kontras, negatif, grayscale, flip, rotasi, crop, ubah ukuran | K | MVP | `dasar_kecerahan` s.d. `dasar_ubah_ukuran` (`e2e/operasiCitra.spec.js`, `mesinOperasi.test.js`) |
+| Operasi warna | Pisah kanal RGB, ruang warna (HSV, grayscale), saturasi, hue, sepia, balance warna | K | MVP | `warna_pisah_kanal` s.d. `warna_balance` (`e2e/operasiCitra.spec.js`, `mesinOperasi.test.js`) |
+| Enhancement | Histogram, equalization, peregangan kontras, koreksi gamma | K | MVP | `enhancement_ekualisasi` s.d. `enhancement_gamma` (`e2e/operasiCitra.spec.js`, `mesinOperasi.test.js`) |
+| Citra biner | Threshold manual, Otsu, adaptif, inversi | K | MVP | `biner_manual`, `biner_otsu`, `biner_adaptif` (`e2e/tahap4.spec.js`, `mesinTahap4.test.js`) |
+| Smoothing | Mean, Gaussian, median (kecil) | K | MVP | `halus_mean`, `halus_gaussian`, `halus_median` (`e2e/tahap4.spec.js`, `mesinTahap4.test.js`) |
+| Sharpening | Unsharp mask, kernel sharpen | K | MVP | `tajam_unsharp`, `tajam_kernel` (`e2e/tahap4.spec.js`, `mesinTahap4.test.js`) |
+| Konvolusi | Kernel preset dan kernel kustom ukuran 3×3 dan 5×5 | K | MVP | `konvolusi_kernel` (`e2e/tahap4.spec.js`, `mesinTahap4.test.js`) |
+| Deteksi tepi (dasar) | Sobel, Prewitt, Roberts, Laplacian | K | MVP | `tepi_sobel`, `tepi_prewitt`, `tepi_roberts`, `tepi_laplacian` (`e2e/tahap4.spec.js`) |
+| Pipeline dan riwayat | Susun operasi berurutan, urutkan ulang, aktif/nonaktif, undo/redo | K | MVP | `pipeline.js`, `eksekutorPipeline.js` (`e2e/pipelineRiwayat.spec.js`, `pipeline.test.js`) |
+| Pembanding | Slider sebelum/sesudah, unduh hasil | K | MVP | `PenggeserSebelumSesudah.jsx`, `BilahAksiKanvas.jsx` (`e2e/kerangkaEditor.spec.js`) |
+| Deteksi tepi (lanjut) | Canny | S | Lanjutan | Tahap 6 |
+| Kontur | Pencarian dan gambar kontur, jumlah kontur | S | Lanjutan | Tahap 6 |
+| Morfologi | Erosi, dilasi, opening, closing, pilihan struktur elemen | S | Lanjutan | Tahap 6 |
+| Segmentasi | Berbasis threshold, k-means warna, watershed (dasar) | S | Lanjutan | Tahap 6 |
+| Reduksi noise | Median besar, bilateral, non-local means | S | Lanjutan | Tahap 6 |
+| Tambah noise | Gaussian, garam-lada | K atau S | Lanjutan | Tahap 6/8 |
+| Filter frekuensi | FFT, spektrum, low-pass, high-pass | S | Lanjutan | Tahap 6 |
+| Kompresi | JPEG (kualitas), PNG/WebP lossless, perbandingan ukuran | S | Lanjutan | Tahap 7 |
+| Demo algoritma kompresi | RLE, Huffman (langkah demi langkah, rasio) | K atau S | Lanjutan | Tahap 7 |
+| Steganografi | LSB: sisipkan dan ekstrak teks atau gambar kecil | S | Lanjutan | Tahap 8 |
+| Watermark | Teks dan logo, visible dan invisible, pilihan posisi, opasitas, ukuran | K (visible), S (invisible) | Lanjutan | Tahap 8 |
+| Mode belajar | Penjelasan konsep, rumus, visual kernel, hubungan ke operasi | K | Lanjutan | Tahap 9 |
 
 Preset untuk pengguna awam (contoh: "Pertajam", "Hitam putih", "Siluet tepi", "Hapus noise") disusun dari operasi di atas dan ditempatkan menonjol di editor.
 
