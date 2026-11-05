@@ -28,6 +28,7 @@ export default defineConfig({
     timeout: 30000,
     env: {
       VITE_MEMUAT_FIXTURE_UJI: 'true',
+      VITE_STATUS_SERVER_OTOMATIS: 'false',
     },
   },
 });

@@ -23,11 +23,26 @@ const JEDA_AWAL_GAGAL_MS = 5000; // 5 detik awal saat gagal
 const JEDA_MAKS_GAGAL_MS = 60000; // Maksimal backoff 60 detik
 
 export function useStatusServer(intervalKustomMs = INTERVAL_NORMAL_MS) {
-  const [statusServer, setStatusServer] = useState(STATUS_SERVER.MEMERIKSA);
+  const [statusServer, setStatusServer] = useState(
+    import.meta.env.VITE_STATUS_SERVER_OTOMATIS === 'false'
+      ? STATUS_SERVER.TIDAK_TERSEDIA
+      : STATUS_SERVER.MEMERIKSA
+  );
   const [infoServer, setInfoServer] = useState(null);
+
+  const statusServerRef = useRef(statusServer);
+  const intervalKustomRef = useRef(intervalKustomMs);
+  intervalKustomRef.current = intervalKustomMs;
+
   const timerRef = useRef(null);
   const jedaGagalRef = useRef(JEDA_AWAL_GAGAL_MS);
   const sedangMemeriksaRef = useRef(false);
+
+  const perbaruiStatus = useCallback((statusBaru, info = null) => {
+    statusServerRef.current = statusBaru;
+    setStatusServer(statusBaru);
+    setInfoServer(info);
+  }, []);
 
   const jalankanPemeriksaan = useCallback(async () => {
     if (sedangMemeriksaRef.current) return;
@@ -37,23 +52,26 @@ export function useStatusServer(intervalKustomMs = INTERVAL_NORMAL_MS) {
     sedangMemeriksaRef.current = false;
 
     if (hasil.sukses) {
-      setStatusServer(STATUS_SERVER.TERSEDIA);
-      setInfoServer(hasil.data || null);
+      perbaruiStatus(STATUS_SERVER.TERSEDIA, hasil.data || null);
       jedaGagalRef.current = JEDA_AWAL_GAGAL_MS; // Reset backoff
     } else {
-      setStatusServer(STATUS_SERVER.TIDAK_TERSEDIA);
-      setInfoServer(null);
+      perbaruiStatus(STATUS_SERVER.TIDAK_TERSEDIA, null);
       // Gandakan jeda backoff hingga batas maksimum
       jedaGagalRef.current = Math.min(
         jedaGagalRef.current * 2,
         JEDA_MAKS_GAGAL_MS
       );
     }
-  }, []);
+  }, [perbaruiStatus]);
 
   const jadwalkanPemeriksaanBerikutnya = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
+    }
+
+    // Jangan jadwalkan jika polling otomatis dinonaktifkan
+    if (import.meta.env.VITE_STATUS_SERVER_OTOMATIS === 'false') {
+      return;
     }
 
     // Jangan jadwalkan jika tab peramban sedang disembunyikan
@@ -62,18 +80,22 @@ export function useStatusServer(intervalKustomMs = INTERVAL_NORMAL_MS) {
     }
 
     const durasiTunggu =
-      statusServer === STATUS_SERVER.TERSEDIA
-        ? intervalKustomMs
+      statusServerRef.current === STATUS_SERVER.TERSEDIA
+        ? intervalKustomRef.current
         : jedaGagalRef.current;
 
     timerRef.current = setTimeout(async () => {
       await jalankanPemeriksaan();
       jadwalkanPemeriksaanBerikutnya();
     }, durasiTunggu);
-  }, [intervalKustomMs, jalankanPemeriksaan, statusServer]);
+  }, [jalankanPemeriksaan]);
 
   // Efek inisialisasi & pemantauan visibilitas tab
   useEffect(() => {
+    if (import.meta.env.VITE_STATUS_SERVER_OTOMATIS === 'false') {
+      return;
+    }
+
     jalankanPemeriksaan().then(() => {
       jadwalkanPemeriksaanBerikutnya();
     });
@@ -106,10 +128,11 @@ export function useStatusServer(intervalKustomMs = INTERVAL_NORMAL_MS) {
   }, [jadwalkanPemeriksaanBerikutnya, jalankanPemeriksaan]);
 
   const periksaManual = useCallback(async () => {
-    setStatusServer(STATUS_SERVER.MEMERIKSA);
+    sedangMemeriksaRef.current = false;
+    perbaruiStatus(STATUS_SERVER.MEMERIKSA, null);
     await jalankanPemeriksaan();
     jadwalkanPemeriksaanBerikutnya();
-  }, [jadwalkanPemeriksaanBerikutnya, jalankanPemeriksaan]);
+  }, [jadwalkanPemeriksaanBerikutnya, jalankanPemeriksaan, perbaruiStatus]);
 
   return {
     statusServer,

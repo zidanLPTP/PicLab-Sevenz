@@ -39,6 +39,10 @@ export default function Aplikasi() {
   const { t } = useTranslation();
   const statusServerHook = useStatusServer();
 
+  if (typeof window !== 'undefined') {
+    window.__statusServerHook = statusServerHook;
+  }
+
   // Reducer Pipeline & Riwayat Perubahan (Tahap 3)
   const [statePipeline, dispatchPipeline] = useReducer(
     reducerPipeline,
