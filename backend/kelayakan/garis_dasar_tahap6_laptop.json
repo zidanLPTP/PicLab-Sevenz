@@ -1,0 +1,145 @@
+{
+  "label": "GARIS DASAR LAPTOP (BUKAN HASIL HOSTING)",
+  "keputusan_fathin": "Hosting belum dibeli dan belum akan dibeli dalam waktu dekat. Hasil di hosting ditunda.",
+  "tanggal_pengujian": "2026-11-06 10:36:51",
+  "lingkungan": {
+    "os": "win32",
+    "python": "3.13.5",
+    "cpu_count": 16,
+    "ram_total_gb": 15.71
+  },
+  "hasil": [
+    {
+      "resolusi": "1 MP",
+      "dimensi": "1000x1000",
+      "total_piksel": 1000000,
+      "puncak_rss_mb": 41.82,
+      "puncak_heap_mb": 96.46,
+      "metrik_operasi": {
+        "canny": {
+          "median_ms": 5.45,
+          "p95_ms": 21.22
+        },
+        "kontur": {
+          "median_ms": 2.34,
+          "p95_ms": 4.44
+        },
+        "morfologi": {
+          "median_ms": 1.21,
+          "p95_ms": 1.87
+        },
+        "segmentasi": {
+          "median_ms": 2952.04,
+          "p95_ms": 4654.22
+        },
+        "noise": {
+          "median_ms": 135.39,
+          "p95_ms": 191.87
+        },
+        "frekuensi": {
+          "median_ms": 623.49,
+          "p95_ms": 934.83
+        }
+      }
+    },
+    {
+      "resolusi": "4 MP",
+      "dimensi": "2000x2000",
+      "total_piksel": 4000000,
+      "puncak_rss_mb": 50.85,
+      "puncak_heap_mb": 385.29,
+      "metrik_operasi": {
+        "canny": {
+          "median_ms": 31.98,
+          "p95_ms": 88.08
+        },
+        "kontur": {
+          "median_ms": 16.36,
+          "p95_ms": 44.26
+        },
+        "morfologi": {
+          "median_ms": 10.39,
+          "p95_ms": 28.82
+        },
+        "segmentasi": {
+          "median_ms": 17745.08,
+          "p95_ms": 18388.82
+        },
+        "noise": {
+          "median_ms": 597.48,
+          "p95_ms": 755.22
+        },
+        "frekuensi": {
+          "median_ms": 3554.25,
+          "p95_ms": 3620.26
+        }
+      }
+    },
+    {
+      "resolusi": "8 MP",
+      "dimensi": "3264x2448",
+      "total_piksel": 7990272,
+      "puncak_rss_mb": 62.3,
+      "puncak_heap_mb": 769.64,
+      "metrik_operasi": {
+        "canny": {
+          "median_ms": 72.39,
+          "p95_ms": 78.92
+        },
+        "kontur": {
+          "median_ms": 32.93,
+          "p95_ms": 36.36
+        },
+        "morfologi": {
+          "median_ms": 16.48,
+          "p95_ms": 16.61
+        },
+        "segmentasi": {
+          "median_ms": 35669.55,
+          "p95_ms": 37178.06
+        },
+        "noise": {
+          "median_ms": 1358.65,
+          "p95_ms": 1380.85
+        },
+        "frekuensi": {
+          "median_ms": 10449.1,
+          "p95_ms": 13705.35
+        }
+      }
+    },
+    {
+      "resolusi": "16 MP (Batas Maks)",
+      "dimensi": "4000x4000",
+      "total_piksel": 16000000,
+      "puncak_rss_mb": 85.45,
+      "puncak_heap_mb": 1541.15,
+      "metrik_operasi": {
+        "canny": {
+          "median_ms": 49.77,
+          "p95_ms": 51.78
+        },
+        "kontur": {
+          "median_ms": 24.79,
+          "p95_ms": 25.96
+        },
+        "morfologi": {
+          "median_ms": 16.09,
+          "p95_ms": 17.96
+        },
+        "segmentasi": {
+          "median_ms": 20066.48,
+          "p95_ms": 20317.28
+        },
+        "noise": {
+          "median_ms": 883.39,
+          "p95_ms": 901.23
+        },
+        "frekuensi": {
+          "median_ms": 5855.12,
+          "p95_ms": 6076.22
+        }
+      }
+    }
+  ]
+}
