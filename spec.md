@@ -55,13 +55,13 @@ Kolom **Lokasi**: K = klien, S = server. Kolom **Fase**: MVP = tahap 0 sampai 4 
 | Deteksi tepi (dasar) | Sobel, Prewitt, Roberts, Laplacian | K | MVP | `tepi_sobel`, `tepi_prewitt`, `tepi_roberts`, `tepi_laplacian` (`e2e/tahap4.spec.js`) |
 | Pipeline dan riwayat | Susun operasi berurutan, urutkan ulang, aktif/nonaktif, undo/redo | K | MVP | `pipeline.js`, `eksekutorPipeline.js` (`e2e/pipelineRiwayat.spec.js`, `pipeline.test.js`) |
 | Pembanding | Slider sebelum/sesudah, unduh hasil | K | MVP | `PenggeserSebelumSesudah.jsx`, `BilahAksiKanvas.jsx` (`e2e/kerangkaEditor.spec.js`) |
-| Deteksi tepi (lanjut) | Canny | S | Lanjutan | Tahap 6 |
-| Kontur | Pencarian dan gambar kontur, jumlah kontur | S | Lanjutan | Tahap 6 |
-| Morfologi | Erosi, dilasi, opening, closing, pilihan struktur elemen | S | Lanjutan | Tahap 6 |
-| Segmentasi | Berbasis threshold, k-means warna, watershed (dasar) | S | Lanjutan | Tahap 6 |
-| Reduksi noise | Median besar, bilateral, non-local means | S | Lanjutan | Tahap 6 |
+| Deteksi tepi (lanjut) | Canny | S | Lanjutan | `server_tepi_canny` (`e2e/operasiServerTahap6.spec.js`, `test_operasi_tepi.py`) |
+| Kontur | Pencarian dan gambar kontur, jumlah kontur | S | Lanjutan | `server_kontur` (`e2e/operasiServerTahap6.spec.js`, `test_operasi_kontur.py`) |
+| Morfologi | Erosi, dilasi, opening, closing, pilihan struktur elemen | S | Lanjutan | `server_morfologi` (`e2e/operasiServerTahap6.spec.js`, `test_operasi_morfologi.py`) |
+| Segmentasi | Berbasis threshold (Multi-Otsu), k-means warna | S | Lanjutan | `server_segmentasi` (`e2e/operasiServerTahap6.spec.js`, `test_operasi_segmentasi.py`) |
+| Reduksi noise | Median besar, bilateral, non-local means | S | Lanjutan | `server_noise` (`e2e/operasiServerTahap6.spec.js`, `test_operasi_noise.py`) |
 | Tambah noise | Gaussian, garam-lada | K atau S | Lanjutan | Tahap 6/8 |
-| Filter frekuensi | FFT, spektrum, low-pass, high-pass | S | Lanjutan | Tahap 6 |
+| Filter frekuensi | FFT 2D, spektrum magnitudo, ideal, Gaussian, Butterworth | S | Lanjutan | `server_frekuensi` (`e2e/operasiServerTahap6.spec.js`, `test_operasi_frekuensi.py`) |
 | Kompresi | JPEG (kualitas), PNG/WebP lossless, perbandingan ukuran | S | Lanjutan | Tahap 7 |
 | Demo algoritma kompresi | RLE, Huffman (langkah demi langkah, rasio) | K atau S | Lanjutan | Tahap 7 |
 | Steganografi | LSB: sisipkan dan ekstrak teks atau gambar kecil | S | Lanjutan | Tahap 8 |

@@ -4,6 +4,32 @@ Semua perubahan penting pada proyek **PicLab Sevenz** akan didokumentasikan dala
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/) dan mengikuti prinsip [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.7.0] - 2026-11-06
+
+### Ditambahkan (Tahap 6: Operasi Server)
+- **6 Modul Pemrosesan Citra Tingkat Lanjut di Backend FastAPI (OpenCV)**:
+  - `tepi_canny`: Deteksi tepi Canny multi-tahap (`/api/v1/tepi/canny`) dengan ambang bawah & atas adaptif, L2 gradient, dan pemeliharaan kanal alfa transparan.
+  - `kontur`: Deteksi kontur berbasis Suzuki 1985 (`/api/v1/kontur/gambar`) dengan mode retrieval (eksternal, daftar, hierarki, tree), metode aproksimasi (none, simple, tc89), ketebalan garis, pemilihan warna hex, dan kanvas overlay atau latar hitam/putih.
+  - `morfologi`: Transformasi morfologi matematis (`/api/v1/morfologi/terapkan`) mencakup erosi, dilasi, opening, closing, gradient, tophat, dan blackhat dengan elemen penstruktur persegi, silang, atau elips ukuran 1–31 piksel.
+  - `segmentasi`: Kuantisasi dan klasterisasi citra (`/api/v1/segmentasi/proses`) via K-Means clustering (k=2..16) dengan inisialisasi k-means++ atau Multi-Otsu histogram partitioning (2..5 kelas) dengan dukungan kanal warna RGB atau Grayscale.
+  - `noise`: Reduksi derau lanjutan (`/api/v1/noise/reduksi`) melalui penapis Bilateral edge-preserving, Non-Local Means (NLM) denoising (FastNLMeansColored), dan Median filter ukuran ganjil besar (3–31).
+  - `frekuensi`: Transformasi domain frekuensi 2D FFT (`/api/v1/frekuensi/filter`) dengan pergeseran pusat FFT, pemfilteran ideal, Gaussian, atau Butterworth (orde 1..10) pada mode lowpass atau highpass, serta visualisasi log-scale magnitude spectrum.
+- **Pengaturan Threading Backend Terkendali**:
+  - Inisialisasi `cv2.setNumThreads(2)` pada `backend/app/utama.py` untuk mencegah *thread exhaustion* pada lingkungan terbatas sumber daya.
+- **Integrasi Frontend & Pipeline Hibrida**:
+  - Penambahan 6 modul klien operasi server pada katalog dan UI frontend.
+  - Skema debounce adaptif 400 ms (`JEDA_DEBOUNCE_SERVER_MS = 400`) pada gerakan slider parameter server untuk mencegah pemborosan komputasi backend.
+  - Indikator status langkah pipeline per-operasi (`menunggu`, `memproses`, `berhasil`, `galat`).
+  - Badge visual `Server` pada panel operasi dan daftar langkah pipeline.
+  - Kartu belajar konsep edukatif dwibahasa (ID & EN) untuk ke-6 operasi server baru.
+- **Pengujian Unit, Integrasi, & E2E Komprehensif**:
+  - 65 uji unit backend pytest mencakup verifikasi matematis piksel, pemeliharaan kanal alfa, penolakan parameter di luar rentang batas via Pydantic `extra='forbid'`, dan zero-disk footprint (100% lolos).
+  - 146 uji unit Vitest frontend (15 berkas uji, 100% lolos).
+  - 39 pengujian Playwright E2E deterministik (100% lolos), mencakup eksekusi nyata 6 operasi server berturut-turut pada backend nyata, urutan hibrida (Klien -> Server -> Klien), undo/redo riwayat, dan verifikasi unduhan citra PNG resolusi penuh.
+- **Benchmark Garis Dasar Laptop Multi-Resolusi**:
+  - Pengukuran empiris menggunakan `backend/kelayakan/ukur_beban_tahap6.py` pada 1 MP, 4 MP, 8 MP, dan 16 MP dengan pencatatan durasi median, durasi P95, puncak RSS memori psutil, dan heap tracemalloc Python tersimpan di `backend/kelayakan/garis_dasar_tahap6_laptop.json`.
+  - 4 tangkapan layar Visual QA antarmuka resolusi 1280px dan 1920px (ID & EN) tersimpan di `tangkapan-layar/`.
+
 ## [0.6.1] - 2026-11-06
 
 ### Diperbaiki & Disempurnakan (Revisi Tahap 5)

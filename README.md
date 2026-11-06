@@ -9,11 +9,11 @@ Proyek ini dibangun dengan prioritas utama pada **utilitas praktis** bagi penggu
 ## 🚀 Teknologi Utama
 
 - **Frontend**: React 18 (JavaScript), Vite, Tailwind CSS v3, Lucide Icons, i18next.
-- **Backend**: Python 3.11+ (teruji pada v3.11 dan v3.13.5, batas minimum `>=3.11` sesuai PEP 619), FastAPI, Uvicorn, Pillow, NumPy.
+- **Backend**: Python 3.11+ (teruji pada v3.11 dan v3.13.5, batas minimum `>=3.11` sesuai PEP 619), FastAPI, Uvicorn, Pillow, NumPy, OpenCV Headless (`cv2.setNumThreads(2)`).
 - **Pengujian**:
-  - Frontend: Vitest + React Testing Library (14 berkas uji, 142 pengujian lulus).
-  - Backend: pytest + HTTPX (44 pengujian unit, integrasi, dan keamanan OWASP lulus).
-  - End-to-End: Playwright Chromium (36 pengujian E2E deterministik lulus, mencakup integrasi klien-server nyata tanpa mock).
+  - Frontend: Vitest + React Testing Library (15 berkas uji, 146 pengujian lulus).
+  - Backend: pytest + HTTPX (65 pengujian unit, integrasi, dan keamanan OWASP lulus).
+  - End-to-End: Playwright Chromium (39 pengujian E2E deterministik lulus, mencakup integrasi klien-server nyata tanpa mock dan operasi pemrosesan citra server lanjutan).
 - **Kualitas & Keamanan**: ESLint, Prettier, Ruff, pip-audit (0 kerentanan), npm audit (0 kerentanan produksi).
 - **Integrasi Berkelanjutan (CI)**: GitHub Actions (matriks Python 3.11 & 3.13, Node 22).
 
@@ -192,4 +192,5 @@ npm run lint
 - [x] **Tahap 3 — Pipeline operasi, riwayat, undo/redo, dan preset** (Tumpukan operasi non-destruktif berantai, reducer deterministik, riwayat snapshot ringan ~55 KB / 100 snapshot, prefix caching di worker, reorder seret & keyboard ARIA live, 5 preset awal).
 - [x] **Tahap 4 — Biner, konvolusi, smoothing, sharpening, deteksi tepi dasar (Penutupan MVP)** (13 operasi spasial/konvolusi baru total 30 operasi klien, konvolusi sejati pemutaran 180°, editor matriks 3×3 & 5×5 navigasi keyboard, kartu belajar konsep dwibahasa, 3 preset baru, verifikasi standalone 0 network requests ke server).
 - [x] **Tahap 5 — Backend: fondasi, keamanan, penghubung klien, uji kelayakan hosting (Revisi Selesai Penuh)** (Fondasi backend FastAPI terstruktur, validasi bertingkat murah ke mahal 10 MB/4096 px/16 MP, pencegahan decompression bomb, pemrosesan murni RAM 0 disk write, rate limiter 429, semafor serentak 503, header keamanan OWASP, penanganan galat standar `{ kode, pesan }`, Zero IP logging pada server aplikasi dan Uvicorn access log dibungkam, isolasi dependensi produksi requirements.txt 98.80 MB vs dev 157.66 MB, mode lokal statis murni saat VITE_ALAMAT_API kosong dengan 0 request kesehatan, pengujian integrasi klien-server nyata tanpa mock Playwright 4 skenario lulus, pembaruan privasi poin 4 dengan catatan keterbatasan reverse proxy upstream, paket mandiri `backend/kelayakan/` beserta garis dasar laptop RSS terukur psutil dan panduan spesifikasi hosting).
-- [ ] **Tahap 6 — Operasi server: Canny, kontur, morfologi, segmentasi, noise, FFT** *(tahap berikutnya)*.
+- [x] **Tahap 6 — Operasi server: Canny, kontur, morfologi, segmentasi, noise, FFT** (6 modul pemrosesan citra tingkat lanjut murni di RAM tanpa penulisan disk fisik menggunakan OpenCV `cv2.setNumThreads(2)`, skema Pydantic `extra='forbid'`, pengujian 65 uji unit backend pytest, integrasi katalog frontend dengan debounce 400 ms dan isolasi memori WebP/PNG, 39 uji Playwright E2E deterministik termasuk alur berantai hibrida klien-server, 4 tangkapan layar visual QA 1280px/1920px dwibahasa, dan benchmark garis dasar laptop multi-resolusi 1–16 MP terukur psutil & tracemalloc).
+- [ ] **Tahap 7 — Kompresi dan demo algoritma** *(tahap berikutnya)*.
