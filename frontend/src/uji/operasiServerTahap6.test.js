@@ -9,10 +9,7 @@ import {
   dapatkanSemuaOperasi,
   ekstrakNilaiAwalParameter,
 } from '../mesin/katalogOperasi';
-import {
-  eksekusiPipelineAsinkron,
-  hitungSignatureLangkah,
-} from '../mesin/eksekutorPipeline';
+import { eksekusiPipelineAsinkron } from '../mesin/eksekutorPipeline';
 import idJson from '../bahasa/id.json';
 import enJson from '../bahasa/en.json';
 
@@ -78,7 +75,9 @@ describe('Operasi Server Tahap 6 (Canny, Kontur, Morfologi, Segmentasi, Noise, F
     const citraAwal = {
       width: 2,
       height: 2,
-      data: new Uint8ClampedArray([10, 20, 30, 255, 40, 50, 60, 255, 70, 80, 90, 255, 100, 110, 120, 255]),
+      data: new Uint8ClampedArray([
+        10, 20, 30, 255, 40, 50, 60, 255, 70, 80, 90, 255, 100, 110, 120, 255,
+      ]),
     };
 
     // Buat langkah klien yang valid (kecerahan + negatif)

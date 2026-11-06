@@ -143,7 +143,9 @@ export default function Aplikasi() {
       return op?.lokasi === 'server';
     });
 
-    const jeda = adaOperasiServer ? (KONFIGURASI_PIPELINE.JEDA_DEBOUNCE_SERVER_MS || 400) : 0;
+    const jeda = adaOperasiServer
+      ? KONFIGURASI_PIPELINE.JEDA_DEBOUNCE_SERVER_MS || 400
+      : 0;
 
     if (jeda > 0) {
       const timer = setTimeout(() => {
@@ -160,6 +162,15 @@ export default function Aplikasi() {
       );
     }
   }, [statePipeline.langkah, citraPreview, terapkanPreviewPipeline]);
+
+  // Sinkronkan pemetaan status langkah untuk indikator visual langkah pipeline
+  useEffect(() => {
+    const petaStatus = {};
+    for (const l of statePipeline.langkah) {
+      petaStatus[l.id] = l.aktif ? 'berhasil' : 'menunggu';
+    }
+    setStatusLangkahMap(petaStatus);
+  }, [statePipeline.langkah]);
 
   // Pintasan Keyboard Global (Undo/Redo)
   useEffect(() => {

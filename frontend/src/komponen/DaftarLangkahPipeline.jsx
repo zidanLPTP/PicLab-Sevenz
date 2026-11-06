@@ -178,7 +178,8 @@ export default function DaftarLangkahPipeline({
                     <div className="flex items-center gap-1 text-[10px] mt-0.5">
                       {statusLangkahMap[item.id] === 'memproses' && (
                         <span className="text-primer flex items-center gap-1 font-medium">
-                          <Loader2 size={10} className="animate-spin" /> Memproses...
+                          <Loader2 size={10} className="animate-spin" />{' '}
+                          Memproses...
                         </span>
                       )}
                       {statusLangkahMap[item.id] === 'berhasil' && (

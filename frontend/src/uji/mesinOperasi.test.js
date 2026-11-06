@@ -503,7 +503,9 @@ describe('Mesin Operasi Citra Murni (Tahap 2)', () => {
   // 2. PENGUJIAN REGISTRI UNTUK SEMUA 17 OPERASI BAWAAN (R3)
   // --------------------------------------------------------------------------
   describe('Uji Registri Lengkap pada Seluruh 17 Operasi (Immutability, Alfa, Parameter Tak Valid)', () => {
-    const semuaOperasi = dapatkanSemuaOperasi().filter((op) => op.lokasi !== 'server');
+    const semuaOperasi = dapatkanSemuaOperasi().filter(
+      (op) => op.lokasi !== 'server'
+    );
 
     it('memiliki tepat 17 operasi citra terdaftar di katalog bawaan', () => {
       expect(semuaOperasi.length).toBeGreaterThanOrEqual(17);

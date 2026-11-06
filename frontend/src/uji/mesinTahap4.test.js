@@ -475,7 +475,9 @@ describe('Mesin Operasi Citra Spasial & Konvolusi (Tahap 4 MVP)', () => {
   // 7. KASUS BATAS (CITRA 1x1, 2x2, DAN REGISTRI LENGKAP 30 OPERASI)
   // ==========================================================================
   describe('Kasus Batas & Verifikasi Immutability/Alfa Seluruh 30 Operasi', () => {
-    const semuaOperasi = dapatkanSemuaOperasi().filter((op) => op.lokasi !== 'server');
+    const semuaOperasi = dapatkanSemuaOperasi().filter(
+      (op) => op.lokasi !== 'server'
+    );
 
     it('memiliki tepat minimal 30 operasi terdaftar di katalog pada Tahap 4', () => {
       expect(semuaOperasi.length).toBeGreaterThanOrEqual(30);

@@ -59,7 +59,10 @@ export const operasiFrekuensi = {
       tipe: 'pilihan',
       pilihan: [
         { nilai: 'gambar_terfilter', label: 'Citra Rekonstruksi Spasial' },
-        { nilai: 'spektrum_magnitudo', label: 'Visualisasi Spektrum Frekuensi' },
+        {
+          nilai: 'spektrum_magnitudo',
+          label: 'Visualisasi Spektrum Frekuensi',
+        },
       ],
       nilaiAwal: 'gambar_terfilter',
     },
