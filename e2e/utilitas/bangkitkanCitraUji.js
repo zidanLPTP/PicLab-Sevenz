@@ -206,6 +206,75 @@ export function bangkitkanSemuaAsetUji(targetDir = 'test-assets') {
   const png4x2 = encodePng(4, 2, buffer4x2);
   fs.writeFileSync(path.join(targetDir, 'tangga-4x2.png'), png4x2);
 
+  // 7. Citra tiga warna 60x60 (20px Merah, 20px Hijau, 20px Biru)
+  const bufTigaWarna = Buffer.alloc(60 * 60 * 4);
+  for (let y = 0; y < 60; y++) {
+    for (let x = 0; x < 60; x++) {
+      const idx = (y * 60 + x) * 4;
+      if (y < 20) {
+        bufTigaWarna[idx] = 255;
+        bufTigaWarna[idx + 1] = 0;
+        bufTigaWarna[idx + 2] = 0;
+      } else if (y < 40) {
+        bufTigaWarna[idx] = 0;
+        bufTigaWarna[idx + 1] = 255;
+        bufTigaWarna[idx + 2] = 0;
+      } else {
+        bufTigaWarna[idx] = 0;
+        bufTigaWarna[idx + 1] = 0;
+        bufTigaWarna[idx + 2] = 255;
+      }
+      bufTigaWarna[idx + 3] = 255;
+    }
+  }
+  fs.writeFileSync(
+    path.join(targetDir, 'tiga-warna-60x60.png'),
+    encodePng(60, 60, bufTigaWarna)
+  );
+
+  // 8. Citra kotak biner 50x50 (tengah 20x20 putih 255, sekeliling hitam 0)
+  const bufKotakBiner = Buffer.alloc(50 * 50 * 4);
+  for (let y = 0; y < 50; y++) {
+    for (let x = 0; x < 50; x++) {
+      const idx = (y * 50 + x) * 4;
+      const v = x >= 15 && x < 35 && y >= 15 && y < 35 ? 255 : 0;
+      bufKotakBiner[idx] = v;
+      bufKotakBiner[idx + 1] = v;
+      bufKotakBiner[idx + 2] = v;
+      bufKotakBiner[idx + 3] = 255;
+    }
+  }
+  fs.writeFileSync(
+    path.join(targetDir, 'kotak-biner-50x50.png'),
+    encodePng(50, 50, bufKotakBiner)
+  );
+
+  // 9. Citra papan catur 100x100
+  const bufPapan = Buffer.alloc(100 * 100 * 4);
+  for (let y = 0; y < 100; y++) {
+    for (let x = 0; x < 100; x++) {
+      const idx = (y * 100 + x) * 4;
+      const kotakX = Math.floor(x / 10);
+      const kotakY = Math.floor(y / 10);
+      const v = (kotakX + kotakY) % 2 === 0 ? 255 : 0;
+      bufPapan[idx] = v;
+      bufPapan[idx + 1] = v;
+      bufPapan[idx + 2] = v;
+      bufPapan[idx + 3] = 255;
+    }
+  }
+  fs.writeFileSync(
+    path.join(targetDir, 'papan-catur-100x100.png'),
+    encodePng(100, 100, bufPapan)
+  );
+
+  // 10. Citra sintetis 4.2 MP (2100x2000) untuk batas komputasi NLM
+  const buf42Mp = bangkitkanCitraSintetis(2100, 2000);
+  fs.writeFileSync(
+    path.join(targetDir, 'sintetis-4.2mp.png'),
+    encodePng(2100, 2000, buf42Mp)
+  );
+
   console.log(
     'Seluruh aset uji citra deterministik berhasil dibangkitkan via Node.js!'
   );
