@@ -1,5 +1,6 @@
-"""Aplikasi utama FastAPI untuk PicLab Sevenz (spec.md bagian 12 & Tahap 5)."""
+"""Aplikasi utama FastAPI untuk PicLab Sevenz (spec.md bagian 12 & Tahap 6)."""
 
+import cv2
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,8 +9,17 @@ from app.inti.galat import daftarkan_penangan_galat
 from app.inti.keamanan import MiddlewareKeamanan
 from app.inti.konfigurasi import konfigurasi
 from app.inti.pencatat import MiddlewareLogPrivasi
+from app.rute.frekuensi import router as router_frekuensi
 from app.rute.kesehatan import router as router_kesehatan
+from app.rute.kontur import router as router_kontur
+from app.rute.morfologi import router as router_morfologi
+from app.rute.noise import router as router_noise
+from app.rute.segmentasi import router as router_segmentasi
+from app.rute.tepi import router as router_tepi
 from app.rute.uji import router as router_uji
+
+# Batasi penggunaan utas internal OpenCV agar tidak melahap kuota CPU di lingkungan bersama
+cv2.setNumThreads(2)
 
 
 def buat_aplikasi() -> FastAPI:
@@ -44,6 +54,12 @@ def buat_aplikasi() -> FastAPI:
 
     # 5. Mendaftarkan Rute-rute API Aplikasi
     app.include_router(router_kesehatan)
+    app.include_router(router_tepi)
+    app.include_router(router_kontur)
+    app.include_router(router_morfologi)
+    app.include_router(router_segmentasi)
+    app.include_router(router_noise)
+    app.include_router(router_frekuensi)
     app.include_router(router_uji)
 
     return app

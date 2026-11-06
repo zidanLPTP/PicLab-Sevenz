@@ -63,9 +63,7 @@ def get_kesehatan():
         "pid": os.getpid(),
         "opencv_tersedia": OPENCV_TERSEDIA,
         "memori": memori_info,
-        "waktu_server_utc": time.strftime(
-            "%Y-%m-%dT%H:%M:%SZ", time.gmtime()
-        ),
+        "waktu_server_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
 
 

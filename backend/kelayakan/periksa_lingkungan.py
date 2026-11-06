@@ -51,7 +51,9 @@ def periksa_cgroup_memori():
             with open(jalur_v2, "r", encoding="utf-8") as f:
                 val = f.read().strip()
                 info_cgroup["cgroup_v2_memory_max"] = (
-                    "unlimited" if val == "max" else f"{int(val) / (1024 * 1024):.1f} MB"
+                    "unlimited"
+                    if val == "max"
+                    else f"{int(val) / (1024 * 1024):.1f} MB"
                 )
         except Exception as e:
             info_cgroup["cgroup_v2_error"] = str(e)
@@ -74,10 +76,14 @@ def periksa_cgroup_memori():
 
         soft, hard = resource.getrlimit(resource.RLIMIT_AS)
         info_cgroup["rlimit_as_soft"] = (
-            "unlimited" if soft == resource.RLIM_INFINITY else f"{soft / (1024 * 1024):.1f} MB"
+            "unlimited"
+            if soft == resource.RLIM_INFINITY
+            else f"{soft / (1024 * 1024):.1f} MB"
         )
         info_cgroup["rlimit_as_hard"] = (
-            "unlimited" if hard == resource.RLIM_INFINITY else f"{hard / (1024 * 1024):.1f} MB"
+            "unlimited"
+            if hard == resource.RLIM_INFINITY
+            else f"{hard / (1024 * 1024):.1f} MB"
         )
     except (ImportError, AttributeError):
         info_cgroup["rlimit"] = "Modul resource tidak tersedia (Windows OS)"

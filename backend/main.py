@@ -11,8 +11,7 @@ __all__ = ["aplikasi"]
 
 if __name__ == "__main__":
     reload_aktif = (
-        not konfigurasi.PRODUKSI
-        and os.getenv("RELOAD", "false").lower() == "true"
+        not konfigurasi.PRODUKSI and os.getenv("RELOAD", "false").lower() == "true"
     )
     uvicorn.run(
         "app.utama:aplikasi",

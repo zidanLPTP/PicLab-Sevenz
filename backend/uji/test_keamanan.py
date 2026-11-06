@@ -154,7 +154,7 @@ def test_simulasi_galat_500_tanpa_kebocoran_jejak_tumpukan():
     teks_mentah = respons.text
     assert "Traceback" not in teks_mentah
     assert "RuntimeError" not in teks_mentah
-    assert "File \"" not in teks_mentah
+    assert 'File "' not in teks_mentah
 
 
 def test_rute_openapi_dan_docs_tersembunyi_di_mode_produksi(monkeypatch):
@@ -173,7 +173,9 @@ def test_rute_openapi_dan_docs_tersembunyi_di_mode_produksi(monkeypatch):
 
     for rute in ["/docs", "/redoc", "/openapi.json"]:
         res = klien_prod.get(rute)
-        assert res.status_code == status.HTTP_404_NOT_FOUND, f"Rute {rute} terbuka di mode produksi!"
+        assert res.status_code == status.HTTP_404_NOT_FOUND, (
+            f"Rute {rute} terbuka di mode produksi!"
+        )
 
 
 def test_pengabaian_x_forwarded_for_jika_proxy_tidak_dipercaya():

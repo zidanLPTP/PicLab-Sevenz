@@ -124,4 +124,6 @@ async def uji_gema_gambar(
 )
 async def rute_simulasi_galat_internal():
     """Memicu eksepsi runtime tak terduga untuk memverifikasi penanganan galat 500."""
-    raise RuntimeError("Simulasi crash internal untuk memverifikasi Zero Information Leakage.")
+    raise RuntimeError(
+        "Simulasi crash internal untuk memverifikasi Zero Information Leakage."
+    )

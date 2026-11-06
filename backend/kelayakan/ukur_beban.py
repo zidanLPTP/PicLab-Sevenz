@@ -142,9 +142,13 @@ def main():
     print("=" * 95)
     print("PENTING:")
     print("1. Data ini merupakan GARIS DASAR LAPTOP, BUKAN HASIL HOSTING.")
-    print("2. Uji kelayakan hosting nyata ditunda sesuai keputusan Fathin sampai hosting dibeli.")
+    print(
+        "2. Uji kelayakan hosting nyata ditunda sesuai keputusan Fathin sampai hosting dibeli."
+    )
     print("3. Puncak RSS diukur menggunakan psutil nyata (Resident Set Size OS).")
-    print("4. Kolom 'Median Gaussian (ms)' mengukur median durasi filter Gaussian Blur.")
+    print(
+        "4. Kolom 'Median Gaussian (ms)' mengukur median durasi filter Gaussian Blur."
+    )
     print("-" * 95)
     print(f"Versi Python: {sys.version.split()[0]} ({sys.platform})")
     print(f"Metode: 1 kali pemanasan + {ULANGAN_PENGUKURAN} kali ulangan (Median)")
@@ -175,11 +179,15 @@ def main():
             hasil_semua.append({"resolusi": item["label"], "status": "OUT_OF_MEMORY"})
         except Exception as err:
             print(f"{item['label']:<18} | GAGAL ({err})")
-            hasil_semua.append({"resolusi": item["label"], "status": "GALAT", "pesan": str(err)})
+            hasil_semua.append(
+                {"resolusi": item["label"], "status": "GALAT", "pesan": str(err)}
+            )
 
     print("=" * 95)
 
-    jalur_json = os.path.join(os.path.dirname(os.path.abspath(__file__)), "garis_dasar_laptop.json")
+    jalur_json = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "garis_dasar_laptop.json"
+    )
     with open(jalur_json, "w", encoding="utf-8") as f:
         json.dump(
             {

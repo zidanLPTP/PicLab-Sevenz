@@ -37,13 +37,20 @@ def kirim_permintaan_kesehatan(url):
 
 def uji_beban_serentak(url, jumlah_permintaan=20, pekerja_serentak=5):
     """Menjalankan sejumlah permintaan serentak dengan worker pool."""
-    print(f"Mengirim {jumlah_permintaan} permintaan ke {url} (Konkurensi: {pekerja_serentak})...")
+    print(
+        f"Mengirim {jumlah_permintaan} permintaan ke {url} (Konkurensi: {pekerja_serentak})..."
+    )
 
     t_mulai_semua = time.perf_counter()
     hasil_list = []
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=pekerja_serentak) as executor:
-        futures = [executor.submit(kirim_permintaan_kesehatan, url) for _ in range(jumlah_permintaan)]
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=pekerja_serentak
+    ) as executor:
+        futures = [
+            executor.submit(kirim_permintaan_kesehatan, url)
+            for _ in range(jumlah_permintaan)
+        ]
         for f in concurrent.futures.as_completed(futures):
             hasil_list.append(f.result())
 
@@ -120,7 +127,15 @@ def main():
     print(f"Throughput Rata-rata  : {ringkasan['throughput_req_per_detik']} req/detik")
     print("\nDistribusi Status HTTP:")
     for st, count in ringkasan["distribusi_status"].items():
-        label = "Sukses" if st == 200 else ("Rate Limit (429)" if st == 429 else ("Server Sibuk (503)" if st == 503 else "Galat"))
+        label = (
+            "Sukses"
+            if st == 200
+            else (
+                "Rate Limit (429)"
+                if st == 429
+                else ("Server Sibuk (503)" if st == 503 else "Galat")
+            )
+        )
         print(f"  • HTTP {st} ({label}): {count} permintaan")
 
     if ringkasan["latensi_ms"]:

@@ -35,7 +35,10 @@ def dapatkan_ip_klien(request: Request) -> str:
     """
     host_koneksi_langsung = request.client.host if request.client else "127.0.0.1"
 
-    if konfigurasi.PERCAYAI_PROXY and host_koneksi_langsung in konfigurasi.PROXY_TERPERCAYA:
+    if (
+        konfigurasi.PERCAYAI_PROXY
+        and host_koneksi_langsung in konfigurasi.PROXY_TERPERCAYA
+    ):
         xff = request.headers.get("x-forwarded-for")
         if xff:
             ip_klien = xff.split(",")[0].strip()
