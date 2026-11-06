@@ -1,4 +1,4 @@
-import { Plus, Search, Sparkles, Wand2 } from 'lucide-react';
+import { Plus, Search, Server, Sparkles, Wand2 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -11,12 +11,15 @@ import { KONFIGURASI_PIPELINE } from '../utilitas/konfigurasiPipeline';
 /**
  * Panel Kiri Editor: Katalog Operasi Citra Berdasarkan Kategori & Preset Awal.
  * Dilengkapi fitur penambahan ke pipeline dan preset komposisi non-destruktif.
+ * Mendukung graceful degradation: operasi berlabel lokasi 'server' otomatis dinonaktifkan
+ * jika backend sedang tidak tersedia tanpa mengganggu operasi klien lainnya.
  */
 export default function PanelOperasi({
   langkahTerpilihOperasiId = null,
   saatTambahOperasi,
   saatMuatPreset,
   jumlahLangkah = 0,
+  apakahServerTersedia = false,
 }) {
   const { t } = useTranslation();
   const [kataKunci, setKataKunci] = useState('');
@@ -121,31 +124,50 @@ export default function PanelOperasi({
                 <div className="space-y-1">
                   {opsDalamKategori.map((op) => {
                     const apakahDipilih = langkahTerpilihOperasiId === op.id;
+                    const adalahOperasiServer = op.lokasi === 'server';
+                    const serverTidakTersedia =
+                      adalahOperasiServer && !apakahServerTersedia;
+                    const tombolDinonaktifkan =
+                      batasMaksimumTercapai || serverTidakTersedia;
+
+                    let judulTooltip = t('pipeline.tambah');
+                    if (serverTidakTersedia) {
+                      judulTooltip = t('statusServer.operasiServerNonaktif');
+                    } else if (batasMaksimumTercapai) {
+                      judulTooltip = t('pipeline.batasTercapai');
+                    }
 
                     return (
                       <button
                         key={op.id}
                         type="button"
                         data-testid={`tombol-tambah-operasi-${op.id}`}
-                        disabled={batasMaksimumTercapai}
+                        data-lokasi={op.lokasi || 'klien'}
+                        disabled={tombolDinonaktifkan}
                         onClick={() => saatTambahOperasi(op.id)}
-                        className={`w-full text-left px-2.5 py-2 rounded-lg text-xs transition-all cursor-pointer flex items-center justify-between border disabled:opacity-50 disabled:cursor-not-allowed ${
-                          apakahDipilih
-                            ? 'bg-primer-lembut border-primer text-primer font-bold shadow-xs'
-                            : 'bg-transparent border-transparent hover:bg-latar-sorot text-teks-utama'
+                        className={`w-full text-left px-2.5 py-2 rounded-lg text-xs transition-all flex items-center justify-between border ${
+                          tombolDinonaktifkan
+                            ? 'opacity-50 cursor-not-allowed bg-latar-subtil border-garis-panel text-teks-redup'
+                            : apakahDipilih
+                              ? 'bg-primer-lembut border-primer text-primer font-bold shadow-xs cursor-pointer'
+                              : 'bg-transparent border-transparent hover:bg-latar-sorot text-teks-utama cursor-pointer'
                         }`}
-                        title={
-                          batasMaksimumTercapai
-                            ? t('pipeline.batasTercapai')
-                            : t('pipeline.tambah')
-                        }
+                        title={judulTooltip}
                       >
                         <div className="truncate pr-2">
-                          <div className="font-semibold truncate">
-                            {t(op.kunciNama)}
+                          <div className="font-semibold truncate flex items-center gap-1.5">
+                            <span className="truncate">{t(op.kunciNama)}</span>
+                            {adalahOperasiServer && (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-primer-lembut text-teks-primer border border-garis-primer">
+                                <Server size={9} />
+                                Server
+                              </span>
+                            )}
                           </div>
                           <div className="text-[10px] text-teks-redup truncate mt-0.5">
-                            {t(op.kunciDeskripsi)}
+                            {serverTidakTersedia
+                              ? t('statusServer.operasiServerNonaktif')
+                              : t(op.kunciDeskripsi)}
                           </div>
                         </div>
                         <Plus

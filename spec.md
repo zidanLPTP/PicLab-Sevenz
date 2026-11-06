@@ -175,6 +175,10 @@ Agent boleh menyesuaikan, tetapi perubahan struktur dicatat di laporan.
 
 ## 14. Deployment
 
+> **Catatan Keputusan Arsitektur (Bertanggal: 2026-11-05)**:  
+> Hosting bersama belum dibeli dan belum akan dibeli dalam waktu dekat (Keputusan Fathin). Uji kelayakan hosting TIDAK dijalankan sekarang pada Tahap 5, melainkan disiapkan sebagai paket mandiri (backend/kelayakan/) beserta garis dasar pengukuran laptop, dan akan dieksekusi setelah hosting dibeli serta sebelum deployment (Tahap 11). Tahap 6–10 dikembangkan dan diuji secara lokal.
+
+
 - Tahap awal: **berjalan lokal**.
 - Target: hosting bersama milik Fathin dengan akses SSH, Node.js, Python, Git Control, dan Cron Jobs. Docker dan Coolify kemungkinan **tidak tersedia** di hosting jenis ini, jadi jalur deployment utamanya:
   1. Frontend: hasil `npm run build` (folder `dist`) diunggah ke domain atau subdomain sebagai situs statis.
@@ -250,5 +254,5 @@ Lolos jika: pipeline CI hijau, build produksi berjalan, panduan deployment bisa 
 
 Agent mencatat jawaban atau usulannya di laporan tahap yang relevan, lalu Fathin memutuskan.
 - Pustaka UI mana yang paling cocok dengan Tailwind (agent mengusulkan di tahap 1).
-- Hasil uji kelayakan hosting: apakah backend FastAPI + OpenCV berjalan memadai di hosting bersama, dan apakah batas ukuran/piksel perlu diturunkan (diputuskan setelah Tahap 5).
+- Hasil uji kelayakan hosting (Pembaruan Keputusan 2026-11-05): Hosting bersama belum dibeli dan belum akan dibeli dalam waktu dekat (Keputusan Fathin). Kit kelayakan (backend/kelayakan/) dan garis dasar laptop telah siap; eksekusi pengujian di hosting nyata ditunda hingga Tahap 11 sebelum deployment. Tahap 6–10 fokus pada pengembangan dan pengujian lokal.
 - Batas ukuran dan piksel final setelah diuji di laptop nyata (tahap 10).

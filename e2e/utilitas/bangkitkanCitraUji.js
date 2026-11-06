@@ -198,6 +198,14 @@ export function bangkitkanSemuaAsetUji(targetDir = 'test-assets') {
   const pngImpuls = encodePng(100, 100, bufferImpuls);
   fs.writeFileSync(path.join(targetDir, 'impuls-100x100.png'), pngImpuls);
 
+  // 6. Citra uji tangga mini 4x2 piksel dengan nilai deterministik presisi (K3)
+  const buffer4x2 = Buffer.from([
+    10, 20, 30, 255, 50, 60, 70, 255, 100, 110, 120, 255, 200, 210, 220, 255,
+    15, 25, 35, 255, 55, 65, 75, 255, 105, 115, 125, 255, 205, 215, 225, 255,
+  ]);
+  const png4x2 = encodePng(4, 2, buffer4x2);
+  fs.writeFileSync(path.join(targetDir, 'tangga-4x2.png'), png4x2);
+
   console.log(
     'Seluruh aset uji citra deterministik berhasil dibangkitkan via Node.js!'
   );

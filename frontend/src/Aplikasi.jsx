@@ -13,6 +13,7 @@ import BilahAksiKanvas from './komponen/BilahAksiKanvas';
 import BilahAtas from './komponen/BilahAtas';
 import PanelOperasi from './komponen/PanelOperasi';
 import PanelParameter from './komponen/PanelParameter';
+import { useStatusServer } from './hook/useStatusServer';
 import {
   bersihkanParameter,
   dapatkanOperasiBerdasarkanId,
@@ -36,6 +37,11 @@ import { validasiBerkasCitra } from './utilitas/validasiBerkas';
  */
 export default function Aplikasi() {
   const { t } = useTranslation();
+  const statusServerHook = useStatusServer();
+
+  if (typeof window !== 'undefined') {
+    window.__statusServerHook = statusServerHook;
+  }
 
   // Reducer Pipeline & Riwayat Perubahan (Tahap 3)
   const [statePipeline, dispatchPipeline] = useReducer(
@@ -453,7 +459,7 @@ export default function Aplikasi() {
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-latar-aplikasi text-teks-utama">
       {/* 1. Bilah Navigasi Atas */}
-      <BilahAtas />
+      <BilahAtas statusServerHook={statusServerHook} />
 
       {/* 2. Layout Editor Tiga Area (Kiri, Tengah, Kanan) */}
       <div className="flex-1 flex overflow-hidden min-h-0">
@@ -463,6 +469,7 @@ export default function Aplikasi() {
           saatTambahOperasi={saatTambahOperasi}
           saatMuatPreset={saatMuatPreset}
           jumlahLangkah={statePipeline.langkah.length}
+          apakahServerTersedia={statusServerHook.apakahTersedia}
         />
 
         {/* Area Tengah: Kanvas / Keadaan Kosong Unggah */}

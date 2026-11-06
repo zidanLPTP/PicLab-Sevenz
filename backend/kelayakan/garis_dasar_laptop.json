@@ -1,0 +1,61 @@
+{
+  "kategori": "GARIS_DASAR_LAPTOP_BUKAN_HASIL_HOSTING",
+  "penjelasan": "Garis dasar performa laptop pengembang terukur via psutil (RSS nyata) dan tracemalloc (Heap).",
+  "tanggal": "2026-11-06",
+  "lingkungan": {
+    "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+    "platform": "win32",
+    "cpu_count": 16,
+    "total_ram_gb": 15.71
+  },
+  "hasil": [
+    {
+      "resolusi": "1 MP",
+      "dimensi": "1000x1000",
+      "total_piksel": 1000000,
+      "ulangan": 5,
+      "median_total_ms": 44.85,
+      "median_gaussian_ms": 27.62,
+      "median_encode_ms": 9.53,
+      "puncak_rss_mb": 40.94,
+      "median_heap_mb": 7.63,
+      "ukuran_png_kb": 10.5
+    },
+    {
+      "resolusi": "4 MP",
+      "dimensi": "2000x2000",
+      "total_piksel": 4000000,
+      "ulangan": 5,
+      "median_total_ms": 176.94,
+      "median_gaussian_ms": 118.46,
+      "median_encode_ms": 33.17,
+      "puncak_rss_mb": 64.28,
+      "median_heap_mb": 30.52,
+      "ukuran_png_kb": 28.0
+    },
+    {
+      "resolusi": "8 MP",
+      "dimensi": "3264x2448",
+      "total_piksel": 7990272,
+      "ulangan": 5,
+      "median_total_ms": 355.64,
+      "median_gaussian_ms": 232.65,
+      "median_encode_ms": 62.68,
+      "puncak_rss_mb": 94.86,
+      "median_heap_mb": 60.97,
+      "ukuran_png_kb": 48.5
+    },
+    {
+      "resolusi": "16 MP (Batas Maks)",
+      "dimensi": "4000x4000",
+      "total_piksel": 16000000,
+      "ulangan": 5,
+      "median_total_ms": 697.6,
+      "median_gaussian_ms": 469.39,
+      "median_encode_ms": 116.46,
+      "puncak_rss_mb": 155.5,
+      "median_heap_mb": 122.08,
+      "ukuran_png_kb": 81.6
+    }
+  ]
+}

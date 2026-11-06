@@ -134,6 +134,13 @@ if (
 ) {
   const modulFixture = import.meta.glob('./uji_fixture/*.js', { eager: true });
   for (const path in modulFixture) {
+    // Operasi server uji hanya dimuat jika VITE_MODE_SERVER_UJI diaktifkan secara eksplisit
+    if (
+      path.toLowerCase().includes('server') &&
+      import.meta.env.VITE_MODE_SERVER_UJI !== 'true'
+    ) {
+      continue;
+    }
     const modul = modulFixture[path];
     const definisi = modul.default || Object.values(modul)[0];
     if (
@@ -148,10 +155,14 @@ if (
 
 /**
  * Mendapatkan seluruh daftar operasi yang terdaftar.
+ * Memastikan setiap operasi memiliki atribut lokasi ('klien' | 'server').
  * @returns {Array<object>}
  */
 export function dapatkanSemuaOperasi() {
-  return [...REGISTRI_OPERASI];
+  return REGISTRI_OPERASI.map((op) => ({
+    ...op,
+    lokasi: op.lokasi || 'klien',
+  }));
 }
 
 /**
