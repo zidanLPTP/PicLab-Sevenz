@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { spawn } from 'child_process';
+import { execSync, spawn } from 'child_process';
+import fs from 'fs';
 import http from 'http';
+import path from 'path';
 
 function cekPortAktif(port = 4173) {
   return new Promise((resolve) => {
@@ -19,11 +21,18 @@ test.describe('K7 b: Bukti Nol Permintaan ke Server pada Build Produksi (Mode Lo
   let prosesPreview = null;
 
   test.beforeAll(async () => {
+    // Pastikan build produksi frontend/dist sudah ada sebelum menjalankan preview
+    const jalurDist = path.resolve('frontend/dist');
+    if (!fs.existsSync(jalurDist)) {
+      execSync('npm run build', { cwd: 'frontend', stdio: 'ignore' });
+    }
+
     // Jalankan vite preview pada folder dist produksi di port 4173 tanpa VITE_ALAMAT_API
     prosesPreview = spawn('npx', ['vite', 'preview', '--port', '4173', '--strictPort'], {
       cwd: 'frontend',
       shell: true,
       stdio: 'ignore',
+      detached: process.platform !== 'win32',
       env: {
         ...process.env,
         VITE_ALAMAT_API: '', // K7 a: Tanpa alamat API (Mode Lokal)
@@ -43,7 +52,11 @@ test.describe('K7 b: Bukti Nol Permintaan ke Server pada Build Produksi (Mode Lo
         if (process.platform === 'win32') {
           spawn('taskkill', ['/pid', String(prosesPreview.pid), '/f', '/t']);
         } else {
-          process.kill(prosesPreview.pid, 'SIGKILL');
+          try {
+            process.kill(-prosesPreview.pid, 'SIGKILL');
+          } catch {
+            process.kill(prosesPreview.pid, 'SIGKILL');
+          }
         }
       } catch {
         // Abaikan jika sudah mati

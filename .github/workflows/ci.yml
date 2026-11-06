@@ -101,7 +101,7 @@ jobs:
       - name: Pasang dependensi root dan frontend
         run: |
           npm ci
-          cd frontend && npm ci && cd ..
+          cd frontend && npm ci && npm run build && cd ..
 
       - name: Pasang peramban Playwright Chromium
         run: npx playwright install --with-deps chromium

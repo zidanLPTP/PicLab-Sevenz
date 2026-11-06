@@ -37,15 +37,18 @@ async function mulaiBackend() {
   const pythonBin =
     process.platform === 'win32'
       ? path.resolve('backend/.venv/Scripts/python.exe')
-      : 'python3';
+      : process.env.PYTHON || 'python3';
 
   prosesBackend = spawn(pythonBin, ['backend/main.py'], {
     stdio: 'ignore',
+    detached: process.platform !== 'win32',
     env: {
       ...process.env,
       PORT_BACKEND: '8000',
       HOST_BACKEND: '127.0.0.1',
       PERCAYAI_PROXY: 'false',
+      RELOAD: 'false',
+      MODE_PRODUKSI: 'true',
     },
   });
 
@@ -58,7 +61,11 @@ function matikanBackend() {
       if (process.platform === 'win32') {
         spawn('taskkill', ['/pid', String(prosesBackend.pid), '/f', '/t']);
       } else {
-        process.kill(prosesBackend.pid, 'SIGKILL');
+        try {
+          process.kill(-prosesBackend.pid, 'SIGKILL');
+        } catch {
+          process.kill(prosesBackend.pid, 'SIGKILL');
+        }
       }
     } catch {
       // Abaikan jika proses sudah berhenti
