@@ -44,6 +44,7 @@ jobs:
     name: Backend Python ${{ matrix.python-version }} (Lint, Uji, Audit)
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.11', '3.13']
     defaults:
@@ -72,7 +73,7 @@ jobs:
         run: pytest -v
 
       - name: Jalankan audit keamanan dependensi (pip-audit)
-        run: pip-audit
+        run: pip-audit -r requirements-dev.txt
 
   e2e:
     name: Pengujian E2E (Playwright)
