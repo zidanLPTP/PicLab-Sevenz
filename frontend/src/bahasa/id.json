@@ -218,7 +218,7 @@
     },
     "tepiCanny": {
       "nama": "Deteksi Tepi Canny",
-      "deskripsi": "Deteksi tepi multi-tahap dengan penekanan non-maksimum dan histeresis adaptif (Server OpenCV)"
+      "deskripsi": "Deteksi tepi multi-tahap dengan penekanan non-maksimum dan histeresis ganda (Server OpenCV)"
     },
     "kontur": {
       "nama": "Deteksi & Gambar Kontur",
@@ -580,6 +580,7 @@
     "BERKAS_RUSAK": "Berkas citra rusak atau tidak dapat diuraikan.",
     "DIMENSI_TERLALU_BESAR": "Dimensi sisi citra melebihi batas maksimum 4096 piksel.",
     "PIKSEL_TERLALU_BANYAK": "Total piksel citra melebihi batas aman pemrosesan (16 juta piksel).",
+    "PIKSEL_TERLALU_BANYAK_UNTUK_OPERASI": "Total piksel citra melebihi batas aman komputasi untuk operasi ini (maks 4 MP untuk NLM). Gunakan operasi lain atau perkecil citra.",
     "TERLALU_BANYAK_PERMINTAAN": "Terlalu banyak permintaan dalam waktu singkat. Silakan coba sesaat lagi.",
     "PARAMETER_TIDAK_VALID": "Parameter yang diberikan tidak valid atau di luar rentang yang diizinkan.",
     "SERVER_SIBUK": "Server sedang memproses beban maksimal permintaan. Silakan coba sesaat lagi.",

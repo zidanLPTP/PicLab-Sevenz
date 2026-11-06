@@ -89,7 +89,7 @@ export const operasiKontur = {
       nilaiAwal: '00ff00',
     },
   ],
-  async terapkan(citra, parameter = {}) {
+  async terapkan(citra, parameter = {}, konteksSkala = { rasio: 1.0 }) {
     const blob = await citraKeBlobPng(citra);
     const kodeWarna = parameter.warna_garis || '00ff00';
     const warnaTerformat = String(kodeWarna).startsWith('#')
@@ -99,6 +99,7 @@ export const operasiKontur = {
     const parameterKirim = {
       ...parameter,
       warna_garis: warnaTerformat,
+      rasio: konteksSkala?.rasio || 1.0,
     };
 
     const respons = await kirimGambarKeServer(
@@ -108,7 +109,9 @@ export const operasiKontur = {
       15000
     );
     if (!respons.sukses || !respons.blob) {
-      throw new Error(respons.pesan || 'Operasi deteksi kontur gagal.');
+      const galat = new Error(respons.pesan || 'Operasi deteksi kontur gagal.');
+      galat.kode = respons.kode || 'SERVER_TIDAK_TERSEDIA';
+      throw galat;
     }
     return await blobPngKeCitra(respons.blob);
   },

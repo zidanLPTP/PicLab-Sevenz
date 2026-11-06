@@ -94,6 +94,11 @@ self.onmessage = async function (e) {
       self.postMessage({
         idPermintaan,
         berhasil: false,
+        kode:
+          err.kode ||
+          (err.message && err.message.includes('server')
+            ? 'SERVER_TIDAK_TERSEDIA'
+            : null),
         pesanGalat: err.message || 'Galat eksekusi pipeline di Web Worker',
       });
     }

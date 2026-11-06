@@ -59,16 +59,24 @@ export const operasiMorfologi = {
       nilaiAwal: 1,
     },
   ],
-  async terapkan(citra, parameter = {}) {
+  async terapkan(citra, parameter = {}, konteksSkala = { rasio: 1.0 }) {
     const blob = await citraKeBlobPng(citra);
+    const paramKirim = {
+      ...parameter,
+      rasio: konteksSkala?.rasio || 1.0,
+    };
     const respons = await kirimGambarKeServer(
       '/api/v1/morfologi',
       blob,
-      parameter,
+      paramKirim,
       15000
     );
     if (!respons.sukses || !respons.blob) {
-      throw new Error(respons.pesan || 'Operasi morfologi citra gagal.');
+      const galat = new Error(
+        respons.pesan || 'Operasi morfologi citra gagal.'
+      );
+      galat.kode = respons.kode || 'SERVER_TIDAK_TERSEDIA';
+      throw galat;
     }
     return await blobPngKeCitra(respons.blob);
   },

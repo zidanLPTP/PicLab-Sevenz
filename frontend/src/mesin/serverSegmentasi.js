@@ -29,7 +29,7 @@ export const operasiSegmentasi = {
       kunciLabel: 'parameter.jumlahKlasterK',
       tipe: 'slider',
       min: 2,
-      max: 12,
+      max: 8,
       step: 1,
       nilaiAwal: 4,
     },
@@ -43,16 +43,24 @@ export const operasiSegmentasi = {
       nilaiAwal: 3,
     },
   ],
-  async terapkan(citra, parameter = {}) {
+  async terapkan(citra, parameter = {}, konteksSkala = { rasio: 1.0 }) {
     const blob = await citraKeBlobPng(citra);
+    const paramKirim = {
+      ...parameter,
+      rasio: konteksSkala?.rasio || 1.0,
+    };
     const respons = await kirimGambarKeServer(
       '/api/v1/segmentasi',
       blob,
-      parameter,
+      paramKirim,
       15000
     );
     if (!respons.sukses || !respons.blob) {
-      throw new Error(respons.pesan || 'Operasi segmentasi citra gagal.');
+      const galat = new Error(
+        respons.pesan || 'Operasi segmentasi citra gagal.'
+      );
+      galat.kode = respons.kode || 'SERVER_TIDAK_TERSEDIA';
+      throw galat;
     }
     return await blobPngKeCitra(respons.blob);
   },

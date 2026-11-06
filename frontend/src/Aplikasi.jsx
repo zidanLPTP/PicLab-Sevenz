@@ -7,6 +7,7 @@ import React, {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AlertTriangle } from 'lucide-react';
 import AreaKanvas from './komponen/AreaKanvas';
 import AreaUnggah from './komponen/AreaUnggah';
 import BilahAksiKanvas from './komponen/BilahAksiKanvas';
@@ -108,6 +109,7 @@ export default function Aplikasi() {
         const tMulaiRenderReact = performance.now();
         hasil.__tInput = tInput;
         setCitraHasilPreview(hasil);
+        setKodeGalat(null);
 
         if (typeof window !== 'undefined' && window.__catatanProfil) {
           window.__catatanProfil.push({
@@ -128,6 +130,12 @@ export default function Aplikasi() {
         if (import.meta.env.DEV) {
           console.error('Galat eksekusi pipeline preview:', err);
         }
+        const kode =
+          err.kode ||
+          (err.message && err.message.includes('server')
+            ? 'SERVER_TIDAK_TERSEDIA'
+            : 'JARINGAN_GAGAL');
+        setKodeGalat(kode);
       }
     },
     [citraPreview, citraAsli]
@@ -424,13 +432,16 @@ export default function Aplikasi() {
 
       // Eksekusi seluruh langkah pipeline pada resolusi penuh (zero caching untuk hemat memori)
       if (statePipeline.langkah.length > 0) {
-        const { hasil } = await jalankanPipeline(
+        const responsPenuh = await jalankanPipeline(
           statePipeline.langkah,
           citraAsli,
           { rasio: 1.0 },
           false // Zero cache intermediate untuk resolusi penuh
         );
-        citraSiapUnduh = hasil;
+        if (!responsPenuh || !responsPenuh.hasil) {
+          throw new Error('Gagal menghasilkan citra resolusi penuh.');
+        }
+        citraSiapUnduh = responsPenuh.hasil;
       }
 
       const blobHasil = await citraKeBlob(citraSiapUnduh, format);
@@ -459,6 +470,14 @@ export default function Aplikasi() {
       if (import.meta.env.DEV) {
         console.error('Galat saat mengunduh citra:', err);
       }
+      const kode =
+        err.kode ||
+        (err.message && err.message.includes('4 MP')
+          ? 'PIKSEL_TERLALU_BANYAK_UNTUK_OPERASI'
+          : err.message && err.message.includes('server')
+            ? 'SERVER_TIDAK_TERSEDIA'
+            : 'GALAT_INTERNAL');
+      setKodeGalat(kode);
     } finally {
       setSedangMemprosesPenuh(false);
     }
@@ -507,6 +526,33 @@ export default function Aplikasi() {
         <div className="flex-1 flex flex-col overflow-hidden min-w-0 bg-latar-kanvas">
           {gambarSrc && metadata ? (
             <>
+              {kodeGalat && (
+                <div
+                  role="alert"
+                  className="mx-4 mt-2 p-3 bg-latar-galat border border-garis-galat rounded-lg text-teks-galat flex items-center justify-between shadow-sm animate-fade-in shrink-0 z-10"
+                >
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle
+                      size={18}
+                      className="shrink-0 text-status-galat"
+                    />
+                    <span className="text-xs font-semibold">
+                      {t(`galatServer.${kodeGalat}`, {
+                        defaultValue: t(`galat.${kodeGalat}`, {
+                          defaultValue: kodeGalat,
+                        }),
+                      })}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setKodeGalat(null)}
+                    className="text-xs underline hover:text-teks-utama cursor-pointer ml-3 shrink-0"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              )}
               <AreaKanvas
                 gambarSrc={gambarSrc}
                 citraSebelum={citraPreview}

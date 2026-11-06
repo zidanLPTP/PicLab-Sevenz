@@ -126,6 +126,7 @@ function dapatkanPekerja() {
         const {
           idPermintaan,
           berhasil,
+          kode,
           hasil,
           pesanGalat,
           durasi,
@@ -190,9 +191,11 @@ function dapatkanPekerja() {
                 detailWaktu,
               });
             } else {
-              tugasSelesai.reject(
-                new Error(pesanGalat || 'Komputasi worker gagal')
-              );
+              const galat = new Error(pesanGalat || 'Komputasi worker gagal');
+              if (kode) {
+                galat.kode = kode;
+              }
+              tugasSelesai.reject(galat);
             }
           }
         }

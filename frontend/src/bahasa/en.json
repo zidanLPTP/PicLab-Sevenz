@@ -580,6 +580,7 @@
     "BERKAS_RUSAK": "Image file is corrupted or unreadable.",
     "DIMENSI_TERLALU_BESAR": "Image side dimension exceeds the 4096 px limit.",
     "PIKSEL_TERLALU_BANYAK": "Total image pixels exceed the safe processing limit (16 million pixels).",
+    "PIKSEL_TERLALU_BANYAK_UNTUK_OPERASI": "Total image pixels exceed safe computational limit for this operation (max 4 MP for NLM). Use another operation or resize the image.",
     "TERLALU_BANYAK_PERMINTAAN": "Too many requests. Please wait a moment.",
     "PARAMETER_TIDAK_VALID": "Provided parameters are invalid or out of allowed range.",
     "SERVER_SIBUK": "Server is busy with maximum concurrent load. Please try again in a moment.",

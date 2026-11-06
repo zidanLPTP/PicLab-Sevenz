@@ -119,4 +119,72 @@ describe('Operasi Server Tahap 6 (Canny, Kontur, Morfologi, Segmentasi, Noise, F
     expect(hasil2.indeksMulaiKomputasi).toBe(2);
     expect(hasil2.langkahDieksekusi).toBe(1);
   });
+
+  it('M4 b: cache prefix pipeline dengan urutan acak ber-seed menghasilkan piksel identik dengan eksekusi tanpa cache', async () => {
+    // PRNG Linear Congruential Generator deterministik ber-seed 42
+    let state = 42;
+    const acak = () => {
+      state = (state * 1664525 + 1013904223) % 4294967296;
+      return state / 4294967296;
+    };
+
+    // Buat citra 8x8 deterministik
+    const piksel = new Uint8ClampedArray(8 * 8 * 4);
+    for (let i = 0; i < piksel.length; i += 4) {
+      piksel[i] = Math.floor(acak() * 256);
+      piksel[i + 1] = Math.floor(acak() * 256);
+      piksel[i + 2] = Math.floor(acak() * 256);
+      piksel[i + 3] = 255;
+    }
+    const citraAwal = { width: 8, height: 8, data: piksel };
+
+    const daftarAksi = [
+      { idOperasi: 'dasar_kecerahan', parameter: { kecerahan: 15 } },
+      { idOperasi: 'dasar_kontras', parameter: { kontras: 20 } },
+      { idOperasi: 'dasar_negatif', parameter: {} },
+      { idOperasi: 'dasar_grayscale', parameter: { metode: 'luminans' } },
+      { idOperasi: 'dasar_kecerahan', parameter: { kecerahan: -10 } },
+    ];
+
+    const langkahPipeline = daftarAksi.map((aksi) => ({
+      idOperasi: aksi.idOperasi,
+      aktif: true,
+      parameter: aksi.parameter,
+    }));
+
+    // Eksekusi penuh tanpa cache
+    const hasilTanpaCache = await eksekusiPipelineAsinkron(
+      langkahPipeline,
+      citraAwal,
+      { rasio: 1.0 },
+      []
+    );
+
+    // Eksekusi bertahap dengan akumulasi cache prefix (simulasi pengguna menambah langkah satu per satu)
+    let cacheBertahap = [];
+    let hasilBertahap = null;
+    for (let panjang = 1; panjang <= langkahPipeline.length; panjang++) {
+      const subLangkah = langkahPipeline.slice(0, panjang);
+      hasilBertahap = await eksekusiPipelineAsinkron(
+        subLangkah,
+        citraAwal,
+        { rasio: 1.0 },
+        cacheBertahap
+      );
+      cacheBertahap = hasilBertahap.cacheBaru;
+    }
+
+    // Bandingkan piksel hasil: harus 100% identik
+    expect(hasilBertahap.hasil.width).toBe(hasilTanpaCache.hasil.width);
+    expect(hasilBertahap.hasil.height).toBe(hasilTanpaCache.hasil.height);
+    for (let i = 0; i < hasilTanpaCache.hasil.data.length; i++) {
+      expect(hasilBertahap.hasil.data[i]).toBe(hasilTanpaCache.hasil.data[i]);
+    }
+  });
+
+  it('M4 c: konversiCitraBlob memverifikasi konstanta BATAS_MUTLAK_MAKS_BYTE adalah 10 MB', async () => {
+    const { BATAS_MUTLAK_MAKS_BYTE } =
+      await import('../utilitas/konversiCitraBlob');
+    expect(BATAS_MUTLAK_MAKS_BYTE).toBe(10 * 1024 * 1024);
+  });
 });

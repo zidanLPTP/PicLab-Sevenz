@@ -199,6 +199,7 @@ export default function BilahAtas({ statusServerHook = null }) {
             />
             <button
               type="button"
+              data-testid="tombol-bahasa-id"
               onClick={() => ubahBahasa('id')}
               className={`px-2 py-1 rounded font-medium transition-all cursor-pointer ${
                 bahasaSaatIni === 'id'
@@ -211,6 +212,7 @@ export default function BilahAtas({ statusServerHook = null }) {
             </button>
             <button
               type="button"
+              data-testid="tombol-ganti-bahasa"
               onClick={() => ubahBahasa('en')}
               className={`px-2 py-1 rounded font-medium transition-all cursor-pointer ${
                 bahasaSaatIni === 'en'
