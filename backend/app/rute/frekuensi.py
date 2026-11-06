@@ -38,7 +38,7 @@ async def endpoint_frekuensi_fft(
         raise GalatAplikasi(
             kode=KodeGalat.PARAMETER_TIDAK_VALID,
             pesan=f"Parameter tidak valid: {str(exc)}",
-            status_code=400,
+            status_code=422,
         )
 
     return await eksekusi_operasi_citra(

@@ -18,6 +18,7 @@ class KodeGalat:
     BERKAS_RUSAK = "BERKAS_RUSAK"
     DIMENSI_TERLALU_BESAR = "DIMENSI_TERLALU_BESAR"
     PIKSEL_TERLALU_BANYAK = "PIKSEL_TERLALU_BANYAK"
+    PIKSEL_TERLALU_BANYAK_UNTUK_OPERASI = "PIKSEL_TERLALU_BANYAK_UNTUK_OPERASI"
     TERLALU_BANYAK_PERMINTAAN = "TERLALU_BANYAK_PERMINTAAN"
     PARAMETER_TIDAK_VALID = "PARAMETER_TIDAK_VALID"
     SERVER_SIBUK = "SERVER_SIBUK"
@@ -34,6 +35,7 @@ PESAN_GALAT_BAKU = {
     KodeGalat.BERKAS_RUSAK: "Berkas citra rusak atau tidak dapat didekode.",
     KodeGalat.DIMENSI_TERLALU_BESAR: "Dimensi sisi citra melebihi batas maksimum yang diizinkan (4096 piksel).",
     KodeGalat.PIKSEL_TERLALU_BANYAK: "Total piksel citra melebihi batas maksimum aman pemrosesan (16 juta piksel).",
+    KodeGalat.PIKSEL_TERLALU_BANYAK_UNTUK_OPERASI: "Total piksel citra melebihi batas maksimum aman untuk operasi ini. Harap perkecil dimensi citra atau gunakan operasi lain.",
     KodeGalat.TERLALU_BANYAK_PERMINTAAN: "Terlalu banyak permintaan dalam waktu singkat. Silakan coba sesaat lagi.",
     KodeGalat.PARAMETER_TIDAK_VALID: "Parameter yang diberikan tidak valid atau berada di luar rentang yang diizinkan.",
     KodeGalat.SERVER_SIBUK: "Server sedang memproses beban maksimal. Silakan coba kembali sesaat lagi.",

@@ -13,7 +13,7 @@ class KonfigurasiAplikasi:
     """Konfigurasi batas dan pengaturan aplikasi backend PicLab Sevenz."""
 
     NAMA_PROYEK: str = "PicLab Sevenz API"
-    VERSI: str = "0.5.0"
+    VERSI: str = "0.7.0"
     DESKRIPSI: str = "Backend API untuk aplikasi pengolahan citra digital PicLab Sevenz"
 
     HOST: str = os.getenv("HOST_BACKEND", "127.0.0.1")
@@ -26,7 +26,12 @@ class KonfigurasiAplikasi:
     DIMENSI_MAKS_SISI: int = int(os.getenv("DIMENSI_MAKS_SISI", "4096"))  # 4096 px
     TOTAL_PIKSEL_MAKS: int = int(
         os.getenv("TOTAL_PIKSEL_MAKS", "16000000")
-    )  # 16 Juta piksel
+    )  # 16 Juta piksel (Batas global)
+
+    # Batasan piksel khusus per operasi berat (spec.md bagian 13 & target < 5 detik)
+    BATAS_PIKSEL_NLM: int = int(
+        os.getenv("BATAS_PIKSEL_NLM", "4000000")
+    )  # 4 Juta piksel untuk Non-Local Means
 
     # Format citra yang didukung
     TIPE_MIME_DIIZINKAN: tuple[str, ...] = (

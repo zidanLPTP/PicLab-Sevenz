@@ -42,7 +42,7 @@ async def endpoint_reduksi_noise(
         raise GalatAplikasi(
             kode=KodeGalat.PARAMETER_TIDAK_VALID,
             pesan=f"Parameter tidak valid: {str(exc)}",
-            status_code=400,
+            status_code=422,
         )
 
     if skema.metode == "nlm":
@@ -55,14 +55,19 @@ async def endpoint_reduksi_noise(
                 "kekuatan_warna": skema.kekuatan_warna,
                 "ukuran_templat": skema.ukuran_templat,
                 "ukuran_pencarian": skema.ukuran_pencarian,
+                "rasio": skema.rasio,
             },
+            batas_waktu_detik=10.0,
         )
     elif skema.metode == "median":
         return await eksekusi_operasi_citra(
             berkas_gambar=gambar,
             nama_operasi="reduksi_noise_median",
             fungsi_komputasi=reduksi_noise_median,
-            argumen_fungsi={"ukuran_kernel": skema.ukuran_kernel},
+            argumen_fungsi={
+                "ukuran_kernel": skema.ukuran_kernel,
+                "rasio": skema.rasio,
+            },
         )
 
     return await eksekusi_operasi_citra(
@@ -73,5 +78,6 @@ async def endpoint_reduksi_noise(
             "diameter": skema.diameter,
             "sigma_warna": skema.sigma_warna,
             "sigma_ruang": skema.sigma_ruang,
+            "rasio": skema.rasio,
         },
     )

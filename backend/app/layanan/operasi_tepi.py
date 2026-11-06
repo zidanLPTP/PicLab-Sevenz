@@ -20,7 +20,6 @@ def gabungkan_alfa(rgb_np: np.ndarray, alfa_np: np.ndarray | None) -> np.ndarray
     if alfa_np is None:
         return rgb_np
     if rgb_np.ndim == 2:
-        # Jika citra keluaran adalah grayscale 2D, perluas ke 3 kanal sebelum menambahkan alfa
         rgb_np = cv2.cvtColor(rgb_np, cv2.COLOR_GRAY2RGB)
     return np.dstack((rgb_np, alfa_np))
 
@@ -33,21 +32,26 @@ def deteksi_tepi_canny(
     l2_gradient: bool = False,
     blur_awal: bool = True,
     inversi: bool = False,
+    rasio: float = 1.0,
 ) -> np.ndarray:
     """Mendeteksi tepi menggunakan algoritma Canny dengan preservasi kanal alfa.
 
     Argumen:
         gambar_np: Array NumPy citra RGB atau RGBA (uint8).
-        ambang_bawah: Nilai ambang histeresis bawah.
-        ambang_atas: Nilai ambang histeresis atas.
+        ambang_bawah: Nilai ambang histeresis ganda bawah.
+        ambang_atas: Nilai ambang histeresis ganda atas.
         ukuran_apertur: Ukuran apertur Sobel (3, 5, atau 7).
         l2_gradient: Apakah menggunakan norma L2 untuk gradien.
         blur_awal: Apakah menerapkan Gaussian blur awal 5x5 untuk reduksi noise.
         inversi: Jika True, tepi berwarna hitam dan latar putih.
+        rasio: Rasio skala pratinjau.
 
     Mengembalikan:
         Array NumPy citra uint8 dengan tepi Canny terdeteksi.
     """
+    if float(ambang_bawah) >= float(ambang_atas):
+        raise ValueError("Nilai ambang bawah Canny harus lebih kecil dari ambang atas.")
+
     if gambar_np.dtype != np.uint8:
         gambar_np = np.clip(gambar_np, 0, 255).astype(np.uint8)
 

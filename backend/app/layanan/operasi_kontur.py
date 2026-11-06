@@ -31,6 +31,7 @@ def cari_dan_gambar_kontur(
     ketebalan_garis: int = 2,
     tampilan: str = "overlay",
     warna_garis: str = "#00ff00",
+    rasio: float = 1.0,
 ) -> Tuple[np.ndarray, int]:
     """Mencari kontur objek dan menggambarnya pada kanvas keluaran.
 
@@ -43,6 +44,7 @@ def cari_dan_gambar_kontur(
         ketebalan_garis: Ketebalan garis kontur (piksel).
         tampilan: 'overlay', 'latar_hitam', atau 'latar_putih'.
         warna_garis: Kode warna heksadesimal #RRGGBB.
+        rasio: Rasio skala pratinjau.
 
     Mengembalikan:
         Tuple (gambar_hasil_np, jumlah_kontur_terpilih).
@@ -73,9 +75,14 @@ def cari_dan_gambar_kontur(
 
     kontur_semua, _ = cv2.findContours(biner, mode_cv, cv2.CHAIN_APPROX_SIMPLE)
 
+    # Skalakan luas minimum dan ketebalan garis terhadap rasio pratinjau jika rasio < 1.0
+    luas_min_efektif = max(0.0, float(luas_minimum) * (float(rasio) ** 2))
+    tebal_raw = int(round(int(ketebalan_garis) * float(rasio)))
+    tebal_efektif = max(1, tebal_raw)
+
     # Filter kontur berdasarkan luas minimum
     kontur_valid: List[np.ndarray] = [
-        k for k in kontur_semua if cv2.contourArea(k) >= float(luas_minimum)
+        k for k in kontur_semua if cv2.contourArea(k) >= luas_min_efektif
     ]
 
     tinggi, lebar = abu.shape[:2]
@@ -95,7 +102,7 @@ def cari_dan_gambar_kontur(
 
     # Gambar kontur
     if kontur_valid:
-        cv2.drawContours(kanvas, kontur_valid, -1, warna_rgb, int(ketebalan_garis))
+        cv2.drawContours(kanvas, kontur_valid, -1, warna_rgb, tebal_efektif)
 
     hasil = gabungkan_alfa(kanvas, alfa)
     return hasil, len(kontur_valid)

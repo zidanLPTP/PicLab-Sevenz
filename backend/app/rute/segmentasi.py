@@ -35,7 +35,7 @@ async def endpoint_segmentasi(
         raise GalatAplikasi(
             kode=KodeGalat.PARAMETER_TIDAK_VALID,
             pesan=f"Parameter tidak valid: {str(exc)}",
-            status_code=400,
+            status_code=422,
         )
 
     if skema.metode == "multi_otsu":
@@ -43,7 +43,7 @@ async def endpoint_segmentasi(
             berkas_gambar=gambar,
             nama_operasi="segmentasi_multi_otsu",
             fungsi_komputasi=segmentasi_multi_otsu,
-            argumen_fungsi={"kelas": skema.kelas},
+            argumen_fungsi={"kelas": skema.kelas, "rasio": skema.rasio},
         )
 
     return await eksekusi_operasi_citra(
@@ -54,5 +54,6 @@ async def endpoint_segmentasi(
             "k": skema.k,
             "iterasi": skema.iterasi,
             "epsilon": skema.epsilon,
+            "rasio": skema.rasio,
         },
     )

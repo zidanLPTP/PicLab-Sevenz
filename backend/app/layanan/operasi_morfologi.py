@@ -22,12 +22,22 @@ PETA_BENTUK = {
 }
 
 
+def dapatkan_elemen_struktur(bentuk: str, ukuran: int) -> np.ndarray:
+    """Membuat elemen penstruktur morfologi OpenCV sesuai bentuk dan ukuran."""
+    bentuk_cv = PETA_BENTUK.get(bentuk.lower(), cv2.MORPH_RECT)
+    ukuran = max(1, int(ukuran))
+    if ukuran % 2 == 0:
+        ukuran += 1
+    return cv2.getStructuringElement(bentuk_cv, (ukuran, ukuran))
+
+
 def terapkan_morfologi(
     gambar_np: np.ndarray,
     operasi: str = "erosi",
     bentuk_elemen: str = "persegi",
     ukuran: int = 3,
     iterasi: int = 1,
+    rasio: float = 1.0,
 ) -> np.ndarray:
     """Menerapkan operasi morfologi citra matematika dengan preservasi kanal alfa.
 
@@ -37,6 +47,7 @@ def terapkan_morfologi(
         bentuk_elemen: 'persegi', 'silang', atau 'elips'.
         ukuran: Ukuran kernel elemen penstruktur (misal 3, 5, 7).
         iterasi: Frekuensi penerapan operasi.
+        rasio: Rasio skala pratinjau.
 
     Mengembalikan:
         Array NumPy citra uint8 hasil transformasi morfologi.
@@ -49,9 +60,8 @@ def terapkan_morfologi(
     op_cv = PETA_OPERASI.get(operasi.lower(), cv2.MORPH_ERODE)
     bentuk_cv = PETA_BENTUK.get(bentuk_elemen.lower(), cv2.MORPH_RECT)
 
-    ukuran_kernel = max(1, int(ukuran))
-    if ukuran_kernel % 2 == 0:
-        ukuran_kernel += 1
+    ukuran_raw = int(round(int(ukuran) * float(rasio)))
+    ukuran_kernel = max(1, ukuran_raw if ukuran_raw % 2 != 0 else ukuran_raw + 1)
 
     kernel = cv2.getStructuringElement(bentuk_cv, (ukuran_kernel, ukuran_kernel))
 

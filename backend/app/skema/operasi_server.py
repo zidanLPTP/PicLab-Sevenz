@@ -3,13 +3,14 @@
 import json
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class SkemaDasarOperasi(BaseModel):
     """Model dasar operasi server dengan larangan penambahan atribut asing (extra forbid)."""
 
     model_config = ConfigDict(extra="forbid")
+    rasio: float = Field(default=1.0, gt=0.0, le=1.0)
 
     @classmethod
     def dari_json_form(
@@ -45,6 +46,14 @@ class ParameterCanny(SkemaDasarOperasi):
             raise ValueError("Ukuran apertur harus bernilai 3, 5, atau 7.")
         return v
 
+    @model_validator(mode="after")
+    def validasi_rentang_ambang(self) -> "ParameterCanny":
+        if self.ambang_bawah >= self.ambang_atas:
+            raise ValueError(
+                "Nilai ambang bawah Canny harus lebih kecil dari ambang atas."
+            )
+        return self
+
 
 class ParameterKontur(SkemaDasarOperasi):
     """Parameter deteksi dan visualisasi kontur."""
@@ -76,7 +85,7 @@ class ParameterSegmentasi(SkemaDasarOperasi):
     """Parameter segmentasi K-Means atau Multi-Otsu."""
 
     metode: str = Field(default="kmeans", pattern="^(kmeans|multi_otsu)$")
-    k: int = Field(default=4, ge=2, le=16)
+    k: int = Field(default=4, ge=2, le=8)
     kelas: int = Field(default=3, ge=2, le=5)
     iterasi: int = Field(default=20, ge=1, le=100)
     epsilon: float = Field(default=0.2, ge=0.001, le=10.0)

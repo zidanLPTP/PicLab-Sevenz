@@ -1,4 +1,11 @@
-"""Modul layanan segmentasi citra (K-Means dan Multi-Otsu Thresholding)."""
+"""Modul layanan segmentasi citra (K-Means dan Multi-Otsu Thresholding).
+
+Dioptimalkan untuk lingkungan hosting terbatas sumber daya (spec.md bagian 13 & Tahap 6):
+- K-Means: klasterisasi pusat pada sampel acak deterministik (maks 500.000 piksel, seed tetap),
+  penetapan label seluruh piksel dalam chunk float32 tanpa alokasi memori berlebih.
+- Batasan k: 2 sampai 8 klaster.
+- Multi-Otsu: partisi histogram 1D cepat (2 sampai 5 kelas).
+"""
 
 from typing import Tuple
 
@@ -13,14 +20,16 @@ def segmentasi_kmeans(
     k: int = 4,
     iterasi: int = 20,
     epsilon: float = 0.2,
+    rasio: float = 1.0,
 ) -> Tuple[np.ndarray, int]:
-    """Segmentasi kuantisasi warna citra menggunakan algoritma K-Means OpenCV.
+    """Segmentasi kuantisasi warna citra menggunakan K-Means deterministik berkinerja tinggi.
 
     Argumen:
-        gambar_np: Citra masukan RGB atau RGBA.
-        k: Jumlah klaster warna (2 sampai 16).
+        gambar_np: Citra masukan RGB atau RGBA uint8.
+        k: Jumlah klaster warna (2 sampai 8).
         iterasi: Jumlah iterasi maksimum konvergensi.
         epsilon: Ambang batas selisih presisi pergeseran pusat klaster.
+        rasio: Rasio skala pratinjau.
 
     Mengembalikan:
         Tuple (gambar_hasil_np, jumlah_klaster).
@@ -33,28 +42,55 @@ def segmentasi_kmeans(
         rgb = cv2.cvtColor(rgb, cv2.COLOR_GRAY2RGB)
 
     tinggi, lebar = rgb.shape[:2]
-    piksel = rgb.reshape((-1, 3)).astype(np.float32)
+    total_piksel = tinggi * lebar
+    piksel_2d = rgb.reshape((-1, 3))
 
-    k_tervalidasi = max(2, min(16, int(k)))
+    k_tervalidasi = max(2, min(8, int(k)))
+
+    # Seed deterministik OpenCV RNG untuk memastikan keterulangan hasil (M3 b & M6)
+    cv2.setRNGSeed(42)
+
+    # Sub-sampling cerdas deterministik: maksimal 500.000 piksel untuk estimasi pusat klaster
+    BATAS_SAMPEL = 500_000
+    if total_piksel > BATAS_SAMPEL:
+        langkah_step = total_piksel // BATAS_SAMPEL
+        sampel_piksel = piksel_2d[::langkah_step].astype(np.float32)
+    else:
+        sampel_piksel = piksel_2d.astype(np.float32)
+
     kriteria = (
         cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,
         max(1, int(iterasi)),
         float(epsilon),
     )
 
-    _, label, pusat = cv2.kmeans(
-        data=piksel,
+    _, _, pusat = cv2.kmeans(
+        data=sampel_piksel,
         K=k_tervalidasi,
         bestLabels=None,
         criteria=kriteria,
-        attempts=10,
-        flags=cv2.KMEANS_RANDOM_CENTERS,
+        attempts=3,
+        flags=cv2.KMEANS_PP_CENTERS,
     )
 
-    pusat_uint8 = np.uint8(pusat)
-    tersegmentasi = pusat_uint8[label.flatten()]
-    hasil_rgb = tersegmentasi.reshape((tinggi, lebar, 3))
+    pusat_float = pusat.astype(np.float32)  # shape (k, 3)
+    pusat_uint8 = np.clip(pusat_float, 0, 255).astype(np.uint8)
 
+    # Tetapkan label ke SELURUH piksel dalam potongan (chunk) memori float32
+    UKURAN_CHUNK = 250_000
+    hasil_flat = np.empty_like(piksel_2d, dtype=np.uint8)
+
+    for i in range(0, total_piksel, UKURAN_CHUNK):
+        chunk = piksel_2d[i : i + UKURAN_CHUNK].astype(np.float32)
+        # Hitung selisih jarak Euclidean kuadrat ke tiap pusat (N_chunk, k)
+        # chunk[:, None, :] shape (N, 1, 3); pusat_float[None, :, :] shape (1, k, 3)
+        dist_kuadrat = np.sum(
+            (chunk[:, None, :] - pusat_float[None, :, :]) ** 2, axis=2
+        )
+        label_chunk = np.argmin(dist_kuadrat, axis=1)
+        hasil_flat[i : i + UKURAN_CHUNK] = pusat_uint8[label_chunk]
+
+    hasil_rgb = hasil_flat.reshape((tinggi, lebar, 3))
     hasil = gabungkan_alfa(hasil_rgb, alfa)
     return hasil, k_tervalidasi
 
@@ -74,7 +110,6 @@ def hitung_ambang_multi_otsu(abu: np.ndarray, kelas: int = 3) -> list[int]:
     if kelas_tervalidasi == 3:
         variansi_maks = -1.0
         ambang_terbaik = [85, 170]
-        # Penelusuran langkah 2 untuk efisiensi
         mu_t = np.sum(np.arange(256) * p)
 
         omega1 = 0.0
@@ -124,12 +159,14 @@ def hitung_ambang_multi_otsu(abu: np.ndarray, kelas: int = 3) -> list[int]:
 def segmentasi_multi_otsu(
     gambar_np: np.ndarray,
     kelas: int = 3,
+    rasio: float = 1.0,
 ) -> Tuple[np.ndarray, list[int]]:
     """Segmentasi citra bertingkat (Multi-Otsu) pada intensitas grayscale.
 
     Argumen:
         gambar_np: Citra masukan RGB atau RGBA.
         kelas: Jumlah kelas pemisahan (2 sampai 5).
+        rasio: Rasio skala pratinjau.
 
     Mengembalikan:
         Tuple (gambar_hasil_np, daftar_nilai_ambang).

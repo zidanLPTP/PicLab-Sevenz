@@ -1,145 +1,284 @@
 {
-  "label": "GARIS DASAR LAPTOP (BUKAN HASIL HOSTING)",
-  "keputusan_fathin": "Hosting belum dibeli dan belum akan dibeli dalam waktu dekat. Hasil di hosting ditunda.",
-  "tanggal_pengujian": "2026-11-06 10:36:51",
-  "lingkungan": {
-    "os": "win32",
-    "python": "3.13.5",
-    "cpu_count": 16,
-    "ram_total_gb": 15.71
-  },
-  "hasil": [
-    {
-      "resolusi": "1 MP",
-      "dimensi": "1000x1000",
+  "status_lingkungan": "GARIS DASAR LAPTOP (BUKAN HASIL HOSTING)",
+  "alasan_status": "Hosting belum dibeli sesuai keputusan Fathin, hasil hosting belum ada.",
+  "cv2_threads": 2,
+  "ulangan": 5,
+  "pemanasan": 2,
+  "resolusi": {
+    "1 MP": {
+      "lebar": 1000,
+      "tinggi": 1000,
       "total_piksel": 1000000,
-      "puncak_rss_mb": 41.82,
-      "puncak_heap_mb": 96.46,
-      "metrik_operasi": {
-        "canny": {
-          "median_ms": 5.45,
-          "p95_ms": 21.22
+      "operasi": {
+        "tepi_canny": {
+          "id_op": "tepi_canny",
+          "durasi_median_ms": 3.81,
+          "durasi_p95_ms": 3.91,
+          "puncak_rss_mb": 129.44,
+          "puncak_heap_mb": 72.13,
+          "nama": "Canny Edge Detection"
         },
         "kontur": {
-          "median_ms": 2.34,
-          "p95_ms": 4.44
+          "id_op": "kontur",
+          "durasi_median_ms": 29.66,
+          "durasi_p95_ms": 29.95,
+          "puncak_rss_mb": 129.64,
+          "puncak_heap_mb": 72.13,
+          "nama": "Deteksi Kontur"
         },
         "morfologi": {
-          "median_ms": 1.21,
-          "p95_ms": 1.87
+          "id_op": "morfologi",
+          "durasi_median_ms": 1.05,
+          "durasi_p95_ms": 1.37,
+          "puncak_rss_mb": 129.89,
+          "puncak_heap_mb": 72.13,
+          "nama": "Morfologi Dilasi"
         },
         "segmentasi": {
-          "median_ms": 2952.04,
-          "p95_ms": 4654.22
+          "id_op": "segmentasi",
+          "durasi_median_ms": 415.69,
+          "durasi_p95_ms": 515.58,
+          "puncak_rss_mb": 129.81,
+          "puncak_heap_mb": 72.13,
+          "nama": "Segmentasi K-Means (k=4)"
         },
         "noise": {
-          "median_ms": 135.39,
-          "p95_ms": 191.87
+          "id_op": "noise",
+          "durasi_median_ms": 43.63,
+          "durasi_p95_ms": 54.98,
+          "puncak_rss_mb": 129.73,
+          "puncak_heap_mb": 72.13,
+          "nama": "Reduksi Noise Bilateral"
         },
         "frekuensi": {
-          "median_ms": 623.49,
-          "p95_ms": 934.83
+          "id_op": "frekuensi",
+          "durasi_median_ms": 34.66,
+          "durasi_p95_ms": 39.17,
+          "puncak_rss_mb": 129.41,
+          "puncak_heap_mb": 72.14,
+          "nama": "Frekuensi FFT Butterworth"
         }
       }
     },
-    {
-      "resolusi": "4 MP",
-      "dimensi": "2000x2000",
+    "2 MP": {
+      "lebar": 1414,
+      "tinggi": 1414,
+      "total_piksel": 1999396,
+      "operasi": {
+        "tepi_canny": {
+          "id_op": "tepi_canny",
+          "durasi_median_ms": 7.8,
+          "durasi_p95_ms": 9.72,
+          "puncak_rss_mb": 201.21,
+          "puncak_heap_mb": 143.62,
+          "nama": "Canny Edge Detection"
+        },
+        "kontur": {
+          "id_op": "kontur",
+          "durasi_median_ms": 67.5,
+          "durasi_p95_ms": 72.91,
+          "puncak_rss_mb": 201.52,
+          "puncak_heap_mb": 143.62,
+          "nama": "Deteksi Kontur"
+        },
+        "morfologi": {
+          "id_op": "morfologi",
+          "durasi_median_ms": 1.25,
+          "durasi_p95_ms": 1.35,
+          "puncak_rss_mb": 201.37,
+          "puncak_heap_mb": 143.62,
+          "nama": "Morfologi Dilasi"
+        },
+        "segmentasi": {
+          "id_op": "segmentasi",
+          "durasi_median_ms": 643.76,
+          "durasi_p95_ms": 771.1,
+          "puncak_rss_mb": 201.21,
+          "puncak_heap_mb": 143.62,
+          "nama": "Segmentasi K-Means (k=4)"
+        },
+        "noise": {
+          "id_op": "noise",
+          "durasi_median_ms": 70.72,
+          "durasi_p95_ms": 71.22,
+          "puncak_rss_mb": 201.0,
+          "puncak_heap_mb": 143.62,
+          "nama": "Reduksi Noise Bilateral"
+        },
+        "frekuensi": {
+          "id_op": "frekuensi",
+          "durasi_median_ms": 93.75,
+          "durasi_p95_ms": 109.62,
+          "puncak_rss_mb": 201.32,
+          "puncak_heap_mb": 143.62,
+          "nama": "Frekuensi FFT Butterworth"
+        }
+      }
+    },
+    "4 MP": {
+      "lebar": 2000,
+      "tinggi": 2000,
       "total_piksel": 4000000,
-      "puncak_rss_mb": 50.85,
-      "puncak_heap_mb": 385.29,
-      "metrik_operasi": {
-        "canny": {
-          "median_ms": 31.98,
-          "p95_ms": 88.08
+      "operasi": {
+        "tepi_canny": {
+          "id_op": "tepi_canny",
+          "durasi_median_ms": 13.92,
+          "durasi_p95_ms": 15.02,
+          "puncak_rss_mb": 344.14,
+          "puncak_heap_mb": 286.71,
+          "nama": "Canny Edge Detection"
         },
         "kontur": {
-          "median_ms": 16.36,
-          "p95_ms": 44.26
+          "id_op": "kontur",
+          "durasi_median_ms": 138.98,
+          "durasi_p95_ms": 145.11,
+          "puncak_rss_mb": 344.3,
+          "puncak_heap_mb": 286.71,
+          "nama": "Deteksi Kontur"
         },
         "morfologi": {
-          "median_ms": 10.39,
-          "p95_ms": 28.82
+          "id_op": "morfologi",
+          "durasi_median_ms": 4.19,
+          "durasi_p95_ms": 5.17,
+          "puncak_rss_mb": 344.21,
+          "puncak_heap_mb": 286.71,
+          "nama": "Morfologi Dilasi"
         },
         "segmentasi": {
-          "median_ms": 17745.08,
-          "p95_ms": 18388.82
+          "id_op": "segmentasi",
+          "durasi_median_ms": 920.03,
+          "durasi_p95_ms": 929.66,
+          "puncak_rss_mb": 344.66,
+          "puncak_heap_mb": 286.71,
+          "nama": "Segmentasi K-Means (k=4)"
         },
         "noise": {
-          "median_ms": 597.48,
-          "p95_ms": 755.22
+          "id_op": "noise",
+          "durasi_median_ms": 143.08,
+          "durasi_p95_ms": 150.12,
+          "puncak_rss_mb": 344.19,
+          "puncak_heap_mb": 286.71,
+          "nama": "Reduksi Noise Bilateral"
         },
         "frekuensi": {
-          "median_ms": 3554.25,
-          "p95_ms": 3620.26
+          "id_op": "frekuensi",
+          "durasi_median_ms": 186.43,
+          "durasi_p95_ms": 216.31,
+          "puncak_rss_mb": 344.16,
+          "puncak_heap_mb": 286.71,
+          "nama": "Frekuensi FFT Butterworth"
         }
       }
     },
-    {
-      "resolusi": "8 MP",
-      "dimensi": "3264x2448",
-      "total_piksel": 7990272,
-      "puncak_rss_mb": 62.3,
-      "puncak_heap_mb": 769.64,
-      "metrik_operasi": {
-        "canny": {
-          "median_ms": 72.39,
-          "p95_ms": 78.92
+    "8 MP": {
+      "lebar": 2828,
+      "tinggi": 2828,
+      "total_piksel": 7997584,
+      "operasi": {
+        "tepi_canny": {
+          "id_op": "tepi_canny",
+          "durasi_median_ms": 28.88,
+          "durasi_p95_ms": 29.41,
+          "puncak_rss_mb": 630.35,
+          "puncak_heap_mb": 572.64,
+          "nama": "Canny Edge Detection"
         },
         "kontur": {
-          "median_ms": 32.93,
-          "p95_ms": 36.36
+          "id_op": "kontur",
+          "durasi_median_ms": 373.6,
+          "durasi_p95_ms": 529.29,
+          "puncak_rss_mb": 630.32,
+          "puncak_heap_mb": 572.64,
+          "nama": "Deteksi Kontur"
         },
         "morfologi": {
-          "median_ms": 16.48,
-          "p95_ms": 16.61
+          "id_op": "morfologi",
+          "durasi_median_ms": 9.91,
+          "durasi_p95_ms": 14.51,
+          "puncak_rss_mb": 630.23,
+          "puncak_heap_mb": 572.64,
+          "nama": "Morfologi Dilasi"
         },
         "segmentasi": {
-          "median_ms": 35669.55,
-          "p95_ms": 37178.06
+          "id_op": "segmentasi",
+          "durasi_median_ms": 1591.23,
+          "durasi_p95_ms": 1695.72,
+          "puncak_rss_mb": 630.4,
+          "puncak_heap_mb": 572.65,
+          "nama": "Segmentasi K-Means (k=4)"
         },
         "noise": {
-          "median_ms": 1358.65,
-          "p95_ms": 1380.85
+          "id_op": "noise",
+          "durasi_median_ms": 325.07,
+          "durasi_p95_ms": 363.13,
+          "puncak_rss_mb": 630.14,
+          "puncak_heap_mb": 572.64,
+          "nama": "Reduksi Noise Bilateral"
         },
         "frekuensi": {
-          "median_ms": 10449.1,
-          "p95_ms": 13705.35
+          "id_op": "frekuensi",
+          "durasi_median_ms": 354.71,
+          "durasi_p95_ms": 553.62,
+          "puncak_rss_mb": 630.3,
+          "puncak_heap_mb": 572.64,
+          "nama": "Frekuensi FFT Butterworth"
         }
       }
     },
-    {
-      "resolusi": "16 MP (Batas Maks)",
-      "dimensi": "4000x4000",
+    "16 MP": {
+      "lebar": 4000,
+      "tinggi": 4000,
       "total_piksel": 16000000,
-      "puncak_rss_mb": 85.45,
-      "puncak_heap_mb": 1541.15,
-      "metrik_operasi": {
-        "canny": {
-          "median_ms": 49.77,
-          "p95_ms": 51.78
+      "operasi": {
+        "tepi_canny": {
+          "id_op": "tepi_canny",
+          "durasi_median_ms": 67.59,
+          "durasi_p95_ms": 73.93,
+          "puncak_rss_mb": 1202.89,
+          "puncak_heap_mb": 1145.02,
+          "nama": "Canny Edge Detection"
         },
         "kontur": {
-          "median_ms": 24.79,
-          "p95_ms": 25.96
+          "id_op": "kontur",
+          "durasi_median_ms": 1182.99,
+          "durasi_p95_ms": 1288.63,
+          "puncak_rss_mb": 1202.5,
+          "puncak_heap_mb": 1145.02,
+          "nama": "Deteksi Kontur"
         },
         "morfologi": {
-          "median_ms": 16.09,
-          "p95_ms": 17.96
+          "id_op": "morfologi",
+          "durasi_median_ms": 18.15,
+          "durasi_p95_ms": 21.54,
+          "puncak_rss_mb": 1202.7,
+          "puncak_heap_mb": 1145.02,
+          "nama": "Morfologi Dilasi"
         },
         "segmentasi": {
-          "median_ms": 20066.48,
-          "p95_ms": 20317.28
+          "id_op": "segmentasi",
+          "durasi_median_ms": 2885.95,
+          "durasi_p95_ms": 2971.3,
+          "puncak_rss_mb": 1202.86,
+          "puncak_heap_mb": 1145.02,
+          "nama": "Segmentasi K-Means (k=4)"
         },
         "noise": {
-          "median_ms": 883.39,
-          "p95_ms": 901.23
+          "id_op": "noise",
+          "durasi_median_ms": 680.98,
+          "durasi_p95_ms": 729.92,
+          "puncak_rss_mb": 1202.24,
+          "puncak_heap_mb": 1145.02,
+          "nama": "Reduksi Noise Bilateral"
         },
         "frekuensi": {
-          "median_ms": 5855.12,
-          "p95_ms": 6076.22
+          "id_op": "frekuensi",
+          "durasi_median_ms": 778.02,
+          "durasi_p95_ms": 1199.67,
+          "puncak_rss_mb": 1202.48,
+          "puncak_heap_mb": 1145.02,
+          "nama": "Frekuensi FFT Butterworth"
         }
       }
     }
-  ]
+  }
 }
