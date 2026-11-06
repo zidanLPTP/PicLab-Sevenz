@@ -141,7 +141,12 @@ export function useStatusServer(intervalKustomMs = INTERVAL_NORMAL_MS) {
         tanganiPerubahanVisibilitas
       );
     };
-  }, [jadwalkanPemeriksaanBerikutnya, jalankanPemeriksaan, modeLokalAktif, perbaruiStatus]);
+  }, [
+    jadwalkanPemeriksaanBerikutnya,
+    jalankanPemeriksaan,
+    modeLokalAktif,
+    perbaruiStatus,
+  ]);
 
   const periksaManual = useCallback(async () => {
     if (modeLokalAktif) return;
@@ -149,7 +154,12 @@ export function useStatusServer(intervalKustomMs = INTERVAL_NORMAL_MS) {
     perbaruiStatus(STATUS_SERVER.MEMERIKSA, null);
     await jalankanPemeriksaan();
     jadwalkanPemeriksaanBerikutnya();
-  }, [jadwalkanPemeriksaanBerikutnya, jalankanPemeriksaan, modeLokalAktif, perbaruiStatus]);
+  }, [
+    jadwalkanPemeriksaanBerikutnya,
+    jalankanPemeriksaan,
+    modeLokalAktif,
+    perbaruiStatus,
+  ]);
 
   return {
     statusServer,

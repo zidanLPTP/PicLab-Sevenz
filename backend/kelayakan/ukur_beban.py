@@ -20,7 +20,7 @@ import psutil
 from PIL import Image, ImageFilter
 
 try:
-    import cv2
+    import cv2  # noqa: F401
 
     OPENCV_TERSEDIA = True
 except ImportError:
