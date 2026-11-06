@@ -103,6 +103,32 @@ API backend akan aktif di: `http://127.0.0.1:8000`
 Endpoint pemeriksaan kesehatan: `http://127.0.0.1:8000/kesehatan`  
 Dokumentasi OpenAPI interaktif: `http://127.0.0.1:8000/docs` (otomatis dinonaktifkan / 404 saat mode produksi aktif)
 
+### Format Galat Standar & Pemetaan Kode HTTP
+Seluruh respons kesalahan dari backend API mengembalikan format JSON seragam `{ "kode": "STRING_TETAP", "pesan": "..." }`:
+
+| Rute Endpoint | Metode | Kode HTTP | Kode Galat (`kode`) | Kondisi Pemicu |
+| :--- | :--- | :--- | :--- | :--- |
+| `/*` (Semua) | GET/POST | **404 Not Found** | `RUTE_TIDAK_DITEMUKAN` | Rute URL tidak terdaftar di server |
+| `/*` (Semua) | DELETE/PUT | **405 Method Not Allowed** | `METODE_TIDAK_DIIZINKAN` | Metode HTTP tidak diizinkan pada endpoint |
+| `/api/*` | POST | **400 Bad Request** | `BERKAS_RUSAK` | Berkas kosong (0 byte) atau header citra korup |
+| `/api/*` | POST | **400 Bad Request** | `DIMENSI_TERLALU_BESAR` | Sisi citra melebihi 4096 piksel |
+| `/api/*` | POST | **400 Bad Request** | `PIKSEL_TERLALU_BANYAK` | Total piksel melebihi 16.000.000 piksel |
+| `/api/*` | POST | **413 Content Too Large** | `BERKAS_TERLALU_BESAR` | Ukuran payload melebihi 10 MB |
+| `/api/*` | POST | **415 Unsupported Media** | `FORMAT_TIDAK_DIDUKUNG` | Berkas bukan JPEG, PNG, WebP, atau BMP (termasuk SVG & teks) |
+| `/api/*` | POST | **422 Unprocessable Content** | `PARAMETER_TIDAK_VALID` | Parameter form/JSON tidak sesuai skema Pydantic |
+| `/*` (Kecuali `/kesehatan`) | Semua | **429 Too Many Requests** | `TERLALU_BANYAK_PERMINTAAN` | Melebihi batas laju (60 permintaan/menit per IP) |
+| `/api/*` | POST | **500 Internal Server Error**| `GALAT_INTERNAL` | Kesalahan tak terduga (tanpa kebocoran stacktrace) |
+| `/api/*` | POST | **503 Service Unavailable** | `SERVER_SIBUK` | Beban serentak melampaui semafor (maks 2 antrean) |
+
+> [!WARNING]
+> **Peringatan Penting Rate Limiting & Reverse Proxy**:  
+> Pembatas laju (*Rate Limiter*) `PembatasLajuMemori` bekerja secara mandiri di memori server tanpa pustaka pihak ketiga (*slowapi*/Redis). Secara bawaan (`PERCAYAI_PROXY=false`), header `X-Forwarded-For` diabaikan demi keamanan spoofing.  
+> **Konsekuensi**: Jika aplikasi diletakkan di belakang reverse proxy hosting bersama tanpa mengaktifkan `PERCAYAI_PROXY=true` dan mendaftarkan IP proxy di `PROXY_TERPERCAYA`, maka seluruh klien akan terbaca memiliki alamat IP yang sama (IP peladen lokal proxy), sehingga batas laju 60 req/menit akan berlaku secara **global** untuk semua pengguna.
+
+> [!NOTE]
+> **Catatan Dependensi untuk Tahap 11 (Deployment)**:  
+> Paket `uvicorn[standard]` pada `backend/requirements.txt` hanya diperlukan untuk menjalankan server ASGI mandiri lokal/VPS. Pada jalur hosting bersama berbasis cPanel / Phusion Passenger WSGI, `uvicorn` tidak digunakan karena daemon web server Apache/Nginx menangani socket HTTP dan gateway via WSGI (`passenger_wsgi.py` + `a2wsgi`).
+
 ---
 
 ## 🧪 Menjalankan Pengujian, Audit Keamanan, & Linting
