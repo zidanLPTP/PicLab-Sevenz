@@ -1,5 +1,5 @@
 /**
- * Katalog & Registri Terpadu Operasi Citra PicLab Sevenz (spec.md bagian 3 & 4).
+ * Katalog & Registri Terpadu Operasi Citra PicLab Sevenz (spec.md bagian 3 & 4, Tahap 6).
  * Registri statis otomatis yang mengimpor definisi operasi bawaan dan modular
  * tanpa eval/new Function (kepatuhan OWASP & Agent.md bagian 7).
  */
@@ -48,8 +48,16 @@ import {
   operasiTepiSobel,
 } from './tepi';
 
+// Operasi Server (Tahap 6)
+import { operasiTepiCanny } from './serverTepiCanny';
+import { operasiKontur } from './serverKontur';
+import { operasiMorfologi } from './serverMorfologi';
+import { operasiSegmentasi } from './serverSegmentasi';
+import { operasiNoise } from './serverNoise';
+import { operasiFrekuensi } from './serverFrekuensi';
+
 /**
- * Daftar kategori operasi citra (spec.md bagian 4).
+ * Daftar kategori operasi citra (spec.md bagian 4 & Tahap 6).
  */
 export const KATEGORI_OPERASI = [
   { id: 'dasar', kunciLabel: 'kategori.dasar' },
@@ -60,10 +68,15 @@ export const KATEGORI_OPERASI = [
   { id: 'sharpening', kunciLabel: 'kategori.sharpening' },
   { id: 'konvolusi', kunciLabel: 'kategori.konvolusi' },
   { id: 'tepi', kunciLabel: 'kategori.tepi' },
+  { id: 'kontur', kunciLabel: 'kategori.kontur' },
+  { id: 'morfologi', kunciLabel: 'kategori.morfologi' },
+  { id: 'segmentasi', kunciLabel: 'kategori.segmentasi' },
+  { id: 'noise', kunciLabel: 'kategori.noise' },
+  { id: 'frekuensi', kunciLabel: 'kategori.frekuensi' },
 ];
 
 /**
- * Registri internal operasi citra bawaan (30 operasi pada MVP Tahap 4).
+ * Registri internal operasi citra bawaan (30 operasi klien + 6 operasi server pada Tahap 6).
  */
 const REGISTRI_OPERASI = [
   // 1. Operasi Dasar (8)
@@ -106,11 +119,19 @@ const REGISTRI_OPERASI = [
   // 7. Operasi Konvolusi (1)
   operasiKonvolusiKernel,
 
-  // 8. Operasi Deteksi Tepi (4)
+  // 8. Operasi Deteksi Tepi (4 Klien + 1 Server)
   operasiTepiSobel,
   operasiTepiPrewitt,
   operasiTepiRoberts,
   operasiTepiLaplacian,
+  operasiTepiCanny,
+
+  // 9. Operasi Server Tambahan (5)
+  operasiKontur,
+  operasiMorfologi,
+  operasiSegmentasi,
+  operasiNoise,
+  operasiFrekuensi,
 ];
 
 // Temukan modul operasi kustom secara statis jika ada (ekstensibilitas modular)

@@ -1,5 +1,5 @@
 /**
- * Konfigurasi batas operasional Pipeline dan Riwayat PicLab Sevenz (spec.md Tahap 3).
+ * Konfigurasi batas operasional Pipeline dan Riwayat PicLab Sevenz (spec.md Tahap 3 & Tahap 6).
  */
 
 export const KONFIGURASI_PIPELINE = {
@@ -9,8 +9,11 @@ export const KONFIGURASI_PIPELINE = {
   /** Batas maksimum tumpukan riwayat (undo/redo snapshot) */
   BATAS_RIWAYAT: 100,
 
-  /** Jeda coalescing (ms) untuk penggabungan peristiwa pergeseran slider */
+  /** Jeda coalescing (ms) untuk penggabungan peristiwa pergeseran slider klien */
   JEDA_COALESCING_MS: 200,
+
+  /** Jeda debounce (ms) untuk operasi server guna menghemat beban komputasi jaringan */
+  JEDA_DEBOUNCE_SERVER_MS: 400,
 };
 
 /**

@@ -55,7 +55,12 @@
     "smoothing": "Smoothing (Blur)",
     "sharpening": "Sharpening",
     "konvolusi": "Kernel Convolution",
-    "tepi": "Edge Detection"
+    "tepi": "Edge Detection",
+    "kontur": "Contour Detection",
+    "morfologi": "Morphological Operations",
+    "segmentasi": "Image Segmentation",
+    "noise": "Noise Reduction",
+    "frekuensi": "Frequency Domain"
   },
   "panel": {
     "judulOperasi": "Operation Catalog",
@@ -210,6 +215,30 @@
         "nama": "Laplacian Operator",
         "deskripsi": "Isotropic second-derivative edge detector for zero-crossing features"
       }
+    },
+    "tepiCanny": {
+      "nama": "Canny Edge Detection",
+      "deskripsi": "Multi-stage edge detector with non-maximum suppression and hysteresis thresholding (Server OpenCV)"
+    },
+    "kontur": {
+      "nama": "Contour Detection & Tracing",
+      "deskripsi": "Traces object boundaries and renders vector contour lines over the canvas (Server OpenCV)"
+    },
+    "morfologi": {
+      "nama": "Mathematical Morphology",
+      "deskripsi": "Geometric shape transformations (erosion, dilation, opening, closing) using structuring elements (Server OpenCV)"
+    },
+    "segmentasi": {
+      "nama": "Image Segmentation",
+      "deskripsi": "Partitioning image regions using K-Means color clustering or multi-level Otsu thresholding (Server OpenCV)"
+    },
+    "noise": {
+      "nama": "Advanced Noise Reduction",
+      "deskripsi": "Denoising with edge preservation using Bilateral filter, Non-Local Means, or Median (Server OpenCV)"
+    },
+    "frekuensi": {
+      "nama": "FFT Frequency Domain Filtering",
+      "deskripsi": "2D Fast Fourier Transform, ideal/gaussian/butterworth frequency filtering, and magnitude spectrum (Server OpenCV)"
     }
   },
   "parameter": {
@@ -268,7 +297,7 @@
     "modelKernelLaplacian": "Laplacian Neighbor Model",
     "model4Tetangga": "4-Neighbors (Orthogonal)",
     "model8Tetangga": "8-Neighbors (Full)",
-    "ukuranKernel": "Convolution Kernel Size",
+    "ukuranKernel": "Structuring Element Size",
     "ukuran3x3": "3 × 3 Matrix",
     "ukuran5x5": "5 × 5 Matrix",
     "matriksKernel": "Kernel Matrix Elements",
@@ -289,7 +318,35 @@
     "selMatriks": "Row {{baris}}, Column {{kolom}}",
     "galatRentangMatriks": "Cell value must be a number between {{min}} and {{max}}",
     "hitungJumlahBobot": "Calculate sum of weights (Σ = {{jumlah}})",
-    "catatanKernelTetap": "Preview may differ from full resolution result due to constant kernel/window size on downscaled preview image."
+    "catatanKernelTetap": "Preview may differ from full resolution result due to constant kernel/window size on downscaled preview image.",
+    "ambangBawah": "Low Threshold",
+    "ambangAtas": "High Threshold",
+    "ukuranApertur": "Sobel Aperture Size",
+    "l2Gradient": "Use Accurate L2 Gradient",
+    "blurAwal": "Apply Pre-Gaussian Blur",
+    "metodeKontur": "Contour Binarization Method",
+    "modeRetrieval": "Contour Retrieval Mode",
+    "luasMinimum": "Minimum Contour Area (px)",
+    "ketebalanGaris": "Contour Line Thickness",
+    "tampilanKontur": "Canvas Display Mode",
+    "warnaGaris": "Contour Line Color",
+    "jenisOperasiMorfologi": "Morphological Operation Type",
+    "bentukElemen": "Structuring Element Shape",
+    "iterasi": "Iteration Count",
+    "metodeSegmentasi": "Segmentation Method",
+    "jumlahKlasterK": "Color Clusters Count (K)",
+    "jumlahKelasOtsu": "Class Count (Otsu)",
+    "metodeNoise": "Denoising Method",
+    "diameterBilateral": "Neighborhood Diameter (d)",
+    "sigmaWarna": "Color Sigma (Color Sensitivity)",
+    "sigmaRuang": "Space Sigma (Spatial Distance)",
+    "kekuatanNlm": "NLM Filter Strength (h)",
+    "ukuranKernelMedian": "Median Kernel Size",
+    "jenisFilterFrekuensi": "Filter Characteristics",
+    "tipeFilterFrekuensi": "Passband Type",
+    "frekuensiCutOff": "Cut-Off Frequency (D0)",
+    "ordeButterworth": "Butterworth Filter Order",
+    "modeKeluaranFft": "FFT Output Mode"
   },
   "presetKernel": {
     "identitas": "Identity (Pass-through)",
@@ -533,5 +590,63 @@
     "SERVER_TIDAK_TERSEDIA": "Backend server is currently unavailable or offline.",
     "DIBATALKAN": "Request canceled due to newer user action.",
     "GALAT_INTERNAL": "An internal server error occurred. Please try again."
+  },
+  "kartuBelajar": {
+    "tepi_canny": {
+      "tujuan": "Optimal edge detection with low error rate, precise localization, and single response per edge.",
+      "rumus": "1) Gaussian Blur -> 2) Gradient G & Angle θ -> 3) Non-Maximum Suppression -> 4) Hysteresis [T_low, T_high]",
+      "penjelasanRumus": "Strong edges (> T_high) are preserved; weak edges (between T_low and T_high) are kept only if connected to strong edges.",
+      "parameter": {
+        "ambang_bawah": "Lower threshold for edge hysteresis connectivity tracing.",
+        "ambang_atas": "Upper threshold for definitive strong edge classification.",
+        "ukuran_apertur": "Sobel aperture size for spatial gradient computation."
+      }
+    },
+    "kontur_deteksi": {
+      "tujuan": "Extracts and traces continuous topological boundary curves of objects on binary images.",
+      "rumus": "B(s) = { p ∈ Image | p lies on connected component boundary }",
+      "penjelasanRumus": "Suzuki border following algorithm organizes outer contours and hole hierarchies.",
+      "parameter": {
+        "metode": "Underlying thresholding/binarization method prior to border tracing.",
+        "luas_minimum": "Filters out small noise contours with area smaller than this minimum threshold."
+      }
+    },
+    "morfologi_matematika": {
+      "tujuan": "Non-linear set-theoretic geometric shape filtering based on structuring elements (B).",
+      "rumus": "Erosion: A ⊖ B = { z | (B)_z ⊆ A }\nDilation: A ⊕ B = { z | (B̂)_z ∩ A ≠ ∅ }",
+      "penjelasanRumus": "Opening (erosion followed by dilation) removes small protrusions; Closing (dilation followed by erosion) fills holes.",
+      "parameter": {
+        "operasi": "Morphological set operation type.",
+        "bentuk_elemen": "Geometric shape of structuring element (rectangle, cross, ellipse).",
+        "ukuran": "Spatial dimension of the structuring kernel."
+      }
+    },
+    "segmentasi_citra": {
+      "tujuan": "Partitions an image into multiple homogeneous segments for object separation and analysis.",
+      "rumus": "K-Means: J = Σ Σ || x_i^(j) - c_j ||²\nMulti-Otsu: Maximize between-class variance σ_B²",
+      "penjelasanRumus": "K-Means clusters color vectors in RGB space; Multi-Otsu finds optimal threshold levels maximizing inter-class variance.",
+      "parameter": {
+        "k": "Target number of clusters or representative quantized colors.",
+        "kelas": "Number of intensity classes in Multi-Otsu mode."
+      }
+    },
+    "noise_reduksi": {
+      "tujuan": "Reduces random image noise while preserving critical edges and fine textures.",
+      "rumus": "Bilateral: I_filter(x) = (1/W_p) Σ I(x_i) · f_r(||I(x_i) - I(x)||) · g_s(||x_i - x||)",
+      "penjelasanRumus": "Bilateral filter combines spatial domain distance with radiometric color similarity to avoid blurring across sharp edges.",
+      "parameter": {
+        "diameter": "Diameter of pixel neighborhood used during filtering.",
+        "sigma_warna": "Color space range standard deviation."
+      }
+    },
+    "frekuensi_fft": {
+      "tujuan": "Manipulates spatial frequency components of an image via 2D Fast Fourier Transform.",
+      "rumus": "F(u,v) = Σ Σ f(x,y) e^(-j2π (ux/M + vy/N))\nG(u,v) = F(u,v) · H(u,v)",
+      "penjelasanRumus": "Lowpass attenuates high frequencies (smoothing); Highpass attenuates low frequencies (extracting sharp edges and textures).",
+      "parameter": {
+        "frekuensi_cut_off": "Cut-off radius distance D0 from frequency center.",
+        "jenis_filter": "Attenuation response curve (Ideal sharp, smooth Gaussian, or continuous Butterworth)."
+      }
+    }
   }
 }

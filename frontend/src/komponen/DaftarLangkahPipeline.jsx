@@ -6,6 +6,11 @@ import {
   GripVertical,
   Layers,
   Trash2,
+  Server,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +23,7 @@ import { dapatkanOperasiBerdasarkanId } from '../mesin/katalogOperasi';
  */
 export default function DaftarLangkahPipeline({
   langkah = [],
+  statusLangkahMap = {},
   langkahTerpilihId = null,
   saatPilihLangkah,
   saatHapusLangkah,
@@ -161,7 +167,37 @@ export default function DaftarLangkahPipeline({
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-teks-utama truncate">
                     {namaOp}
+                    {op?.lokasi === 'server' && (
+                      <span className="ml-1.5 inline-flex items-center gap-0.5 px-1 py-0.2 text-[9px] font-bold uppercase rounded bg-primer-lembut text-teks-primer border border-garis-primer">
+                        <Server size={8} />
+                        Server
+                      </span>
+                    )}
                   </div>
+                  {statusLangkahMap[item.id] && (
+                    <div className="flex items-center gap-1 text-[10px] mt-0.5">
+                      {statusLangkahMap[item.id] === 'memproses' && (
+                        <span className="text-primer flex items-center gap-1 font-medium">
+                          <Loader2 size={10} className="animate-spin" /> Memproses...
+                        </span>
+                      )}
+                      {statusLangkahMap[item.id] === 'berhasil' && (
+                        <span className="text-status-sukses flex items-center gap-1 font-medium">
+                          <CheckCircle2 size={10} /> Berhasil
+                        </span>
+                      )}
+                      {statusLangkahMap[item.id] === 'galat' && (
+                        <span className="text-teks-bahaya flex items-center gap-1 font-medium">
+                          <AlertCircle size={10} /> Galat
+                        </span>
+                      )}
+                      {statusLangkahMap[item.id] === 'menunggu' && (
+                        <span className="text-teks-redup flex items-center gap-1 font-medium">
+                          <Clock size={10} /> Menunggu
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {!item.aktif && (
                     <span className="text-[10px] text-teks-redup italic">
                       ({t('pipeline.nonaktif')})

@@ -16,6 +16,7 @@ import KartuBelajarOperasi from './KartuBelajarOperasi';
  */
 export default function PanelParameter({
   langkah = [],
+  statusLangkahMap = {},
   langkahTerpilihId = null,
   operasiAktif = null,
   parameter = {},
@@ -138,6 +139,7 @@ export default function PanelParameter({
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
         {/* 1. Rangkaian Operasi Pipeline */}
         <DaftarLangkahPipeline
+          statusLangkahMap={statusLangkahMap}
           langkah={langkah}
           langkahTerpilihId={langkahTerpilihId}
           saatPilihLangkah={saatPilihLangkah}

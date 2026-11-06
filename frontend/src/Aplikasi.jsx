@@ -30,6 +30,7 @@ import {
   ekstrakDataCitra,
   jalankanPipeline,
 } from './pekerja/pengelolaPekerja';
+import { KONFIGURASI_PIPELINE } from './utilitas/konfigurasiPipeline';
 import { validasiBerkasCitra } from './utilitas/validasiBerkas';
 
 /**
@@ -38,6 +39,7 @@ import { validasiBerkasCitra } from './utilitas/validasiBerkas';
 export default function Aplikasi() {
   const { t } = useTranslation();
   const statusServerHook = useStatusServer();
+  const [statusLangkahMap, setStatusLangkahMap] = useState({});
 
   if (typeof window !== 'undefined') {
     window.__statusServerHook = statusServerHook;
@@ -133,7 +135,25 @@ export default function Aplikasi() {
 
   // Sinkronkan eksekusi preview setiap kali langkah pipeline diperbarui
   useEffect(() => {
-    if (citraPreview) {
+    if (!citraPreview) return;
+
+    const adaOperasiServer = statePipeline.langkah.some((l) => {
+      if (!l.aktif) return false;
+      const op = dapatkanOperasiBerdasarkanId(l.idOperasi);
+      return op?.lokasi === 'server';
+    });
+
+    const jeda = adaOperasiServer ? (KONFIGURASI_PIPELINE.JEDA_DEBOUNCE_SERVER_MS || 400) : 0;
+
+    if (jeda > 0) {
+      const timer = setTimeout(() => {
+        terapkanPreviewPipeline(
+          statePipeline.langkah,
+          tInputTerakhirRef.current || performance.now()
+        );
+      }, jeda);
+      return () => clearTimeout(timer);
+    } else {
       terapkanPreviewPipeline(
         statePipeline.langkah,
         tInputTerakhirRef.current || performance.now()
@@ -509,6 +529,7 @@ export default function Aplikasi() {
 
         {/* Area Kanan: Rangkaian Pipeline, Parameter, Histogram, & Riwayat */}
         <PanelParameter
+          statusLangkahMap={statusLangkahMap}
           langkah={statePipeline.langkah}
           langkahTerpilihId={statePipeline.langkahTerpilihId}
           saatPilihLangkah={saatPilihLangkah}

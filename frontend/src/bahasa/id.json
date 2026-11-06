@@ -55,7 +55,12 @@
     "smoothing": "Smoothing (Penghalusan)",
     "sharpening": "Sharpening (Penajaman)",
     "konvolusi": "Konvolusi Kernel",
-    "tepi": "Deteksi Tepi"
+    "tepi": "Deteksi Tepi",
+    "kontur": "Deteksi Kontur",
+    "morfologi": "Morfologi Citra",
+    "segmentasi": "Segmentasi Citra",
+    "noise": "Reduksi Noise",
+    "frekuensi": "Domain Frekuensi"
   },
   "panel": {
     "judulOperasi": "Katalog Operasi Citra",
@@ -210,6 +215,30 @@
         "nama": "Operator Laplacian",
         "deskripsi": "Deteksi tepi turunan kedua isotropik untuk menemukan persilangan nol (zero-crossing)"
       }
+    },
+    "tepiCanny": {
+      "nama": "Deteksi Tepi Canny",
+      "deskripsi": "Deteksi tepi multi-tahap dengan penekanan non-maksimum dan histeresis adaptif (Server OpenCV)"
+    },
+    "kontur": {
+      "nama": "Deteksi & Gambar Kontur",
+      "deskripsi": "Melacak batas kontur objek citra dan memvisualisasikannya di atas kanvas (Server OpenCV)"
+    },
+    "morfologi": {
+      "nama": "Morfologi Matematika",
+      "deskripsi": "Transformasi bentuk geometris objek (erosi, dilasi, opening, closing) berbasis elemen penstruktur (Server OpenCV)"
+    },
+    "segmentasi": {
+      "nama": "Segmentasi Citra",
+      "deskripsi": "Pemisahan wilayah citra berdasarkan kuantisasi warna K-Means atau multi-level Otsu (Server OpenCV)"
+    },
+    "noise": {
+      "nama": "Reduksi Noise Lanjutan",
+      "deskripsi": "Menghilangkan derau dengan mempertahankan ketajaman tepi via Bilateral, NLM, atau Median (Server OpenCV)"
+    },
+    "frekuensi": {
+      "nama": "Pemfilteran Domain Frekuensi FFT",
+      "deskripsi": "Transformasi Fourier 2D (FFT), penapisan frekuensi ideal/gaussian/butterworth, dan spektrum (Server OpenCV)"
     }
   },
   "parameter": {
@@ -268,7 +297,7 @@
     "modelKernelLaplacian": "Model Tetangga Laplacian",
     "model4Tetangga": "4-Tetangga (Ortogonal)",
     "model8Tetangga": "8-Tetangga (Penuh)",
-    "ukuranKernel": "Ukuran Kernel Konvolusi",
+    "ukuranKernel": "Ukuran Elemen Penstruktur",
     "ukuran3x3": "Matriks 3 × 3",
     "ukuran5x5": "Matriks 5 × 5",
     "matriksKernel": "Matriks Elemen Kernel",
@@ -289,7 +318,35 @@
     "selMatriks": "Baris {{baris}}, Kolom {{kolom}}",
     "galatRentangMatriks": "Nilai sel harus berupa angka antara {{min}} dan {{max}}",
     "hitungJumlahBobot": "Hitung jumlah seluruh bobot (Σ = {{jumlah}})",
-    "catatanKernelTetap": "Pratinjau dapat berbeda dari hasil resolusi penuh karena ukuran jendela/kernel konstan pada citra yang diperkecil."
+    "catatanKernelTetap": "Pratinjau dapat berbeda dari hasil resolusi penuh karena ukuran jendela/kernel konstan pada citra yang diperkecil.",
+    "ambangBawah": "Ambang Bawah (Low Threshold)",
+    "ambangAtas": "Ambang Atas (High Threshold)",
+    "ukuranApertur": "Ukuran Apertur Sobel",
+    "l2Gradient": "Gunakan Gradien L2 Akurat",
+    "blurAwal": "Terapkan Gaussian Blur Awal",
+    "metodeKontur": "Metode Binarisasi Kontur",
+    "modeRetrieval": "Mode Pengambilan Kontur",
+    "luasMinimum": "Luas Kontur Minimum (px)",
+    "ketebalanGaris": "Ketebalan Garis Kontur",
+    "tampilanKontur": "Mode Tampilan Kanvas",
+    "warnaGaris": "Warna Garis Kontur",
+    "jenisOperasiMorfologi": "Jenis Operasi Morfologi",
+    "bentukElemen": "Bentuk Elemen Penstruktur",
+    "iterasi": "Jumlah Iterasi",
+    "metodeSegmentasi": "Metode Segmentasi",
+    "jumlahKlasterK": "Jumlah Klaster Warna (K)",
+    "jumlahKelasOtsu": "Jumlah Kelas Pemisahan (Otsu)",
+    "metodeNoise": "Metode Reduksi Noise",
+    "diameterBilateral": "Diameter Tetangga (d)",
+    "sigmaWarna": "Sigma Warna (Sensitivitas Warna)",
+    "sigmaRuang": "Sigma Ruang (Jarak Spasial)",
+    "kekuatanNlm": "Kekuatan Filter NLM (h)",
+    "ukuranKernelMedian": "Ukuran Kernel Median",
+    "jenisFilterFrekuensi": "Jenis Karakteristik Filter",
+    "tipeFilterFrekuensi": "Tipe Lolos Frekuensi",
+    "frekuensiCutOff": "Frekuensi Batas (Cut-Off D0)",
+    "ordeButterworth": "Orde Filter Butterworth",
+    "modeKeluaranFft": "Format Keluaran Hasil FFT"
   },
   "presetKernel": {
     "identitas": "Identitas (Tanpa Efek)",
@@ -533,5 +590,63 @@
     "SERVER_TIDAK_TERSEDIA": "Server backend sedang tidak tersedia atau dalam keadaan mati.",
     "DIBATALKAN": "Permintaan dibatalkan karena ada aksi pengguna yang lebih baru.",
     "GALAT_INTERNAL": "Terjadi kesalahan internal pada server. Silakan coba lagi."
+  },
+  "kartuBelajar": {
+    "tepi_canny": {
+      "tujuan": "Deteksi tepi optimal dengan tingkat kesalahan rendah, lokalisasi presisi tinggi, dan respon tunggal per tepi.",
+      "rumus": "1) Gaussian Blur -> 2) Gradien G & Sudut θ -> 3) Non-Maximum Suppression -> 4) Hysteresis [T_low, T_high]",
+      "penjelasanRumus": "Tepi kuat (> T_high) langsung diterima; tepi lemah (antara T_low dan T_high) hanya diterima jika terhubung dengan tepi kuat.",
+      "parameter": {
+        "ambang_bawah": "Batas bawah histeresis penelusuran kontinuitas tepi.",
+        "ambang_atas": "Batas atas klasifikasi tepi kuat pasti.",
+        "ukuran_apertur": "Ukuran kernel Sobel untuk komputasi diferensiasi gradien spasial."
+      }
+    },
+    "kontur_deteksi": {
+      "tujuan": "Mengekstrak dan menggambar batas kurva topologis objek kontinu pada citra hasil binarisasi.",
+      "rumus": "B(s) = { p ∈ Citra | p terletak pada batas objek terhubung }",
+      "penjelasanRumus": "Algoritma penelusuran Suzuki menghubungkan piksel batas terluar atau hirarki lubang objek (tree/external).",
+      "parameter": {
+        "metode": "Metode binarisasi dasar sebelum pelacakan kontur kurva.",
+        "luas_minimum": "Menyaring kontur bintik kecil yang luas pikselnya kurang dari ambang batas."
+      }
+    },
+    "morfologi_matematika": {
+      "tujuan": "Operasi geometri himpunan non-linier untuk memodifikasi struktur bentuk objek berbasis elemen penstruktur (structuring element B).",
+      "rumus": "Erosi: A ⊖ B = { z | (B)_z ⊆ A }\nDilasi: A ⊕ B = { z | (B̂)_z ∩ A ≠ ∅ }",
+      "penjelasanRumus": "Opening (erosi lalu dilasi) membuang tonjolan kecil; Closing (dilasi lalu erosi) menutup lubang dan celah kecil.",
+      "parameter": {
+        "operasi": "Pilihan operasi himpunan morfologi citra.",
+        "bentuk_elemen": "Bentuk geometri kernel penstruktur (persegi, silang, atau elips).",
+        "ukuran": "Dimensi spasial kernel elemen penstruktur."
+      }
+    },
+    "segmentasi_citra": {
+      "tujuan": "Mempartisi citra menjadi beberapa segmen homogen untuk mempermudah analisis objek dan latar belakang.",
+      "rumus": "K-Means: J = Σ Σ || x_i^(j) - c_j ||²\nMulti-Otsu: Maksimum σ_B²(t1, t2, ...)",
+      "penjelasanRumus": "K-Means mengelompokkan piksel terdekat di ruang RGB; Multi-Otsu mencari ambang pemisah variansi antar-kelas optimal.",
+      "parameter": {
+        "k": "Jumlah warna representatif atau klaster yang dihasilkan.",
+        "kelas": "Jumlah kelas kuantisasi intensitas pada metode Multi-Otsu."
+      }
+    },
+    "noise_reduksi": {
+      "tujuan": "Mereduksi fluktuasi derau acak pada citra dengan menjaga detail tepi dan tekstur penting tetap tajam.",
+      "rumus": "Bilateral: I_filter(x) = (1/W_p) Σ I(x_i) · f_r(||I(x_i) - I(x)||) · g_s(||x_i - x||)",
+      "penjelasanRumus": "Bilateral menggabungkan kedekatan spasial dan kesamaan warna sehingga tidak membaurkan piksel yang melintasi tepi kontras.",
+      "parameter": {
+        "diameter": "Jarak diameter piksel tetangga yang diperhitungkan.",
+        "sigma_warna": "Toleransi variasi warna (nilai besar memperlakukan perbedaan warna lebih luas sebagai derau)."
+      }
+    },
+    "frekuensi_fft": {
+      "tujuan": "Memanipulasi komponen spektrum frekuensi spasial citra melalui Transformasi Fourier Cepat 2D.",
+      "rumus": "F(u,v) = Σ Σ f(x,y) e^(-j2π (ux/M + vy/N))\nG(u,v) = F(u,v) · H(u,v)",
+      "penjelasanRumus": "Lowpass meneruskan frekuensi rendah (hasil halus/blur); Highpass meneruskan frekuensi tinggi (tepi tajam dan tekstur).",
+      "parameter": {
+        "frekuensi_cut_off": "Jarak radius batas D0 dari pusat frekuensi.",
+        "jenis_filter": "Bentuk kurva respons atenuasi frekuensi (Ideal, Gaussian halus, atau Butterworth bertingkat)."
+      }
+    }
   }
 }

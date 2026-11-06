@@ -1,5 +1,5 @@
 /**
- * Layanan Klien API PicLab Sevenz (spec.md bagian 9, Tahap 5, & K7).
+ * Layanan Klien API PicLab Sevenz (spec.md bagian 9, Tahap 5, & Tahap 6).
  * Menyediakan penghubung komunikasi jaringan antara frontend React dan backend FastAPI.
  * Mengimplementasikan:
  * - Dukungan deployment statis murni tanpa backend (Mode Lokal, 0 health check request)
@@ -95,11 +95,11 @@ export async function periksaKesehatan(batasWaktuMs = 5000) {
  * Mengirim berkas citra dan parameter ke endpoint server backend.
  * Menerapkan pembatalan otomatis jika ada permintaan baru ke rute yang sama (Latest-Wins).
  *
- * @param {string} rute - Jalur rute endpoint (mis. '/api/uji/gema')
+ * @param {string} rute - Jalur rute endpoint (mis. '/api/v1/tepi/canny')
  * @param {Blob|File} berkasBlob - Data citra dalam bentuk Blob
  * @param {Record<string, any>} [parameter={}] - Parameter operasi tambahan
  * @param {number} [batasWaktuMs=15000] - Batas waktu timeout pemrosesan
- * @returns {Promise<{ sukses: boolean, blob?: Blob, lebar?: number, tinggi?: number, kode?: string, pesan?: string }>}
+ * @returns {Promise<{ sukses: boolean, blob?: Blob, lebar?: number, tinggi?: number, infoOperasi?: string, kode?: string, pesan?: string }>}
  */
 export async function kirimGambarKeServer(
   rute,
@@ -155,8 +155,12 @@ export async function kirimGambarKeServer(
     const formData = new FormData();
     formData.append('gambar', berkasBlob, 'citra.png');
 
+    // Lampirkan string JSON parameter terstruktur (untuk endpoint FastAPI Tahap 6)
+    formData.append('parameter', JSON.stringify(parameter));
+
+    // Lampirkan juga key individual untuk kompatibilitas endpoint lain (mis. /api/uji/gema)
     for (const [kunci, nilai] of Object.entries(parameter)) {
-      if (nilai !== undefined && nilai !== null) {
+      if (kunci !== 'parameter' && nilai !== undefined && nilai !== null) {
         formData.append(kunci, String(nilai));
       }
     }
@@ -175,12 +179,14 @@ export async function kirimGambarKeServer(
       const blobHasil = await respons.blob();
       const lebar = Number(respons.headers.get('x-lebar')) || 0;
       const tinggi = Number(respons.headers.get('x-tinggi')) || 0;
+      const infoOperasi = respons.headers.get('x-info-operasi') || '';
 
       return {
         sukses: true,
         blob: blobHasil,
         lebar,
         tinggi,
+        infoOperasi,
       };
     }
 
