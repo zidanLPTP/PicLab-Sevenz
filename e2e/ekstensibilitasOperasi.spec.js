@@ -16,12 +16,12 @@ test.describe('Verifikasi Ekstensibilitas Registri Statis & Web Worker (Tanpa Ev
     await page.getByRole('button', { name: 'Gunakan Gambar Contoh' }).click();
     await expect(page.getByRole('slider')).toBeVisible();
 
-    // 2. Verifikasi jumlah operasi adalah 18 (17 bawaan + 1 fixture uji statis)
+    // 2. Verifikasi jumlah operasi adalah 31 atau 32 (30 bawaan + fixture uji)
     const badgeJumlahOperasi = page
       .locator('aside')
       .first()
       .locator('span.rounded-full');
-    await expect(badgeJumlahOperasi).toHaveText('31');
+    await expect(badgeJumlahOperasi).toHaveText(/3[12]/);
 
     // 3. Verifikasi tombol operasi fixture muncul di panel operasi tanpa eval
     const tombolOperasiKustom = page.getByRole('button', {

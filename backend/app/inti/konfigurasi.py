@@ -51,10 +51,12 @@ class KonfigurasiAplikasi:
 
     # Keamanan & Perlindungan Beban Sumber Daya (Rate Limiting, Concurrency, Timeout)
     BATAS_LAJU_PER_MENIT: int = int(os.getenv("BATAS_LAJU_PER_MENIT", "60"))
-    BATAS_PERMINTAAN_SERENTAK: int = int(os.getenv("BATAS_PERMINTAAN_SERENTAK", "3"))
+    BATAS_PERMINTAAN_SERENTAK: int = int(os.getenv("BATAS_PERMINTAAN_SERENTAK", "2"))
     BATAS_WAKTU_DETIK: float = float(os.getenv("BATAS_WAKTU_DETIK", "15.0"))
 
-    # Daftar IP reverse proxy terpercaya yang diizinkan meneruskan X-Forwarded-For
+    # Pengaturan Proxy Klien untuk Rate Limiting
+    # Header X-Forwarded-For HANYA dipercaya bila PERCAYAI_PROXY=True DAN IP koneksi langsung ada di PROXY_TERPERCAYA.
+    PERCAYAI_PROXY: bool = os.getenv("PERCAYAI_PROXY", "false").lower() == "true"
     PROXY_TERPERCAYA: list[str] = field(
         default_factory=lambda: [
             ip.strip()

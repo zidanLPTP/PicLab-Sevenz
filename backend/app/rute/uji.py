@@ -115,3 +115,13 @@ async def uji_gema_gambar(
                 "X-Operasi": "gema_balik_horizontal",
             },
         )
+
+
+@router.get(
+    "/simulasi-galat-internal",
+    summary="Simulasi kesalahan internal tak terduga untuk pengujian respon 500",
+    include_in_schema=False,
+)
+async def rute_simulasi_galat_internal():
+    """Memicu eksepsi runtime tak terduga untuk memverifikasi penanganan galat 500."""
+    raise RuntimeError("Simulasi crash internal untuk memverifikasi Zero Information Leakage.")

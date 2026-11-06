@@ -9,8 +9,8 @@ import os
 import sys
 import time
 import tracemalloc
-from typing import Optional
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+
+from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from PIL import Image

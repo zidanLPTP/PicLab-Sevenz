@@ -1,10 +1,84 @@
 /**
  * Definisi operasi citra percobaan sisi server (Tahap 5).
- * Hanya aktif pada mode pengujian / pengembangan (VITE_MODE_SERVER_UJI === 'true' atau test).
+ * Hanya aktif pada mode pengujian / pengembangan (VITE_MODE_SERVER_UJI === 'true').
  * Mencontohkan skema operasi server (lokasi: 'server') untuk fondasi Tahap 6.
  */
 
 import { kirimGambarKeServer } from '../../layanan/api';
+
+/**
+ * Mengonversi piksel RGBA ke Blob PNG di browser maupun Web Worker.
+ * @param {{ data: Uint8ClampedArray, width: number, height: number }} citra
+ * @returns {Promise<Blob>}
+ */
+async function citraKeBlobPng(citra) {
+  if (typeof OffscreenCanvas !== 'undefined') {
+    const kanvas = new OffscreenCanvas(citra.width, citra.height);
+    const ctx = kanvas.getContext('2d');
+    const imageData = new ImageData(
+      new Uint8ClampedArray(citra.data),
+      citra.width,
+      citra.height
+    );
+    ctx.putImageData(imageData, 0, 0);
+    return await kanvas.convertToBlob({ type: 'image/png' });
+  }
+
+  if (typeof document !== 'undefined' && document.createElement) {
+    const kanvas = document.createElement('canvas');
+    kanvas.width = citra.width;
+    kanvas.height = citra.height;
+    const ctx = kanvas.getContext('2d');
+    const imageData = new ImageData(
+      new Uint8ClampedArray(citra.data),
+      citra.width,
+      citra.height
+    );
+    ctx.putImageData(imageData, 0, 0);
+    return await new Promise((resolve) => kanvas.toBlob(resolve, 'image/png'));
+  }
+
+  throw new Error('Lingkungan eksekusi tidak mendukung pembuatan Blob citra.');
+}
+
+/**
+ * Mengonversi Blob PNG dari respons backend kembali ke objek ImageData { data, width, height }.
+ * @param {Blob} blob
+ * @returns {Promise<{ data: Uint8ClampedArray, width: number, height: number }>}
+ */
+async function blobPngKeCitra(blob) {
+  const imgBitmap = await createImageBitmap(blob);
+  const lebar = imgBitmap.width;
+  const tinggi = imgBitmap.height;
+
+  if (typeof OffscreenCanvas !== 'undefined') {
+    const kanvas = new OffscreenCanvas(lebar, tinggi);
+    const ctx = kanvas.getContext('2d');
+    ctx.drawImage(imgBitmap, 0, 0);
+    const dataHasil = ctx.getImageData(0, 0, lebar, tinggi);
+    return {
+      data: dataHasil.data,
+      width: lebar,
+      height: tinggi,
+    };
+  }
+
+  if (typeof document !== 'undefined' && document.createElement) {
+    const kanvas = document.createElement('canvas');
+    kanvas.width = lebar;
+    kanvas.height = tinggi;
+    const ctx = kanvas.getContext('2d');
+    ctx.drawImage(imgBitmap, 0, 0);
+    const dataHasil = ctx.getImageData(0, 0, lebar, tinggi);
+    return {
+      data: dataHasil.data,
+      width: lebar,
+      height: tinggi,
+    };
+  }
+
+  throw new Error('Lingkungan eksekusi tidak mendukung dekode Blob citra.');
+}
 
 export const operasiServerUjiGema = {
   id: 'server_uji_gema',
@@ -23,57 +97,17 @@ export const operasiServerUjiGema = {
     },
   ],
   /**
-   * Mengirim citra ke endpoint backend dan mengembalikan hasil citra.
+   * Mengirim citra ke endpoint backend sungguhan dan mengembalikan citra hasil.
    *
    * @param {{ data: Uint8ClampedArray, width: number, height: number }} citra
    * @param {Record<string, any>} parameter
    * @returns {Promise<{ data: Uint8ClampedArray, width: number, height: number }>}
    */
   async terapkan(citra, parameter = {}) {
-    // Penanganan khusus lingkungan headless/uji unit tanpa kanvas browser DOM
-    if (
-      typeof document === 'undefined' ||
-      typeof ImageData === 'undefined' ||
-      !document.createElement
-    ) {
-      const dataBaru = new Uint8ClampedArray(citra.data);
-      if (parameter.balik_horizontal ?? true) {
-        for (let y = 0; y < citra.height; y++) {
-          for (let x = 0; x < Math.floor(citra.width / 2); x++) {
-            const idx1 = (y * citra.width + x) * 4;
-            const idx2 = (y * citra.width + (citra.width - 1 - x)) * 4;
-            for (let c = 0; c < 4; c++) {
-              const temp = dataBaru[idx1 + c];
-              dataBaru[idx1 + c] = dataBaru[idx2 + c];
-              dataBaru[idx2 + c] = temp;
-            }
-          }
-        }
-      }
-      return {
-        data: dataBaru,
-        width: citra.width,
-        height: citra.height,
-      };
-    }
+    // 1. Ubah citra memori ke Blob PNG
+    const blob = await citraKeBlobPng(citra);
 
-    // 1. Ubah citra memori ke Blob PNG di browser
-    const kanvas = document.createElement('canvas');
-    kanvas.width = citra.width;
-    kanvas.height = citra.height;
-    const ctx = kanvas.getContext('2d');
-    const imageData = new ImageData(
-      new Uint8ClampedArray(citra.data),
-      citra.width,
-      citra.height
-    );
-    ctx.putImageData(imageData, 0, 0);
-
-    const blob = await new Promise((resolve) =>
-      kanvas.toBlob(resolve, 'image/png')
-    );
-
-    // 2. Kirim ke backend melalui layanan API
+    // 2. Kirim ke backend melalui layanan API (koneksi HTTP sungguhan)
     const respons = await kirimGambarKeServer(
       '/api/uji/gema',
       blob,
@@ -82,21 +116,11 @@ export const operasiServerUjiGema = {
     );
 
     if (!respons.sukses || !respons.blob) {
-      throw new Error(respons.pesan || 'Operasi server gagal.');
+      throw new Error(respons.pesan || 'Operasi server gagal diproses.');
     }
 
-    // 3. Dekode kembali blob keluaran PNG dari server ke citra piksel murni
-    const imgBitmap = await createImageBitmap(respons.blob);
-    kanvas.width = imgBitmap.width;
-    kanvas.height = imgBitmap.height;
-    ctx.drawImage(imgBitmap, 0, 0);
-    const dataHasil = ctx.getImageData(0, 0, kanvas.width, kanvas.height);
-
-    return {
-      data: dataHasil.data,
-      width: kanvas.width,
-      height: kanvas.height,
-    };
+    // 3. Dekode kembali blob keluaran PNG dari server ke piksel murni
+    return await blobPngKeCitra(respons.blob);
   },
 };
 

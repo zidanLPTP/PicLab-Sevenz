@@ -1,21 +1,23 @@
 /**
- * Kustom Hook useStatusServer (spec.md bagian 5, 9 & Tahap 5).
+ * Kustom Hook useStatusServer (spec.md bagian 5, 9, Tahap 5, & K7).
  * Memantau status ketersediaan backend FastAPI secara berkala dan reaktif.
  * Fitur:
+ * - Dukungan Mode Lokal: Jika VITE_ALAMAT_API tidak diatur, 0 permintaan kesehatan dikirim
  * - Pemeriksaan awal saat komponen dipasang
- * - Polling berkala (default 30 detik)
+ * - Polling berkala (default 30 detik saat server sehat)
  * - Berhenti saat dokumen/tab tersembunyi (visibilitychange)
- * - Exponential backoff saat server tidak tersedia untuk menghemat sumber daya
- * - Fungsi periksaUlang untuk pemicu manual
+ * - Exponential backoff (5s hingga 60s) saat server tidak tersedia untuk menghemat sumber daya
+ * - Fungsi periksaManual untuk pemicu verifikasi pengguna
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { periksaKesehatan } from '../layanan/api';
+import { apakahModeLokal, periksaKesehatan } from '../layanan/api';
 
 export const STATUS_SERVER = {
   MEMERIKSA: 'memeriksa',
   TERSEDIA: 'tersedia',
   TIDAK_TERSEDIA: 'tidak_tersedia',
+  MODE_LOKAL: 'mode_lokal',
 };
 
 const INTERVAL_NORMAL_MS = 30000; // 30 detik saat server sehat
@@ -23,11 +25,15 @@ const JEDA_AWAL_GAGAL_MS = 5000; // 5 detik awal saat gagal
 const JEDA_MAKS_GAGAL_MS = 60000; // Maksimal backoff 60 detik
 
 export function useStatusServer(intervalKustomMs = INTERVAL_NORMAL_MS) {
-  const [statusServer, setStatusServer] = useState(
-    import.meta.env.VITE_STATUS_SERVER_OTOMATIS === 'false'
-      ? STATUS_SERVER.TIDAK_TERSEDIA
-      : STATUS_SERVER.MEMERIKSA
-  );
+  const modeLokalAktif = apakahModeLokal();
+
+  const [statusServer, setStatusServer] = useState(() => {
+    if (modeLokalAktif) return STATUS_SERVER.MODE_LOKAL;
+    if (import.meta.env.VITE_STATUS_SERVER_OTOMATIS === 'false') {
+      return STATUS_SERVER.TIDAK_TERSEDIA;
+    }
+    return STATUS_SERVER.MEMERIKSA;
+  });
   const [infoServer, setInfoServer] = useState(null);
 
   const statusServerRef = useRef(statusServer);
@@ -45,6 +51,11 @@ export function useStatusServer(intervalKustomMs = INTERVAL_NORMAL_MS) {
   }, []);
 
   const jalankanPemeriksaan = useCallback(async () => {
+    if (modeLokalAktif) {
+      perbaruiStatus(STATUS_SERVER.MODE_LOKAL, null);
+      return;
+    }
+
     if (sedangMemeriksaRef.current) return;
     sedangMemeriksaRef.current = true;
 
@@ -62,9 +73,11 @@ export function useStatusServer(intervalKustomMs = INTERVAL_NORMAL_MS) {
         JEDA_MAKS_GAGAL_MS
       );
     }
-  }, [perbaruiStatus]);
+  }, [modeLokalAktif, perbaruiStatus]);
 
   const jadwalkanPemeriksaanBerikutnya = useCallback(() => {
+    if (modeLokalAktif) return;
+
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
@@ -88,10 +101,15 @@ export function useStatusServer(intervalKustomMs = INTERVAL_NORMAL_MS) {
       await jalankanPemeriksaan();
       jadwalkanPemeriksaanBerikutnya();
     }, durasiTunggu);
-  }, [jalankanPemeriksaan]);
+  }, [jalankanPemeriksaan, modeLokalAktif]);
 
   // Efek inisialisasi & pemantauan visibilitas tab
   useEffect(() => {
+    if (modeLokalAktif) {
+      perbaruiStatus(STATUS_SERVER.MODE_LOKAL, null);
+      return;
+    }
+
     if (import.meta.env.VITE_STATUS_SERVER_OTOMATIS === 'false') {
       return;
     }
@@ -102,12 +120,10 @@ export function useStatusServer(intervalKustomMs = INTERVAL_NORMAL_MS) {
 
     const tanganiPerubahanVisibilitas = () => {
       if (!document.hidden) {
-        // Tab aktif kembali: segera periksa dan mulai lagi penjadwalan
         jalankanPemeriksaan().then(() => {
           jadwalkanPemeriksaanBerikutnya();
         });
       } else {
-        // Tab disembunyikan: batalkan timer aktif
         if (timerRef.current) {
           clearTimeout(timerRef.current);
         }
@@ -125,19 +141,21 @@ export function useStatusServer(intervalKustomMs = INTERVAL_NORMAL_MS) {
         tanganiPerubahanVisibilitas
       );
     };
-  }, [jadwalkanPemeriksaanBerikutnya, jalankanPemeriksaan]);
+  }, [jadwalkanPemeriksaanBerikutnya, jalankanPemeriksaan, modeLokalAktif, perbaruiStatus]);
 
   const periksaManual = useCallback(async () => {
+    if (modeLokalAktif) return;
     sedangMemeriksaRef.current = false;
     perbaruiStatus(STATUS_SERVER.MEMERIKSA, null);
     await jalankanPemeriksaan();
     jadwalkanPemeriksaanBerikutnya();
-  }, [jadwalkanPemeriksaanBerikutnya, jalankanPemeriksaan, perbaruiStatus]);
+  }, [jadwalkanPemeriksaanBerikutnya, jalankanPemeriksaan, modeLokalAktif, perbaruiStatus]);
 
   return {
     statusServer,
     apakahTersedia: statusServer === STATUS_SERVER.TERSEDIA,
     apakahMemeriksa: statusServer === STATUS_SERVER.MEMERIKSA,
+    apakahModeLokal: statusServer === STATUS_SERVER.MODE_LOKAL,
     infoServer,
     periksaManual,
   };

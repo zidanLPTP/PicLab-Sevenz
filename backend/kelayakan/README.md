@@ -19,7 +19,7 @@ Kit ini bertujuan menguji tiga aspek kritis sebelum deployment:
 
 ## 2. Panduan Langkah Demi Langkah Memasang di Hosting Bersama
 
-Panduan ini berlaku umum untuk panel hosting bersama modern (cPanel, DirectAdmin, atau panel hosting berbasis Linux lainnya dengan fitur aplikasi Python).
+Panduan ini berlaku umum untuk panel hosting bersama modern (seperti cPanel, DirectAdmin, CloudLinux, atau panel sejenis dengan fitur aplikasi Python).
 
 ### Langkah 1: Hubungkan ke Server via SSH
 Buka terminal dan lakukan autentikasi SSH ke akun hosting:
@@ -29,7 +29,7 @@ ssh username@domain-atau-ip-server -p 22
 
 ### Langkah 2: Buat Aplikasi Python di Panel Hosting
 1. Buka antarmuka panel kontrol hosting (misal menu *Setup Python App* / *Python Manager*).
-2. Pilih versi Python: **Python 3.10** (minimum yang didukung), **3.11**, atau **3.12**.
+2. Pilih versi Python: **Python 3.11** (minimum yang didukung), **3.12**, atau **3.13**.
 3. Tentukan direktori aplikasi: `piclab-kelayakan`.
 4. Tentukan URI aplikasi atau subdomain: arahkan ke subdomain API khusus, misalnya `api.domain.com`.
 5. Klik **Create** / **Save**. Panel akan menyiapkan lingkungan virtualenv secara otomatis.
@@ -51,7 +51,7 @@ pip install --only-binary=:all: -r requirements-uji.txt
 
 > **Apa yang dilakukan jika instalasi gagal?**
 > - **Jika `opencv-python-headless` gagal terpasang**: Hal ini lazim terjadi jika sistem hosting kekurangan library dinamis OS (`libGL.so.1`, `libglib-2.0.so.0`). Jangan panik: aplikasi dan skrip pengukur beban memiliki fallback otomatis ke Pillow + NumPy. Catat kegagalan ini di laporan agar operasi Canny Tahap 6 dapat disesuaikan menggunakan kernel konvolusi murni NumPy.
-> - **Jika error compiler memaksa build wheel**: Periksa versi Python. Pastikan menggunakan Python 3.10 atau 3.11 yang memiliki ketersediaan wheel biner `manylinux` paling lengkap di PyPI.
+> - **Jika error compiler memaksa build wheel**: Periksa versi Python. Pastikan menggunakan Python 3.11 atau 3.12 yang memiliki ketersediaan wheel biner `manylinux` paling lengkap di PyPI.
 
 ### Langkah 5: Konfigurasi Subdomain `api.` dan CORS
 1. Buat subdomain `api.domainanda.com` di menu Subdomains panel.
@@ -98,45 +98,21 @@ python periksa_lingkungan.py
 python ukur_beban.py
 
 # 3. Uji konkurensi endpoint (stdlib tanpa dependensi tambahan)
-python uji_konkurensi.py --jumlah 20 --pekerja 4
+python uji_konkurensi.py --url http://127.0.0.1:8000/api/uji-gema --serentak 2
 ```
 
 ---
 
-## 4. Templat Laporan Hasil Uji Hosting (Tinggal Diisi)
+## 4. Hasil Garis Dasar Laptop Pengembang (Bukan Hasil Hosting)
 
-Salin templat ini, isi berdasarkan keluaran berkas `lingkungan.json`, `hasil_beban.json`, dan `hasil_konkurensi.json`, lalu serahkan kepada tim arsitektur:
+Tabel berikut adalah hasil pengukuran performa di laptop pengembang menggunakan skrip `ukur_beban.py`:
 
-```markdown
-### Laporan Uji Kelayakan Hosting Bersama PicLab Sevenz
-- **Nama Penguji**: Fathin
-- **Tanggal Pengujian**: [YYYY-MM-DD]
-- **Penyedia Hosting**: [Nama Provider]
-- **Tipe Paket**: [Hosting Bersama / CloudLinux / VPS KVM]
+| Resolusi | Dimensi | Total Piksel | Median Total (ms) | Puncak RSS OS (MB) | Puncak Heap Python (MB) | Median Gaussian (ms) | Ukuran PNG (KB) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **1 MP** | 1000x1000 | 1.000.000 | 44,9 ms | 40,94 MB | 7,63 MB | 27,6 ms | 10,5 KB |
+| **4 MP** | 2000x2000 | 4.000.000 | 176,9 ms | 64,28 MB | 30,52 MB | 118,5 ms | 28,0 KB |
+| **8 MP** | 3264x2448 | 7.990.272 | 355,6 ms | 94,86 MB | 60,97 MB | 232,7 ms | 48,5 KB |
+| **16 MP** | 4000x4000 | 16.000.000 | 697,6 ms | 155,50 MB | 122,08 MB | 469,4 ms | 81,6 KB |
 
-#### 1. Karakteristik Lingkungan Server
-- Versi Python Server: [...]
-- Arsitektur & Libc: [...]
-- Batas Memori Fisik (LVE PMEM / cgroup): [...] MB
-- Dukungan Wheel Biner (OpenCV Headless): [Berhasil / Gagal]
-- Web Server / WSGI Server: [LiteSpeed / Apache mod_passenger / Nginx Unit]
-
-#### 2. Hasil Pengukuran Beban Komputasi di Hosting
-| Resolusi Citra | Durasi Total (ms) | Puncak Heap RAM (MB) | Status Eksekusi |
-| :--- | :--- | :--- | :--- |
-| **1 MP** (1000x1000) | ... ms | ... MB | [Sukses / OOM / Timeout] |
-| **4 MP** (2000x2000) | ... ms | ... MB | [Sukses / OOM / Timeout] |
-| **8 MP** (3264x2448) | ... ms | ... MB | [Sukses / OOM / Timeout] |
-| **16 MP** (4000x4000) | ... ms | ... MB | [Sukses / OOM / Timeout] |
-
-#### 3. Hasil Uji Konkurensi & Batas Serentak
-- Permintaan Terkirim: 20
-- Respons Berhasil (HTTP 200): [...]
-- Respons Dibatasi (HTTP 429 / 503): [...]
-- Latensi Median: [...] ms
-- Kejadian Proses Dimatikan (Killed/OOM): [Ada / Tidak Ada]
-
-#### 4. Kesimpulan & Rekomendasi
-- Apakah hosting layak menjalankan batas 16 MP penuh? [Ya / Perlu Diturunkan ke 8 MP]
-- Catatan kendala teknis: [...]
-```
+> [!IMPORTANT]
+> **Catatan Penamaan Label:** Kolom `Median Gaussian (ms)` mengukur waktu median algoritma filter Gaussian Blur (radius=2) menggunakan Pillow. Pada laporan terdahulu kolom ini disingkat sebagai "Median Filter", yang dapat menimbulkan ambiguitas penafsiran antara filter spasial Gaussian Blur dengan algoritma Median Filter.

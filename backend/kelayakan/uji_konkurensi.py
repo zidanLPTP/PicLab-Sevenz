@@ -10,7 +10,6 @@ import argparse
 import concurrent.futures
 import json
 import statistics
-import sys
 import time
 import urllib.error
 import urllib.request

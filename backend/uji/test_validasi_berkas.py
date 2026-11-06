@@ -188,6 +188,157 @@ def test_tolak_parameter_tidak_valid():
     assert data["kode"] == KodeGalat.PARAMETER_TIDAK_VALID
 
 
+def test_tolak_polyglot_html_dengan_header_palsu():
+    """Tolak polyglot biner atau berkas HTML berekstensi PNG."""
+    payload_html = b"<!DOCTYPE html><html><body><script>alert(1)</script></body></html>"
+    respons = klien.post(
+        "/api/uji/gema",
+        files={"gambar": ("serangan.png", payload_html, "image/png")},
+    )
+    assert respons.status_code == status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
+    data = respons.json()
+    assert data["kode"] == KodeGalat.FORMAT_TIDAK_DIDUKUNG
+
+
+def test_tolak_polyglot_zip_arsip():
+    """Tolak arsip zip yang dikirim dengan ekstensi atau MIME PNG."""
+    payload_zip = b"PK\x03\x04\x14\x00\x00\x00\x08\x00" + b"\x00" * 40
+    respons = klien.post(
+        "/api/uji/gema",
+        files={"gambar": ("arsip.png", payload_zip, "image/png")},
+    )
+    assert respons.status_code == status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
+    data = respons.json()
+    assert data["kode"] == KodeGalat.FORMAT_TIDAK_DIDUKUNG
+
+
+def test_tolak_berkas_terpotong_truncated_png():
+    """Tolak citra PNG yang byte-nya terpotong di tengah stream sebelum penutup IEND."""
+    # Header PNG valid tapi hanya memiliki 16 byte awal tanpa IDAT dan IEND
+    png_buntung = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00"
+    respons = klien.post(
+        "/api/uji/gema",
+        files={"gambar": ("buntung.png", png_buntung, "image/png")},
+    )
+    assert respons.status_code == status.HTTP_400_BAD_REQUEST
+    data = respons.json()
+    assert data["kode"] == KodeGalat.BERKAS_RUSAK
+
+
+def test_tolak_multipart_tanpa_berkas():
+    """Tolak permintaan multipart jika field berkas gambar tidak disertakan."""
+    respons = klien.post("/api/uji/gema", data={"balik_horizontal": "true"})
+    assert respons.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    data = respons.json()
+    assert data["kode"] == KodeGalat.PARAMETER_TIDAK_VALID
+
+
+def test_tolak_multipart_field_salah():
+    """Tolak permintaan multipart jika nama field bukan 'gambar'."""
+    citra = buat_citra_png_memori()
+    respons = klien.post(
+        "/api/uji/gema",
+        files={"berkas_salah": ("uji.png", citra, "image/png")},
+    )
+    assert respons.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    data = respons.json()
+    assert data["kode"] == KodeGalat.PARAMETER_TIDAK_VALID
+
+
+def test_penanganan_aman_nama_berkas_path_traversal():
+    """Pastikan nama berkas dengan path traversal (../../etc/passwd) dinetralisir dan tidak crash."""
+    citra = buat_citra_png_memori()
+    nama_traversal = "../../../../etc/passwd"
+    respons = klien.post(
+        "/api/uji/gema",
+        files={"gambar": (nama_traversal, citra, "image/png")},
+    )
+    assert respons.status_code == status.HTTP_200_OK
+    assert respons.headers["content-type"] == "image/png"
+
+
+def test_penanganan_aman_nama_berkas_null_byte():
+    """Pastikan nama berkas yang mengandung null byte (\x00) tidak merusak backend."""
+    citra = buat_citra_png_memori()
+    nama_null_byte = "gambar_uji\x00_bahaya.png"
+    respons = klien.post(
+        "/api/uji/gema",
+        files={"gambar": (nama_null_byte, citra, "image/png")},
+    )
+    assert respons.status_code == status.HTTP_200_OK
+
+
+def test_pembersihan_metadata_exif_dan_gps():
+    """Memverifikasi bahwa metadata EXIF (termasuk tag identitas/perangkat) dibersihkan secara mutlak."""
+    # Buat citra JPEG dengan tag EXIF standar
+    buf = io.BytesIO()
+    img = Image.new("RGB", (20, 20), (255, 100, 50))
+    exif = img.getexif()
+    # 0x010E = Image Description, 0x0131 = Software, 0x0132 = DateTime
+    exif[0x010E] = "Informasi Rahasia Pengguna PicLab"
+    exif[0x0131] = "Kamera Rahasia PicLab"
+    exif[0x0132] = "2026:11:06 08:00:00"
+    img.save(buf, format="JPEG", exif=exif)
+
+    respons = klien.post(
+        "/api/uji/gema",
+        files={"gambar": ("foto_ber_exif.jpg", buf.getvalue(), "image/jpeg")},
+    )
+    assert respons.status_code == status.HTTP_200_OK
+
+    hasil_img = Image.open(io.BytesIO(respons.content))
+    hasil_exif = hasil_img.getexif()
+    # Hasil PNG tidak boleh memuat EXIF asli
+    assert len(hasil_exif) == 0, f"Metadata EXIF masih tersisa: {dict(hasil_exif)}"
+    assert "exif" not in hasil_img.info or not hasil_img.info["exif"]
+
+
+def test_dukungan_mode_warna_palet_p():
+    """Membuktikan mode warna palet P diproses secara aman tanpa galat."""
+    img = Image.new("P", (16, 16))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+
+    respons = klien.post(
+        "/api/uji/gema",
+        files={"gambar": ("palet.png", buf.getvalue(), "image/png")},
+    )
+    assert respons.status_code == status.HTTP_200_OK
+    hasil_img = Image.open(io.BytesIO(respons.content))
+    assert hasil_img.size == (16, 16)
+
+
+def test_dukungan_mode_warna_grayscale_l():
+    """Membuktikan mode grayscale L diproses secara aman."""
+    img = Image.new("L", (16, 16), color=128)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+
+    respons = klien.post(
+        "/api/uji/gema",
+        files={"gambar": ("grayscale.png", buf.getvalue(), "image/png")},
+    )
+    assert respons.status_code == status.HTTP_200_OK
+    hasil_img = Image.open(io.BytesIO(respons.content))
+    assert hasil_img.size == (16, 16)
+
+
+def test_dukungan_mode_warna_16bit_i16():
+    """Membuktikan mode 16-bit integer (I;16) ditangani tanpa unhandled crash."""
+    # Buat raw Pillow image mode I;16 lalu simpan sebagai PNG
+    img = Image.new("I;16", (16, 16), color=32768)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+
+    respons = klien.post(
+        "/api/uji/gema",
+        files={"gambar": ("16bit.png", buf.getvalue(), "image/png")},
+    )
+    assert respons.status_code == status.HTTP_200_OK
+    hasil_img = Image.open(io.BytesIO(respons.content))
+    assert hasil_img.size == (16, 16)
+
+
 # ============================================================================
 # 2. UJI POSITIF: DUKUNGAN MULTI-FORMAT DAN KONSISTENSI PIKSEL
 # ============================================================================

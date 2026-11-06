@@ -1,6 +1,6 @@
-"""Passenger WSGI Entrypoint untuk cPanel / CloudLinux Shared Hosting.
+"""Passenger WSGI Entrypoint untuk Shared Hosting dengan Phusion Passenger / WSGI.
 
-Menghubungkan aplikasi FastAPI (ASGI) ke server web Apache/cPanel via Phusion Passenger
+Menghubungkan aplikasi FastAPI (ASGI) ke server web hosting bersama via Phusion Passenger
 menggunakan adapter a2wsgi (ASGI-to-WSGI).
 """
 
@@ -13,7 +13,7 @@ if jalur_saat_ini not in sys.path:
     sys.path.insert(0, jalur_saat_ini)
 
 # 2. Impor aplikasi minimal FastAPI
-from aplikasi_minimal import app
+from aplikasi_minimal import app  # noqa: E402
 
 # 3. Bungkus aplikasi ASGI dengan ASGIMiddleware dari a2wsgi agar kompatibel WSGI
 try:
@@ -21,11 +21,11 @@ try:
 
     application = ASGIMiddleware(app)
 except ImportError:
-    # Pesan diagnostik ramah jika a2wsgi belum terpasang di virtualenv cPanel
+    # Pesan diagnostik ramah jika a2wsgi belum terpasang di virtualenv hosting
     def application(environ, start_response):
         status = "500 Internal Server Error"
         output = (
-            b"Paket 'a2wsgi' belum terpasang di virtualenv Python cPanel.\n"
+            b"Paket 'a2wsgi' belum terpasang di virtualenv Python hosting bersama.\n"
             b"Jalankan: pip install a2wsgi\n"
         )
         response_headers = [

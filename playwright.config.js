@@ -6,10 +6,10 @@ export default defineConfig({
   testIgnore: process.env.RUN_BENCHMARK
     ? []
     : ['**/benchmark*.spec.js', '**/profiling*.spec.js'],
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : 4,
+  workers: 1,
   reporter: 'list',
   use: {
     baseURL: 'http://localhost:5173',
@@ -28,7 +28,9 @@ export default defineConfig({
     timeout: 30000,
     env: {
       VITE_MEMUAT_FIXTURE_UJI: 'true',
+      VITE_MODE_SERVER_UJI: 'true',
       VITE_STATUS_SERVER_OTOMATIS: 'false',
+      VITE_ALAMAT_API: 'http://127.0.0.1:8000',
     },
   },
 });

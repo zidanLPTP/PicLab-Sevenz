@@ -12,5 +12,7 @@ if __name__ == "__main__":
         "app.utama:aplikasi",
         host=konfigurasi.HOST,
         port=konfigurasi.PORT,
-        reload=True,
+        reload=not konfigurasi.PRODUKSI,
+        access_log=False,  # Matikan log akses bawaan Uvicorn demi privasi (Zero IP Logging)
+        server_header=False,  # Jangan kirim header 'server: uvicorn' demi keamanan
     )

@@ -1,10 +1,11 @@
 /**
- * Layanan Klien API PicLab Sevenz (spec.md bagian 9 & Tahap 5).
+ * Layanan Klien API PicLab Sevenz (spec.md bagian 9, Tahap 5, & K7).
  * Menyediakan penghubung komunikasi jaringan antara frontend React dan backend FastAPI.
  * Mengimplementasikan:
+ * - Dukungan deployment statis murni tanpa backend (Mode Lokal, 0 health check request)
  * - Pembatalan permintaan usang otomatis (latest-wins AbortController)
  * - Pemetaan kode galat standar (JARINGAN_GAGAL, SERVER_TIDAK_TERSEDIA, BATAS_WAKTU_HABIS)
- * - Privasi penuh: nama berkas generik (tanpa nama asli) dan bebas log konsol citra
+ * - Privasi penuh: nama berkas generik citra.png (tanpa nama asli) dan bebas log konsol citra
  */
 
 import { BATASAN_BERKAS } from '../utilitas/konfigurasiBerkas';
@@ -15,6 +16,7 @@ export const KODE_GALAT_KLIEN_API = {
   BATAS_WAKTU_HABIS: 'BATAS_WAKTU_HABIS',
   DIBATALKAN: 'DIBATALKAN',
   BERKAS_MELEBIHI_BATAS: 'BERKAS_TERLALU_BESAR',
+  MODE_LOKAL: 'MODE_LOKAL',
   GALAT_INTERNAL: 'GALAT_INTERNAL',
 };
 
@@ -23,23 +25,43 @@ const pengontrolAktifPerRute = new Map();
 
 /**
  * Mendapatkan URL basis API dari variabel lingkungan Vite.
+ * Jika VITE_ALAMAT_API tidak diatur atau kosong, mengembalikan string kosong (Mode Lokal).
  */
 export function dapatkanAlamatApi() {
-  return import.meta.env.VITE_ALAMAT_API || 'http://localhost:8000';
+  const envUrl = import.meta.env.VITE_ALAMAT_API;
+  if (!envUrl || envUrl.trim() === '') {
+    return '';
+  }
+  return envUrl.trim().replace(/\/+$/, '');
+}
+
+/**
+ * Memeriksa apakah aplikasi berjalan dalam mode statis lokal murni tanpa backend.
+ */
+export function apakahModeLokal() {
+  return dapatkanAlamatApi() === '';
 }
 
 /**
  * Memeriksa status kesehatan server backend.
+ * Jika dalam Mode Lokal (VITE_ALAMAT_API tidak diatur), TIDAK melakukan pemanggilan jaringan sama sekali.
  *
  * @param {number} [batasWaktuMs=5000] - Batas waktu timeout dalam milidetik
  * @returns {Promise<{ sukses: boolean, data?: object, kode?: string }>}
  */
 export async function periksaKesehatan(batasWaktuMs = 5000) {
+  const alamat = dapatkanAlamatApi();
+  if (!alamat) {
+    return {
+      sukses: false,
+      kode: KODE_GALAT_KLIEN_API.MODE_LOKAL,
+    };
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), batasWaktuMs);
 
   try {
-    const alamat = dapatkanAlamatApi();
     const respons = await fetch(`${alamat}/kesehatan`, {
       method: 'GET',
       signal: controller.signal,
@@ -85,6 +107,15 @@ export async function kirimGambarKeServer(
   parameter = {},
   batasWaktuMs = 15000
 ) {
+  const alamat = dapatkanAlamatApi();
+  if (!alamat) {
+    return {
+      sukses: false,
+      kode: KODE_GALAT_KLIEN_API.MODE_LOKAL,
+      pesan: 'Operasi server tidak tersedia dalam deployment mode lokal.',
+    };
+  }
+
   // 1. Validasi Klien: Periksa ukuran sebelum mengirim ke jaringan
   if (!berkasBlob || berkasBlob.size === 0) {
     return {
@@ -118,7 +149,6 @@ export async function kirimGambarKeServer(
   }, batasWaktuMs);
 
   try {
-    const alamat = dapatkanAlamatApi();
     const urlLengkap = `${alamat}${rute.startsWith('/') ? rute : `/${rute}`}`;
 
     // 3. Susun Multipart Form Data dengan nama berkas generik (Privasi OWASP)

@@ -2,6 +2,7 @@ import {
   BookOpen,
   Globe,
   Info,
+  Laptop,
   Loader2,
   Server,
   ShieldCheck,
@@ -13,7 +14,7 @@ import ModalPrivasi from './ModalPrivasi';
 
 /**
  * Bilah navigasi atas PicLab Sevenz.
- * Menampilkan identitas, status server backend, akses dialog privasi, panduan belajar, dan pemilih bahasa.
+ * Menampilkan identitas, status server backend/mode lokal, akses dialog privasi, panduan belajar, dan pemilih bahasa.
  */
 export default function BilahAtas({ statusServerHook = null }) {
   const { t, i18n } = useTranslation();
@@ -29,6 +30,7 @@ export default function BilahAtas({ statusServerHook = null }) {
   const status = statusServerHook?.statusServer || 'tidak_tersedia';
   const apakahTersedia = status === 'tersedia';
   const apakahMemeriksa = status === 'memeriksa';
+  const apakahModeLokal = status === 'mode_lokal';
 
   return (
     <>
@@ -47,30 +49,51 @@ export default function BilahAtas({ statusServerHook = null }) {
 
         {/* Menu Navigasi & Kontrol Kanan */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Indikator Status Server Backend (Tahap 5) */}
+          {/* Indikator Status Server Backend / Mode Lokal (Tahap 5 & K7) */}
           <div className="relative group">
             <button
               type="button"
               data-testid="indikator-status-server"
               data-status={status}
-              onClick={() => statusServerHook?.periksaManual?.()}
+              disabled={apakahModeLokal}
+              onClick={() => {
+                if (!apakahModeLokal) {
+                  statusServerHook?.periksaManual?.();
+                }
+              }}
               aria-label={`${t('statusServer.judul')}: ${t(
-                apakahMemeriksa
-                  ? 'statusServer.memeriksa'
-                  : apakahTersedia
-                    ? 'statusServer.tersedia'
-                    : 'statusServer.tidakTersedia'
+                apakahModeLokal
+                  ? 'statusServer.modeLokal'
+                  : apakahMemeriksa
+                    ? 'statusServer.memeriksa'
+                    : apakahTersedia
+                      ? 'statusServer.tersedia'
+                      : 'statusServer.tidakTersedia'
               )}`}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium border rounded-md transition-colors cursor-pointer focus:ring-2 focus:ring-primer focus:outline-none ${
-                apakahMemeriksa
-                  ? 'bg-latar-subtil text-teks-redup border-garis-panel'
-                  : apakahTersedia
-                    ? 'bg-primer-lembut text-teks-primer border-garis-primer hover:bg-latar-subtil'
-                    : 'bg-latar-galat text-teks-galat border-garis-galat hover:bg-latar-subtil'
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium border rounded-md transition-colors ${
+                apakahModeLokal
+                  ? 'bg-latar-subtil text-teks-primer border-garis-panel cursor-default'
+                  : apakahMemeriksa
+                    ? 'bg-latar-subtil text-teks-redup border-garis-panel cursor-pointer focus:ring-2 focus:ring-primer focus:outline-none'
+                    : apakahTersedia
+                      ? 'bg-primer-lembut text-teks-primer border-garis-primer hover:bg-latar-subtil cursor-pointer focus:ring-2 focus:ring-primer focus:outline-none'
+                      : 'bg-latar-galat text-teks-galat border-garis-galat hover:bg-latar-subtil cursor-pointer focus:ring-2 focus:ring-primer focus:outline-none'
               }`}
             >
-              {apakahMemeriksa ? (
-                <Loader2 size={14} className="animate-spin text-teks-redup" />
+              {apakahModeLokal ? (
+                <>
+                  <Laptop size={14} className="stroke-[1.75] text-teks-redup" />
+                  <span className="hidden sm:inline font-semibold">
+                    {t('statusServer.modeLokal')}
+                  </span>
+                </>
+              ) : apakahMemeriksa ? (
+                <>
+                  <Loader2 size={14} className="animate-spin text-teks-redup" />
+                  <span className="hidden sm:inline font-semibold">
+                    {t('statusServer.memeriksa')}
+                  </span>
+                </>
               ) : apakahTersedia ? (
                 <>
                   <span className="relative flex h-2 w-2">
@@ -78,22 +101,19 @@ export default function BilahAtas({ statusServerHook = null }) {
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-status-sukses" />
                   </span>
                   <Server size={14} className="stroke-[1.75]" />
+                  <span className="hidden sm:inline font-semibold">
+                    {t('statusServer.tersedia')}
+                  </span>
                 </>
               ) : (
                 <>
                   <span className="inline-flex rounded-full h-2 w-2 bg-status-galat" />
                   <WifiOff size={14} className="stroke-[1.75]" />
+                  <span className="hidden sm:inline font-semibold">
+                    {t('statusServer.tidakTersedia')}
+                  </span>
                 </>
               )}
-              <span className="hidden sm:inline font-semibold">
-                {t(
-                  apakahMemeriksa
-                    ? 'statusServer.memeriksa'
-                    : apakahTersedia
-                      ? 'statusServer.tersedia'
-                      : 'statusServer.tidakTersedia'
-                )}
-              </span>
             </button>
 
             {/* Tooltip Keterangan Status Server */}
@@ -102,30 +122,40 @@ export default function BilahAtas({ statusServerHook = null }) {
                 <span>{t('statusServer.judul')}:</span>
                 <span
                   className={
-                    apakahTersedia ? 'text-garis-primer' : 'text-garis-galat'
+                    apakahModeLokal
+                      ? 'text-teks-redup'
+                      : apakahTersedia
+                        ? 'text-garis-primer'
+                        : 'text-garis-galat'
                   }
                 >
                   {t(
-                    apakahMemeriksa
-                      ? 'statusServer.memeriksa'
-                      : apakahTersedia
-                        ? 'statusServer.tersedia'
-                        : 'statusServer.tidakTersedia'
+                    apakahModeLokal
+                      ? 'statusServer.modeLokal'
+                      : apakahMemeriksa
+                        ? 'statusServer.memeriksa'
+                        : apakahTersedia
+                          ? 'statusServer.tersedia'
+                          : 'statusServer.tidakTersedia'
                   )}
                 </span>
               </div>
               <p className="text-teks-redup text-[10px] max-w-xs whitespace-normal">
                 {t(
-                  apakahMemeriksa
-                    ? 'statusServer.keteranganMemeriksa'
-                    : apakahTersedia
-                      ? 'statusServer.keteranganTersedia'
-                      : 'statusServer.keteranganTidakTersedia'
+                  apakahModeLokal
+                    ? 'statusServer.keteranganModeLokal'
+                    : apakahMemeriksa
+                      ? 'statusServer.keteranganMemeriksa'
+                      : apakahTersedia
+                        ? 'statusServer.keteranganTersedia'
+                        : 'statusServer.keteranganTidakTersedia'
                 )}
               </p>
-              <span className="text-[9px] text-teks-redup pt-0.5 border-t border-garis-subtil/30">
-                {t('statusServer.tombolPeriksa')}
-              </span>
+              {!apakahModeLokal && (
+                <span className="text-[9px] text-teks-redup pt-0.5 border-t border-garis-subtil/30">
+                  {t('statusServer.tombolPeriksa')}
+                </span>
+              )}
             </div>
           </div>
 

@@ -2,10 +2,10 @@
  * Web Worker untuk pemrosesan citra PicLab Sevenz di thread terpisah.
  * Menjamin antarmuka pengguna tidak membeku saat komputasi berlangsung.
  * Kepatuhan OWASP & Agent.md: Registri statis murni tanpa eval atau new Function.
- * Mendukung eksekusi sekuensial pipeline non-destruktif dan prefix caching.
+ * Mendukung eksekusi sekuensial pipeline non-destruktif, prefix caching, dan operasi server.
  */
 
-import { eksekusiPipelineSekuensial } from '../mesin/eksekutorPipeline';
+import { eksekusiPipelineAsinkron } from '../mesin/eksekutorPipeline';
 import {
   bersihkanParameter,
   dapatkanOperasiBerdasarkanId,
@@ -14,7 +14,7 @@ import {
 // Memori cache prefix sekuensial tingkat worker (hanya untuk preview interaktif)
 let cachePrefixWorker = [];
 
-self.onmessage = function (e) {
+self.onmessage = async function (e) {
   const dataPesan = e.data || {};
 
   // Perintah pembersihan cache saat citra utama diganti
@@ -25,7 +25,7 @@ self.onmessage = function (e) {
 
   const tWorkerMasuk = performance.now();
 
-  // Eksekusi Pipeline Sekuensial (Tahap 3)
+  // Eksekusi Pipeline Sekuensial (Tahap 3 & 5)
   if (dataPesan.tipe === 'EKSEKUSI_PIPELINE') {
     const {
       idPermintaan,
@@ -51,7 +51,7 @@ self.onmessage = function (e) {
       const cacheMasukan = gunakanPrefixCache ? cachePrefixWorker : false;
       const waktuAwal = performance.now();
 
-      const hasilEksekusi = eksekusiPipelineSekuensial(
+      const hasilEksekusi = await eksekusiPipelineAsinkron(
         daftarLangkah || [],
         masukanCitra,
         konteksSkala || { rasio: 1.0 },
@@ -123,7 +123,7 @@ self.onmessage = function (e) {
 
     const parameterBersih = bersihkanParameter(operasi, parameter);
     const waktuAwal = performance.now();
-    const hasil = operasi.terapkan(
+    const hasil = await operasi.terapkan(
       masukanCitra,
       parameterBersih,
       konteksSkala || { rasio: 1.0 }

@@ -1,7 +1,7 @@
 """Modul middleware keamanan, rate limiting, pembatas konkurensi, dan security headers.
 
 Mengimplementasikan pertahanan berlapis sesuai panduan OWASP dan spec.md bagian 10:
-- Pengenalan identitas klien aman di belakang reverse proxy
+- Pengenalan identitas klien aman di belakang reverse proxy (hanya bila diaktifkan secara eksplisit)
 - Penolakan dini berdasarkan Content-Length sebelum membaca isi (OWASP A04)
 - Rate limiting berbasis jendela geser di memori (429 + Retry-After)
 - Pembatas permintaan serentak Semaphore (503 SERVER_SIBUK)
@@ -21,22 +21,23 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.inti.galat import PESAN_GALAT_BAKU, KodeGalat
 from app.inti.konfigurasi import konfigurasi
 
-# Semaphore global untuk pembatasan pemrosesan citra serentak (mencegah kehabisan RAM hosting)
+# Semaphore global per proses untuk pembatasan pemrosesan citra serentak
 pembatas_konkurensi = asyncio.Semaphore(konfigurasi.BATAS_PERMINTAAN_SERENTAK)
 
 
 def dapatkan_ip_klien(request: Request) -> str:
     """Mendapatkan alamat IP klien secara aman.
 
-    HANYA mempercayai header X-Forwarded-For bila koneksi langsung berasal
-    dari daftar PROXY_TERPERCAYA yang dikonfigurasi.
+    Header X-Forwarded-For HANYA diperiksa jika PERCAYAI_PROXY=True DAN koneksi
+    langsung berasal dari daftar PROXY_TERPERCAYA.
+    Jika PERCAYAI_PROXY=False (default bawaan), header proxy palsu selalu diabaikan
+    dan koneksi langsung yang digunakan.
     """
     host_koneksi_langsung = request.client.host if request.client else "127.0.0.1"
 
-    if host_koneksi_langsung in konfigurasi.PROXY_TERPERCAYA:
+    if konfigurasi.PERCAYAI_PROXY and host_koneksi_langsung in konfigurasi.PROXY_TERPERCAYA:
         xff = request.headers.get("x-forwarded-for")
         if xff:
-            # Ambil alamat IP klien asli pertama dari daftar hop
             ip_klien = xff.split(",")[0].strip()
             if ip_klien:
                 return ip_klien
@@ -47,7 +48,7 @@ def dapatkan_ip_klien(request: Request) -> str:
 class PembatasLajuMemori:
     """Rate limiter geser murni memori berbasis alamat IP klien.
 
-    Bebas dependensi eksternal (tanpa Redis), aman untuk hosting bersama.
+    Bebas dependensi eksternal (tanpa Redis atau library pihak ketiga), aman untuk hosting bersama.
     """
 
     def __init__(self, batas_per_menit: int):

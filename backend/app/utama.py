@@ -24,13 +24,13 @@ def buat_aplikasi() -> FastAPI:
         openapi_url=None if konfigurasi.PRODUKSI else "/openapi.json",
     )
 
-    # 1. Daftarkan Middleware Logging Privasi Terstruktur
+    # 1. Daftarkan Middleware Logging Privasi Terstruktur (Bebas IP, Bebas Query)
     app.add_middleware(MiddlewareLogPrivasi)
 
     # 2. Daftarkan Middleware Keamanan (Security Headers & Rate Limiting)
     app.add_middleware(MiddlewareKeamanan)
 
-    # 3. Middleware CORS Ketat (Hanya asal terdaftar, tanpa wildcard *, tanpa credentials)
+    # 3. Middleware CORS Ketat (Hanya origin terdaftar, tanpa wildcard *, tanpa credentials)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=konfigurasi.ORIGIN_DIIZINKAN,
@@ -57,4 +57,6 @@ if __name__ == "__main__":
         host=konfigurasi.HOST,
         port=konfigurasi.PORT,
         reload=not konfigurasi.PRODUKSI,
+        access_log=False,
+        server_header=False,
     )

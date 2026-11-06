@@ -9,13 +9,13 @@ Proyek ini dibangun dengan prioritas utama pada **utilitas praktis** bagi penggu
 ## 🚀 Teknologi Utama
 
 - **Frontend**: React 18 (JavaScript), Vite, Tailwind CSS v3, Lucide Icons, i18next.
-- **Backend**: Python 3.10+ (teruji pada v3.10 dan v3.13.5), FastAPI, Uvicorn, Pillow, NumPy.
+- **Backend**: Python 3.11+ (teruji pada v3.11 dan v3.13.5, batas minimum `>=3.11` sesuai PEP 619), FastAPI, Uvicorn, Pillow, NumPy.
 - **Pengujian**:
   - Frontend: Vitest + React Testing Library (14 berkas uji, 142 pengujian lulus).
-  - Backend: pytest + HTTPX (29 pengujian unit & integrasi OWASP lulus).
-  - End-to-End: Playwright Chromium (30 pengujian E2E deterministik lulus).
-- **Kualitas & Keamanan**: ESLint, Prettier, Ruff, pip-audit (0 kerentanan), npm audit (0 kerentanan).
-- **Integrasi Berkelanjutan (CI)**: GitHub Actions (matriks Python 3.10 & 3.13, Node 22).
+  - Backend: pytest + HTTPX (44 pengujian unit, integrasi, dan keamanan OWASP lulus).
+  - End-to-End: Playwright Chromium (36 pengujian E2E deterministik lulus, mencakup integrasi klien-server nyata tanpa mock).
+- **Kualitas & Keamanan**: ESLint, Prettier, Ruff, pip-audit (0 kerentanan), npm audit (0 kerentanan produksi).
+- **Integrasi Berkelanjutan (CI)**: GitHub Actions (matriks Python 3.11 & 3.13, Node 22).
 
 ---
 
@@ -26,19 +26,18 @@ Struktur folder utama proyek mengacu pada spesifikasi (`spec.md` bagian 12):
 ```text
 PicLab-Sevenz/
 ├── .github/
-│   └── workflows/       # Alur kerja GitHub Actions (CI: lint, uji frontend, matriks backend, e2e)
+│   └── workflows/       # Alur kerja GitHub Actions (CI: lint, uji frontend, matriks backend 3.11 & 3.13, e2e)
 ├── backend/
 │   ├── app/
-│   │   ├── inti/        # Konfigurasi aplikasi & CORS ketat
+│   │   ├── inti/        # Konfigurasi aplikasi, zero IP logging, & CORS ketat
 │   │   ├── rute/        # Titik akhir API (GET /kesehatan, POST /api/uji/gema)
 │   │   ├── layanan/     # Logika bisnis validasi stream & mitigasi keamanan
 │   │   ├── skema/       # Skema format galat standar { kode, pesan }
-│   │   ├── konfigurasi.py # Sumber kebenaran tunggal batas ukuran & memori backend
 │   │   └── utama.py     # Inisialisasi aplikasi FastAPI & penanganan galat terpusat
 │   ├── kelayakan/       # Paket mandiri uji kelayakan hosting bersama (disiapkan untuk Fathin)
 │   │   ├── aplikasi_minimal.py      # Server FastAPI diagnostik minimal (RAM murni)
 │   │   ├── periksa_lingkungan.py    # Skrip deteksi libc, cgroup limit, & latensi library
-│   │   ├── ukur_beban.py            # Skrip pengukur beban sintetis (1, 4, 8, 16 MP)
+│   │   ├── ukur_beban.py            # Skrip pengukur beban sintetis via psutil (1, 4, 8, 16 MP)
 │   │   ├── uji_konkurensi.py        # Skrip uji konkurensi permintaan serentak (stdlib)
 │   │   ├── passenger_wsgi.py        # Jembatan ASGI-ke-WSGI untuk Phusion Passenger
 │   │   ├── requirements-uji.txt     # Dependensi uji kelayakan (OpenCV & SciPy hanya di sini)
@@ -46,29 +45,12 @@ PicLab-Sevenz/
 │   │   ├── SYARAT_HOSTING_SEBELUM_MEMBELI.md # Dokumen spesifikasi sebelum sewa hosting
 │   │   └── README.md                # Panduan langkah demi langkah pemasangan di hosting
 │   ├── uji/             # Pengujian unit, integrasi, dan keamanan backend (pytest)
-│   ├── requirements.txt # Dependensi backend produksi (bersih tanpa OpenCV/SciPy)
-│   ├── pyproject.toml   # Konfigurasi proyek & ruff/pytest (requires-python = ">=3.10")
-│   └── main.py          # Titik masuk eksekusi server backend
-├── frontend/
-│   ├── public/          # Berkas statis & aset logo SVG
-│   ├── src/
-│   │   ├── komponen/    # Komponen antarmuka React (BilahAtas, PanelOperasi, AreaKanvas, dll)
-│   │   ├── mesin/       # Algoritma pemrosesan citra Web Worker (30 operasi klien bawaan)
-│   │   ├── layanan/     # Layanan jaringan API klien (api.js, pembatalan latest-wins)
-│   │   ├── hook/        # Kustom React Hook (useStatusServer.js pemantau reaktif)
-│   │   ├── tema/        # Sumber kebenaran tunggal token desain (token.js)
-│   │   ├── bahasa/      # Berkas internasionalisasi (id.json & en.json)
-│   │   ├── utilitas/    # Validasi biner klien (konfigurasiBerkas.js)
-│   │   └── uji/         # Pengujian frontend unit & integrasi
-│   ├── package.json     # Dependensi & skrip frontend
-│   └── tailwind.config.js # Konfigurasi tema token desain
-├── e2e/                 # Pengujian End-to-End Playwright (termasuk penghubungServer.spec.js)
-├── Agent.md             # Panduan kerja dan tata tertib agen
-├── spec.md              # Spesifikasi teknis arsitektur
-├── styleguide.md        # Panduan sistem desain dan antarmuka
-├── CHANGELOG.md         # Catatan perubahan berkala
-├── .env.example         # Contoh variabel lingkungan
-└── README.md            # Dokumentasi utama proyek
+│   ├── requirements.txt # Dependensi backend produksi (ramping, 98.80 MB venv bersih)
+│   ├── requirements-dev.txt # Dependensi pengembangan, pengujian, dan audit keamanan
+│   ├── pyproject.toml   # Konfigurasi proyek & ruff/pytest (requires-python = ">=3.11")
+│   └── main.py          # Titik masuk eksekusi server backend Uvicorn (access_log=False)
+├── frontend/            # Kode sumber klien React + Vite
+└── e2e/                 # Pengujian End-to-End Playwright (alur klien dan klien-server nyata)
 ```
 
 ---
@@ -77,7 +59,7 @@ PicLab-Sevenz/
 
 ### 1. Prasyarat Sistem
 - **Node.js**: v20+ (teruji pada v22.16.0 LTS)
-- **Python**: **v3.10 minimum yang harus tersedia di hosting** (teruji pada v3.10 dan v3.13.5)
+- **Python**: **v3.11 minimum yang harus tersedia** (teruji pada v3.11 dan v3.13.5; Python 3.10 EOL Oktober 2026 PEP 619)
 
 ### 2. Persiapan Lingkungan
 Salin berkas konfigurasi lingkungan:
@@ -90,14 +72,16 @@ Pasang dependensi frontend:
 npm --prefix frontend install
 ```
 
-Siapkan lingkungan virtual dan dependensi backend produksi:
+Siapkan lingkungan virtual dan dependensi backend:
 ```bash
 cd backend
 python -m venv .venv
 # Pada Windows:
 .venv\Scripts\pip install -r requirements.txt
+# Untuk pengembangan, pengujian, dan audit keamanan:
+.venv\Scripts\pip install -r requirements-dev.txt
 # Pada Linux / macOS:
-# source .venv/bin/activate && pip install -r requirements.txt
+# source .venv/bin/activate && pip install -r requirements-dev.txt
 cd ..
 ```
 
@@ -117,7 +101,7 @@ npm run dev:backend
 ```
 API backend akan aktif di: `http://127.0.0.1:8000`  
 Endpoint pemeriksaan kesehatan: `http://127.0.0.1:8000/kesehatan`  
-Dokumentasi OpenAPI interaktif: `http://127.0.0.1:8000/docs`
+Dokumentasi OpenAPI interaktif: `http://127.0.0.1:8000/docs` (otomatis dinonaktifkan / 404 saat mode produksi aktif)
 
 ---
 
@@ -161,14 +145,16 @@ npm run lint
 > Pengujian di hosting nyata akan dijalankan setelah hosting dibeli dan sebelum deployment di Tahap 11. Tahap 6–10 dikembangkan dan diuji secara lokal.
 
 ### Ringkasan Garis Dasar Laptop (Bukan Hasil Hosting):
-| Resolusi Citra | Total Piksel | Median Durasi (ms) | Puncak Heap Python (MB) |
-| :--- | :--- | :--- | :--- |
-| **1 MP** (1000×1000) | 1.000.000 px | 47,2 ms | 7,63 MB |
-| **4 MP** (2000×2000) | 4.000.000 px | 174,9 ms | 30,52 MB |
-| **8 MP** (3264×2448) | 7.990.272 px | 929,3 ms | 60,97 MB |
-| **16 MP** (4000×4000) | 16.000.000 px | 1.916,4 ms | 122,08 MB |
+*Diukur menggunakan `backend/kelayakan/ukur_beban.py` dengan 1 pemanasan + 5 ulangan (median)*:
 
-*Catatan Keterbatasan: Tracemalloc hanya mengukur alokasi heap murni Python. Alokasi internal library C (NumPy/Pillow) dan page cache sistem operasi riil diperkirakan 2x–3x lebih besar.*
+| Resolusi Citra | Total Piksel | Median Total (ms) | Puncak RSS OS (`psutil`) | Puncak Heap Python (`tracemalloc`) | Median Gaussian Blur (ms) | Ukuran PNG (KB) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **1 MP** (1000×1000) | 1.000.000 px | 44,9 ms | 40,94 MB | 7,63 MB | 27,6 ms | 10,5 KB |
+| **4 MP** (2000×2000) | 4.000.000 px | 176,9 ms | 64,28 MB | 30,52 MB | 118,5 ms | 28,0 KB |
+| **8 MP** (3264×2448) | 7.990.272 px | 355,6 ms | 94,86 MB | 60,97 MB | 232,7 ms | 48,5 KB |
+| **16 MP** (4000×4000) | 16.000.000 px | 697,6 ms | 155,50 MB | 122,08 MB | 469,4 ms | 81,6 KB |
+
+*Catatan Penamaan: Kolom `Median Gaussian Blur (ms)` mengukur waktu median algoritma filter Gaussian Blur (radius=2). Keterbatasan semafor konkurensi FastAPI (`BATAS_PERMINTAAN_SERENTAK = 2`) bekerja per-proses; jika hosting menjalankan multi-proses worker Passenger, kapasitas serentak global menjadi perkalian dari jumlah proses aktif.*
 
 ---
 
@@ -179,5 +165,5 @@ npm run lint
 - [x] **Tahap 2 — Mesin operasi klien: dasar, warna, enhancement** (Arsitektur fungsi murni `{ data, width, height }`, 17 operasi citra bawaan, Web Worker pola latest-wins, preview responsif 1024 px, unduh resolusi penuh multi-format, visualisasi histogram RGB & luminans SVG mandiri, registri dinamis ekstensibel).
 - [x] **Tahap 3 — Pipeline operasi, riwayat, undo/redo, dan preset** (Tumpukan operasi non-destruktif berantai, reducer deterministik, riwayat snapshot ringan ~55 KB / 100 snapshot, prefix caching di worker, reorder seret & keyboard ARIA live, 5 preset awal).
 - [x] **Tahap 4 — Biner, konvolusi, smoothing, sharpening, deteksi tepi dasar (Penutupan MVP)** (13 operasi spasial/konvolusi baru total 30 operasi klien, konvolusi sejati pemutaran 180°, editor matriks 3×3 & 5×5 navigasi keyboard, kartu belajar konsep dwibahasa, 3 preset baru, verifikasi standalone 0 network requests ke server).
-- [x] **Tahap 5 — Backend: fondasi, keamanan, penghubung klien, uji kelayakan hosting** (Fondasi backend FastAPI terstruktur, validasi bertingkat murah ke mahal 10 MB/4096 px/16 MP, pencegahan decompression bomb, pemrosesan murni RAM 0 disk write, rate limiter 429, semafor serentak 503, header keamanan OWASP, penanganan galat standar `{ kode, pesan }`, penghubung klien latest-wins AbortController, hook pemantau reaktif status server di bilah atas, graceful degradation 100% operasi klien mandiri saat server offline, pembaruan privasi poin 4, paket mandiri `backend/kelayakan/` beserta garis dasar laptop dan panduan spesifikasi hosting).
+- [x] **Tahap 5 — Backend: fondasi, keamanan, penghubung klien, uji kelayakan hosting (Revisi Selesai Penuh)** (Fondasi backend FastAPI terstruktur, validasi bertingkat murah ke mahal 10 MB/4096 px/16 MP, pencegahan decompression bomb, pemrosesan murni RAM 0 disk write, rate limiter 429, semafor serentak 503, header keamanan OWASP, penanganan galat standar `{ kode, pesan }`, Zero IP logging pada server aplikasi dan Uvicorn access log dibungkam, isolasi dependensi produksi requirements.txt 98.80 MB vs dev 157.66 MB, mode lokal statis murni saat VITE_ALAMAT_API kosong dengan 0 request kesehatan, pengujian integrasi klien-server nyata tanpa mock Playwright 4 skenario lulus, pembaruan privasi poin 4 dengan catatan keterbatasan reverse proxy upstream, paket mandiri `backend/kelayakan/` beserta garis dasar laptop RSS terukur psutil dan panduan spesifikasi hosting).
 - [ ] **Tahap 6 — Operasi server: Canny, kontur, morfologi, segmentasi, noise, FFT** *(tahap berikutnya)*.

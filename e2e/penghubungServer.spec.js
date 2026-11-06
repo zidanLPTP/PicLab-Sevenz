@@ -33,7 +33,7 @@ test.describe('Tahap 5: Penghubung Klien-Backend & Graceful Degradation', () => 
     const modalPrivasi = page.getByRole('dialog');
     await expect(modalPrivasi).toBeVisible();
     await expect(modalPrivasi).toContainText(
-      /Log server hanya mencatat metode|Server logs record only/
+      /Log server.*hanya mencatat metode|Server logs.*record only/
     );
     const tombolTutup = page.getByRole('button', {
       name: /Mengerti dan Tutup|Understood and Close/,

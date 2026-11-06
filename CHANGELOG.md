@@ -4,6 +4,41 @@ Semua perubahan penting pada proyek **PicLab Sevenz** akan didokumentasikan dala
 
 Format berkas ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/) dan mengikuti prinsip [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.6.1] - 2026-11-06
+
+### Diperbaiki & Disempurnakan (Revisi Tahap 5)
+- **Zero IP Logging & Pembungkaman Log Akses Uvicorn (K2)**:
+  - Menghentikan pencatatan alamat IP klien secara mutlak di seluruh layer backend (`piclab.akses`).
+  - Format log baru: `METODE RUTE - STATUS - DURASI_MS` (bebas IP mentah, bebas query string sensitif, dan bebas nama berkas asli pengguna).
+  - Pembungkaman log akses bawaan Uvicorn (`access_log=False` dan penonaktifan logger `uvicorn.access`) untuk menutup celah pencatatan otomatis IP.
+  - Penambahan uji otomatis tangkap logger (`test_log_privasi.py`) dengan caplog membuktikan IP, query rahasia, dan nama berkas tidak pernah dicatat.
+  - Pembaruan teks dialog privasi dwibahasa (poin 4) mencatat secara jujur keterbatasan infrastruktur reverse proxy upstream di luar server aplikasi.
+- **Pengujian E2E Klien-Server Sungguhan Tanpa Mock (K3)**:
+  - Operasi percobaan `server_uji_gema` di katalog terbukti tidak ada di bundel produksi dist (`frontend/dist`).
+  - Runner Playwright menjalankan backend FastAPI sungguhan (`e2e/integrasiServerNyata.spec.js`) dan menguji 4 skenario nyata:
+    1. Server hidup: unggah citra uji tangga 4×2 piksel diketahui, panggil operasi server, kanvas ter-render, dan piksel unduhan terbukti matematis terbalik horizontal.
+    2. Unggah berkas bukan citra (teks) dari UI: menampilkan pesan galat dwibahasa tanpa crash.
+    3. Server dimatikan di tengah jalan: UI degradasi anggun (status Server Mati, tombol aksi server dinonaktifkan otomatis, nol unhandled rejection).
+    4. Server pulih: auto-recovery mendeteksi server hidup kembali dan tombol operasi server aktif kembali.
+  - Uji penolakan CORS browser pada fetch cross-origin.
+- **Pemisahan Dependensi & Batas Minimum Python 3.11 (K4 & K8)**:
+  - Pemisahan `backend/requirements.txt` (hanya produksi) dan `backend/requirements-dev.txt` (pengembangan, uji, audit).
+  - Pembuktian venv bersih produksi: total ukuran disk hanya 98,80 MB (berhasil start uvicorn) vs venv dev 157,66 MB (penghematan 37,3%).
+  - Peningkatan batas minimum Python ke `>=3.11` pada `pyproject.toml` (karena Python 3.10 EOL Oktober 2026 sesuai PEP 619). CI GitHub Actions menguji matriks Python 3.11 dan 3.13.
+  - Header `X-Forwarded-For` hanya dipercaya jika `PERCAYAI_PROXY=True` dan IP berada dalam `PROXY_TERPERCAYA` (default: false / tidak dipercaya).
+  - Semafor konkurensi FastAPI dicatat keterbatasannya sebagai pembatas per-proses (`BATAS_PERMINTAAN_SERENTAK = 2`).
+- **Tabel Uji Negatif Pytest Lengkap (K5)**:
+  - 44 pengujian pytest lulus 100% mencakup validasi berkas rusak, polyglot HTML/ZIP, bom dekompresi, pembersihan EXIF/GPS, dukungan mode warna P/L/I;16, mode produksi menonaktifkan `/docs`, dan simulasi galat 500 tanpa kebocoran jejak stacktrace.
+- **Audit Dependensi Bersih & Pengujian Klon Bersih (K6)**:
+  - `npm audit --omit=dev`: 0 kerentanan pada dependensi produksi frontend.
+  - `pip-audit`: 0 kerentanan pada dependensi backend Python.
+- **Mode Lokal Statis Murni pada Deployment (K7)**:
+  - Jika `VITE_ALAMAT_API` tidak diatur, aplikasi otomatis beroperasi dalam Mode Lokal murni (0 health check request ke port backend, status di bilah atas "Mode Lokal").
+  - Terverifikasi pada `vite preview` dengan rekaman lalu lintas jaringan membuktikan 0 permintaan ke server backend.
+- **Garis Dasar Laptop Empiris via psutil (K8)**:
+  - Puncak RSS OS nyata diukur langsung via `psutil`: 1 MP = 40,94 MB; 4 MP = 64,28 MB; 8 MP = 94,86 MB; 16 MP = 155,50 MB dengan label tegas "GARIS DASAR LAPTOP, BUKAN HASIL HOSTING".
+  - Penjelasan label durasi filter Gaussian Blur (radius=2) untuk menghilangkan ambiguitas nama kolom.
+
 ## [0.6.0] - 2026-11-05
 
 ### Ditambahkan
